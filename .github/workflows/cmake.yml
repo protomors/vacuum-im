@@ -6,8 +6,8 @@ on: [push]
 
 jobs:
   build:
-    name: ubuntu 20.04
-    runs-on: ubuntu-20.04
+    name: ubuntu
+    runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v1
