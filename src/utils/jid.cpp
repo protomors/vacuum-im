@@ -8,7 +8,7 @@
 
 static const QChar CharDog = '@';
 static const QChar CharSlash = '/';
-static const QList<QChar> EscChars =     QList<QChar>()   << 0x5c << 0x20 << 0x22 << 0x26 << 0x27 << 0x2f << 0x3a << 0x3c << 0x3e << 0x40;
+static const QList<QChar> EscChars =     QList<QChar>()   << QChar(ushort(0x5c)) << QChar(ushort(0x20)) << QChar(ushort(0x22)) << QChar(ushort(0x26)) << QChar(ushort(0x27)) << QChar(ushort(0x2f)) << QChar(ushort(0x3a)) << QChar(ushort(0x3c)) << QChar(ushort(0x3e)) << QChar(ushort(0x40));
 static const QList<QString> EscStrings = QList<QString>() <<"\\5c"<<"\\20"<<"\\22"<<"\\26"<<"\\27"<<"\\2f"<<"\\3a"<<"\\3c"<<"\\3e"<<"\\40";
 
 QHash<QString,Jid> Jid::FJidCache;
@@ -398,7 +398,7 @@ Jid &Jid::parseFromString(const QString &AJidStr)
 {
 	if (!FJidCache.contains(AJidStr))
 	{
-		if (d == NULL)
+		if (d == nullptr)
 			d = new JidData;
 		JidData *dd = d.data();
 

@@ -822,7 +822,7 @@ QStyleOptionViewItem AdvancedItemDelegate::itemStyleOption(const AdvancedDelegat
 
 		hint = AItem.d->hints.value(AdvancedDelegateItem::FontWeight);
 		if (!hint.isNull())
-			itemOption.font.setWeight(hint.toInt());
+			itemOption.font.setWeight(static_cast<QFont::Weight>(hint.toInt()));
 
 		hint = AItem.d->hints.value(AdvancedDelegateItem::FontItalic);
 		if (!hint.isNull())
@@ -1167,7 +1167,7 @@ bool AdvancedItemDelegate::editorEvent(QEvent *AEvent, QAbstractItemModel *AMode
 	}
 
 	Qt::CheckState state;
-	if ((flags & Qt::ItemIsTristate) > 0)
+	if ((flags & Qt::ItemIsAutoTristate) > 0)
 		state = static_cast<Qt::CheckState>((value.toInt()+1) % 3);
 	else if (value.toInt() == Qt::Unchecked)
 		state = Qt::Checked;

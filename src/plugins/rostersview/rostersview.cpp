@@ -690,7 +690,7 @@ QModelIndex RostersView::mapToModel(const QModelIndex &AProxyIndex) const
 	QModelIndex index = AProxyIndex;
 	if (!FProxyModels.isEmpty())
 	{
-		QMap<int, QAbstractProxyModel *>::const_iterator it = FProxyModels.constEnd();
+		QMultiMap<int, QAbstractProxyModel *>::const_iterator it = FProxyModels.constEnd();
 		do
 		{
 			--it;
@@ -705,7 +705,7 @@ QModelIndex RostersView::mapFromModel(const QModelIndex &AModelIndex) const
 	QModelIndex index = AModelIndex;
 	if (!FProxyModels.isEmpty())
 	{
-		QMap<int, QAbstractProxyModel *>::const_iterator it = FProxyModels.constBegin();
+		QMultiMap<int, QAbstractProxyModel *>::const_iterator it = FProxyModels.constBegin();
 		while (it != FProxyModels.constEnd())
 		{
 			index = it.value()->mapFromSource(index);
@@ -720,7 +720,7 @@ QModelIndex RostersView::mapToProxy(QAbstractProxyModel *AProxyModel, const QMod
 	QModelIndex index = AModelIndex;
 	if (!FProxyModels.isEmpty())
 	{
-		QMap<int,QAbstractProxyModel *>::const_iterator it = FProxyModels.constBegin();
+		QMultiMap<int,QAbstractProxyModel *>::const_iterator it = FProxyModels.constBegin();
 		while (it!=FProxyModels.constEnd())
 		{
 			index = it.value()->mapFromSource(index);
@@ -738,7 +738,7 @@ QModelIndex RostersView::mapFromProxy(QAbstractProxyModel *AProxyModel, const QM
 	if (!FProxyModels.isEmpty())
 	{
 		bool doMap = false;
-		QMap<int, QAbstractProxyModel *>::const_iterator it = FProxyModels.constEnd();
+		QMultiMap<int, QAbstractProxyModel *>::const_iterator it = FProxyModels.constEnd();
 		do
 		{
 			--it;
@@ -1149,7 +1149,7 @@ void RostersView::paintEvent(QPaintEvent *AEvent)
 	if (!FDropIndicatorRect.isNull())
 	{
 		QStyleOption option;
-		option.init(this);
+		option.initFrom(this);
 		option.rect = FDropIndicatorRect.adjusted(0,0,-1,-1);
 		QPainter painter(viewport());
 		style()->drawPrimitive(QStyle::PE_IndicatorItemViewItemDrop, &option, &painter, this);

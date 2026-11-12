@@ -54,7 +54,7 @@ static const struct { QStandardPaths::StandardLocation location; QString key; } 
 	{ QStandardPaths::PicturesLocation,       "%PicturesLocation%"     },
 	{ QStandardPaths::TempLocation,           "%TempLocation%"         },
 	{ QStandardPaths::HomeLocation,           "%HomeLocation%"         },
-	{ QStandardPaths::DataLocation,           "%DataLocation%"         },
+	{ QStandardPaths::AppLocalDataLocation,           "%DataLocation%"         },
 	{ QStandardPaths::CacheLocation,          "%CacheLocation%"        },
 };
 

@@ -244,8 +244,8 @@ void ViewWidget::onMessageStyleUrlClicked(QWidget *AWidget, const QUrl &AUrl)
 {
 	if (AWidget == FStyleWidget)
 	{
-		QMap<int,IMessageViewUrlHandler *> handlers = FMessageWidgets->viewUrlHandlers();
-		for (QMap<int,IMessageViewUrlHandler *>::const_iterator it = handlers.constBegin(); it!=handlers.constEnd(); ++it)
+		QMultiMap<int,IMessageViewUrlHandler *> handlers = FMessageWidgets->viewUrlHandlers();
+		for (QMultiMap<int,IMessageViewUrlHandler *>::const_iterator it = handlers.constBegin(); it!=handlers.constEnd(); ++it)
 			if (it.value()->messageViewUrlOpen(it.key(),this,AUrl))
 				break;
 		emit urlClicked(AUrl);
