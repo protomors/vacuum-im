@@ -1,6 +1,7 @@
 #include "advanceditemmodel.h"
 
 #include <QTimer>
+#include <QRegularExpression>
 
 #define FIRST_VALID_ROLE 0
 
@@ -119,8 +120,13 @@ QList<QStandardItem *> AdvancedItemModel::findItems(const QMultiMap<int, QVarian
 					case Qt::MatchExactly:
 						accepted = (findValue==itemValue);
 						break;
-					case Qt::MatchRegExp:
+					case 4: // Qt::MatchRegExp, removed in Qt 6
 						accepted = QRegExp(findValue.toString(),cs).exactMatch(itemValue.toString());
+						break;
+					case Qt::MatchRegularExpression:
+						accepted = QRegularExpression(QRegularExpression::anchoredPattern(findValue.toString()),
+							cs==Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption)
+							.match(itemValue.toString()).hasMatch();
 						break;
 					case Qt::MatchWildcard:
 						accepted = QRegExp(findValue.toString(), cs, QRegExp::Wildcard).exactMatch(itemValue.toString());
@@ -163,7 +169,7 @@ QMultiMap<int, AdvancedItemSortHandler *> AdvancedItemModel::itemSortHandlers() 
 void AdvancedItemModel::insertItemSortHandler(int AOrder, AdvancedItemSortHandler *AHandler)
 {
 	if (AHandler)
-		FItemSortHandlers.insertMulti(AOrder,AHandler);
+		FItemSortHandlers.insert(AOrder,AHandler);
 }
 
 void AdvancedItemModel::removeItemSortHandler(int AOrder, AdvancedItemSortHandler *AHandler)
@@ -185,8 +191,8 @@ void AdvancedItemModel::insertItemDataHolder(int AOrder, AdvancedItemDataHolder 
 	{
 		foreach(int role, AHolder->advancedItemDataRoles(AOrder))
 			if (role != AnyRole)
-				FItemDataHolders[role].insertMulti(AOrder,AHolder);
-		FItemDataHolders[AnyRole].insertMulti(AOrder,AHolder);
+				FItemDataHolders[role].insert(AOrder,AHolder);
+		FItemDataHolders[AnyRole].insert(AOrder,AHolder);
 	}
 }
 

@@ -162,7 +162,7 @@ int StanzaProcessor::insertStanzaHandle(const IStanzaHandle &AHandle)
 			handleId = (handleId > 0) ? handleId+1 : 1;
 
 		FHandles.insert(handleId,AHandle);
-		FHandleIdByOrder.insertMulti(AHandle.order,handleId);
+		FHandleIdByOrder.insert(AHandle.order,handleId);
 		connect(AHandle.handler->instance(),SIGNAL(destroyed(QObject *)),SLOT(onStanzaHandlerDestroyed(QObject *)));
 
 		LOG_DEBUG(QString("Stanza handle inserted, id=%1, handler=%2, order=%3, direction=%4, stream=%5, conditions=%6").arg(handleId).arg(AHandle.handler->instance()->metaObject()->className()).arg(AHandle.order).arg(AHandle.direction).arg(AHandle.streamJid.full()).arg(QStringList(AHandle.conditions).join("; ")));
@@ -237,7 +237,7 @@ bool StanzaProcessor::checkCondition(const QDomElement &AElem, const QString &AC
 				}
 			}
 			if (!attrName.isEmpty())
-				attributes.insertMulti(attrName,attrValue);
+				attributes.insert(attrName,attrValue);
 			pos++;
 		}
 		else 

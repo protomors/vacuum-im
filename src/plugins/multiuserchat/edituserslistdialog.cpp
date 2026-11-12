@@ -1,4 +1,5 @@
 #include "edituserslistdialog.h"
+#include <utils/qtcompat.h>
 
 #include <QMessageBox>
 #include <QInputDialog>
@@ -109,8 +110,8 @@ QList<IMultiUserListItem> EditUsersListDialog::deltaList() const
 {
 	QList<IMultiUserListItem> result;
 
-	QSet<Jid> listItems = FUserListItem.keys().toSet();
-	QSet<Jid> modelItems = FUserModelItem.keys().toSet();
+	QSet<Jid> listItems = setFromList(FUserListItem.keys());
+	QSet<Jid> modelItems = setFromList(FUserModelItem.keys());
 
 	QSet<Jid> newItems =  modelItems - listItems;
 	QSet<Jid> oldItems = listItems - modelItems;

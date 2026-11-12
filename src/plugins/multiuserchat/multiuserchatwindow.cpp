@@ -1,4 +1,5 @@
 #include "multiuserchatwindow.h"
+#include <utils/qtcompat.h>
 
 #include <QPair>
 #include <QTimer>
@@ -668,7 +669,7 @@ INotification MultiUserChatWindow::messageNotify(INotifications *ANotifications,
 				{
 					if (FDestroyTimers.contains(window))
 						delete FDestroyTimers.take(window);
-					FActiveChatMessages.insertMulti(window,messageId);
+					FActiveChatMessages.insert(window,messageId);
 
 					QStandardItem *userItem = FUsersView->findUserItem(FMultiChat->findUser(userJid.resource()));
 					if (userItem != NULL)
@@ -1281,7 +1282,7 @@ void MultiUserChatWindow::refreshCompleteNicks()
 	{
 		if (user != FMultiChat->mainUser())
 			if (FCompleteNickStarts.isEmpty() || user->nick().toLower().startsWith(FCompleteNickStarts))
-				sortedNicks.insertMulti(user->nick().toLower(), user->nick());
+				sortedNicks.insert(user->nick().toLower(), user->nick());
 	}
 	FCompleteNicks = sortedNicks.values();
 
@@ -2113,7 +2114,7 @@ bool MultiUserChatWindow::eventFilter(QObject *AObject, QEvent *AEvent)
 		if (AEvent->type()==QEvent::MouseButtonPress || AEvent->type()==QEvent::MouseButtonRelease)
 		{
 			QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(AEvent);
-			if (mouseEvent!=NULL && mouseEvent->button()==Qt::MidButton)
+			if (mouseEvent!=NULL && mouseEvent->button()==Qt::MiddleButton)
 			{
 				if (AEvent->type() == QEvent::MouseButtonPress)
 				{
@@ -2133,7 +2134,7 @@ bool MultiUserChatWindow::eventFilter(QObject *AObject, QEvent *AEvent)
 		if (AEvent->type()==QEvent::MouseButtonPress || AEvent->type()==QEvent::MouseButtonRelease)
 		{
 			QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(AEvent);
-			if (mouseEvent!=NULL && mouseEvent->button()==Qt::MidButton)
+			if (mouseEvent!=NULL && mouseEvent->button()==Qt::MiddleButton)
 			{
 				if (AEvent->type() == QEvent::MouseButtonPress)
 				{
@@ -3040,7 +3041,7 @@ void MultiUserChatWindow::onChangeUserAffiliationActionTriggered(bool)
 
 void MultiUserChatWindow::onInviteUserMenuAccepted(const QMultiMap<Jid, Jid> &AAddresses)
 {
-	QList<Jid> contacts = AAddresses.values().toSet().toList();
+	QList<Jid> contacts = setFromList(AAddresses.values()).values();
 	if (!contacts.isEmpty())
 		FMultiChat->sendInvitation(contacts);
 }

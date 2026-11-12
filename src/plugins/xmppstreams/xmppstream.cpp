@@ -1,4 +1,5 @@
 #include "xmppstream.h"
+#include <utils/qtcompat.h>
 
 #include <QTextDocument>
 #include <definitions/namespaces.h>
@@ -381,7 +382,7 @@ void XmppStream::insertXmppDataHandler(int AOrder, IXmppDataHandler *AHandler)
 	if (AHandler && !FDataHandlers.contains(AOrder, AHandler))
 	{
 		LOG_STRM_DEBUG(streamJid(),QString("XMPP data handler inserted, order=%1, address=%2").arg(AOrder).arg((quint64)AHandler));
-		FDataHandlers.insertMulti(AOrder, AHandler);
+		FDataHandlers.insert(AOrder, AHandler);
 		emit dataHandlerInserted(AOrder,AHandler);
 	}
 }
@@ -401,7 +402,7 @@ void XmppStream::insertXmppStanzaHandler(int AOrder, IXmppStanzaHadler *AHandler
 	if (AHandler && !FStanzaHandlers.contains(AOrder, AHandler))
 	{
 		LOG_STRM_DEBUG(streamJid(),QString("XMPP stanza handler inserted, order=%1, address=%2").arg(AOrder).arg((quint64)AHandler));
-		FStanzaHandlers.insertMulti(AOrder, AHandler);
+		FStanzaHandlers.insert(AOrder, AHandler);
 		emit stanzaHandlerInserted(AOrder, AHandler);
 	}
 }
@@ -467,7 +468,7 @@ void XmppStream::processFeatures()
 
 void XmppStream::clearActiveFeatures()
 {
-	foreach(IXmppFeature *feature, FActiveFeatures.toSet())
+	foreach(IXmppFeature *feature, setFromList(FActiveFeatures))
 		delete feature->instance();
 	FActiveFeatures.clear();
 }

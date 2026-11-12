@@ -1,4 +1,5 @@
 #include "textmanager.h"
+#include <functional>
 
 #include <QRegExp>
 #include <QTextBlock>
@@ -145,7 +146,7 @@ QString TextManager::getCopyableText(const QTextDocumentFragment &AFragment)
 	// The links are replaced from the last one, so that the positions of the
 	// others stay valid.
 	QList<int> positions = links.keys();
-	std::sort(positions.begin(), positions.end(), qGreater<int>());
+	std::sort(positions.begin(), positions.end(), std::greater<int>());
 	for (int position : positions)
 	{
 		const int length = links.value(position).first;

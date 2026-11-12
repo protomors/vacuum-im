@@ -1,4 +1,5 @@
 #include "bitsofbinary.h"
+#include <utils/qtcompat.h>
 
 #include <QFile>
 #include <QDateTime>
@@ -407,7 +408,7 @@ void BitsOfBinary::onXmppStreamCreated(IXmppStream *AXmppStream)
 
 void BitsOfBinary::onOfflineTimerTimeout()
 {
-	foreach(const QString &contentId, FOfflineRequests.toSet())
+	foreach(const QString &contentId, setFromList(FOfflineRequests))
 	{
 		QString type; QByteArray data; quint64 maxAge;
 		if (loadBinary(contentId,type,data,maxAge))

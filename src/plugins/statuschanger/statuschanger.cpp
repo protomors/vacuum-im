@@ -1,6 +1,7 @@
 #include "statuschanger.h"
 
 #include <QTimer>
+#include <QRandomGenerator>
 #include <QToolButton>
 #include <definitions/actiongroups.h>
 #include <definitions/optionvalues.h>
@@ -252,17 +253,17 @@ bool StatusChanger::startPlugin()
 QMultiMap<int, IOptionsDialogWidget *> StatusChanger::optionsDialogWidgets(const QString &ANodeId, QWidget *AParent)
 {
 	QMultiMap<int, IOptionsDialogWidget *> widgets;
-	QStringList nodeTree = ANodeId.split(".",QString::SkipEmptyParts);
+	QStringList nodeTree = ANodeId.split(".",Qt::SkipEmptyParts);
 	if (nodeTree.count()==3 && nodeTree.at(0)==OPN_ACCOUNTS && nodeTree.at(2)=="Additional")
 	{
 		OptionsNode options = Options::node(OPV_ACCOUNT_ITEM,nodeTree.at(1));
-		widgets.insertMulti(OWO_ACCOUNTS_ADDITIONAL_AUTOCONNECT,FOptionsManager->newOptionsDialogWidget(options.node("auto-connect"),tr("Connect to server on startup"),AParent));
-		widgets.insertMulti(OWO_ACCOUNTS_ADDITIONAL_AUTORECONNECT,FOptionsManager->newOptionsDialogWidget(options.node("auto-reconnect"),tr("Reconnect to server on connection errors"),AParent));
+		widgets.insert(OWO_ACCOUNTS_ADDITIONAL_AUTOCONNECT,FOptionsManager->newOptionsDialogWidget(options.node("auto-connect"),tr("Connect to server on startup"),AParent));
+		widgets.insert(OWO_ACCOUNTS_ADDITIONAL_AUTORECONNECT,FOptionsManager->newOptionsDialogWidget(options.node("auto-reconnect"),tr("Reconnect to server on connection errors"),AParent));
 	}
 	else if (ANodeId == OPN_STATUSITEMS)
 	{
-		widgets.insertMulti(OHO_STATUS_ITEMS, FOptionsManager->newOptionsDialogHeader(tr("Standard and users statuses"), AParent));
-		widgets.insertMulti(OWO_STATUS_ITEMS, new StatusOptionsWidget(this,AParent));
+		widgets.insert(OHO_STATUS_ITEMS, FOptionsManager->newOptionsDialogHeader(tr("Standard and users statuses"), AParent));
+		widgets.insert(OWO_STATUS_ITEMS, new StatusOptionsWidget(this,AParent));
 	}
 	return widgets;
 }
@@ -488,7 +489,7 @@ int StatusChanger::addStatusItem(const QString &AName, int AShow, const QString 
 	int statusId = statusByName(AName);
 	if (statusId==STATUS_NULL_ID && !AName.isEmpty())
 	{
-		statusId = qrand();
+		statusId = QRandomGenerator::global()->bounded(1, 0x7fffffff);
 		while(statusId<=STATUS_MAX_STANDART_ID || FStatusItems.contains(statusId))
 			statusId = (statusId > STATUS_MAX_STANDART_ID) ? statusId+1 : STATUS_MAX_STANDART_ID+1;
 

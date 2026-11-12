@@ -332,9 +332,7 @@ QString Jid::encode(const QString &AJidStr)
 			}
 			else if (!AJidStr.at(i).isLetterOrNumber())
 			{
-				QString hex;
-				hex.sprintf("%%%02X", AJidStr.at(i).toLatin1());
-				encJid.append(hex);
+				encJid.append(QString::asprintf("%%%02X", AJidStr.at(i).toLatin1()));
 			}
 			else
 			{

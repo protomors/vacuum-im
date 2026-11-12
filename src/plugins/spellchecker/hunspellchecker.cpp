@@ -6,6 +6,8 @@
 #	include <thirdparty/hunspell/hunspell.hxx>
 #endif
 
+#include <string>
+#include <vector>
 #include <QDir>
 #include <QFile>
 #include <QLocale>
@@ -86,7 +88,7 @@ bool HunspellChecker::isCorrect(const QString &AWord)
 	if(available())
 	{
 		QByteArray encWord = FDictCodec!=NULL ? FDictCodec->fromUnicode(AWord) : AWord.toUtf8();
-		return FHunSpell->spell(encWord.constData());
+		return FHunSpell->spell(std::string(encWord.constData()));
 	}
 	return true;
 }
@@ -117,12 +119,10 @@ QList<QString> HunspellChecker::suggestions(const QString &AWord)
 	QList<QString> words;
 	if(available())
 	{
-		char **sugglist;
 		QByteArray encWord = FDictCodec ? FDictCodec->fromUnicode(AWord) : AWord.toUtf8();
-		int count = FHunSpell->suggest(&sugglist, encWord.data());
-		for(int i = 0; i < count; ++i)
-			words.append(FDictCodec ? FDictCodec->toUnicode(sugglist[i]) : QString::fromUtf8(sugglist[i]));
-		FHunSpell->free_list(&sugglist, count);
+		const std::vector<std::string> suggestions = FHunSpell->suggest(std::string(encWord.constData()));
+		for (const std::string &suggestion : suggestions)
+			words.append(FDictCodec ? FDictCodec->toUnicode(suggestion.c_str()) : QString::fromUtf8(suggestion.c_str()));
 	}
 	return words;
 }

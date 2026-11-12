@@ -1,6 +1,7 @@
 #include "statistics.h"
 
 #include <QScreen>
+#include <QRandomGenerator>
 #include <QApplication>
 #include <QDir>
 #include <QUrlQuery>
@@ -262,7 +263,7 @@ QMultiMap<int, IOptionsDialogWidget *> Statistics::optionsDialogWidgets(const QS
 	QMultiMap<int, IOptionsDialogWidget *> widgets;
 	if (ANodeId == OPN_COMMON)
 	{
-		widgets.insertMulti(OWO_COMMON_SENDSTATISTICS,FOptionsManager->newOptionsDialogWidget(Options::node(OPV_COMMON_STATISTICTS_ENABLED),tr("Send anonymous statistics to developer"),AParent));
+		widgets.insert(OWO_COMMON_SENDSTATISTICS,FOptionsManager->newOptionsDialogWidget(Options::node(OPV_COMMON_STATISTICTS_ENABLED),tr("Send anonymous statistics to developer"),AParent));
 	}
 	return widgets;
 }
@@ -604,7 +605,7 @@ QUrl Statistics::buildHitUrl(const IStatisticsHit &AHit) const
 	}
 
 	// Cache Buster
-	query.append(qMakePair<QString,QString>("z",QUrl::toPercentEncoding(QString::number(qrand()))));
+	query.append(qMakePair<QString,QString>("z",QUrl::toPercentEncoding(QString::number(QRandomGenerator::global()->generate()))));
 
 	QUrlQuery urlQuery;
 	urlQuery.setQueryDelimiters('=','&');
@@ -876,7 +877,7 @@ void Statistics::onLoggerErrorReported(const QString &AClass, const QString &AMe
 		hit.exception.fatal = AFatal;
 		hit.exception.descr = AMessage;
 		sendStatisticsHit(hit);
-		FReportedErrors.insertMulti(AClass,AMessage);
+		FReportedErrors.insert(AClass,AMessage);
 	}
 }
 

@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QFileInfo>
 #include <QDateTime>
+#include <QRandomGenerator>
 #include <QApplication>
 #include <QDesktopServices>
 #include <QCryptographicHash>
@@ -67,7 +68,6 @@ OptionsManager::OptionsManager()
 	FAutoSaveTimer.setInterval(AUTO_SAVE_TIMEOUT);
 	connect(&FAutoSaveTimer, SIGNAL(timeout()),SLOT(onAutoSaveTimerTimeout()));
 
-	qsrand(QDateTime::currentDateTime().toTime_t());
 }
 
 OptionsManager::~OptionsManager()
@@ -180,14 +180,14 @@ QMultiMap<int, IOptionsDialogWidget *> OptionsManager::optionsDialogWidgets(cons
 	QMultiMap<int, IOptionsDialogWidget *> widgets;
 	if (ANodeId == OPN_COMMON)
 	{
-		widgets.insertMulti(OHO_COMMON_SETTINGS, newOptionsDialogHeader(tr("Common settings"),AParent));
+		widgets.insert(OHO_COMMON_SETTINGS, newOptionsDialogHeader(tr("Common settings"),AParent));
 #ifdef Q_OS_WIN
-		widgets.insertMulti(OWO_COMMON_AUTOSTART, newOptionsDialogWidget(Options::node(OPV_COMMON_AUTOSTART), tr("Auto run application on system startup"), AParent));
+		widgets.insert(OWO_COMMON_AUTOSTART, newOptionsDialogWidget(Options::node(OPV_COMMON_AUTOSTART), tr("Auto run application on system startup"), AParent));
 #else
 		Q_UNUSED(AParent);
 #endif
 
-		widgets.insertMulti(OHO_COMMON_LOCALIZATION, newOptionsDialogHeader(tr("Localization"),AParent));
+		widgets.insert(OHO_COMMON_LOCALIZATION, newOptionsDialogHeader(tr("Localization"),AParent));
 
 		QDir localeDir(QApplication::applicationDirPath());
 		localeDir.cd(TRANSLATIONS_DIR);
@@ -214,7 +214,7 @@ QMultiMap<int, IOptionsDialogWidget *> OptionsManager::optionsDialogWidgets(cons
 		for(QMap<QString,QString>::const_iterator it=sortLangMap.constBegin(); it!=sortLangMap.constEnd(); ++it)
 			if (langCombox->findData(it.value()) < 0)
 				langCombox->addItem(it.key(),it.value());
-		widgets.insertMulti(OWO_COMMON_LANGUAGE,newOptionsDialogWidget(Options::node(OPV_COMMON_LANGUAGE),tr("Language:"),langCombox,AParent));
+		widgets.insert(OWO_COMMON_LANGUAGE,newOptionsDialogWidget(Options::node(OPV_COMMON_LANGUAGE),tr("Language:"),langCombox,AParent));
 	}
 	return widgets;
 }
@@ -415,7 +415,7 @@ bool OptionsManager::changeProfilePassword(const QString &AProfile, const QStrin
 		{
 			keyValue.resize(16);
 			for (int i=0; i<keyValue.size(); i++)
-				keyValue[i] = qrand();
+				keyValue[i] = char(QRandomGenerator::global()->bounded(256));
 		}
 		keyValue = Options::encrypt(keyValue, QCryptographicHash::hash(ANewPassword.toUtf8(),QCryptographicHash::Md5));
 		keyText.toText().setData(keyValue.toBase64());
@@ -449,7 +449,7 @@ bool OptionsManager::addProfile(const QString &AProfile, const QString &APasswor
 
 			QByteArray keyData(16,0);
 			for (int i=0; i<keyData.size(); i++)
-				keyData[i] = qrand();
+				keyData[i] = char(QRandomGenerator::global()->bounded(256));
 			keyData = Options::encrypt(keyData, QCryptographicHash::hash(APassword.toUtf8(),QCryptographicHash::Md5));
 
 			QDomNode keyElem = profileDoc.documentElement().appendChild(profileDoc.createElement("key"));
@@ -735,9 +735,13 @@ QMap<QString, QVariant> OptionsManager::getOptionValues(const OptionsNode &ANode
 	if (ANode.hasValue())
 		values.insert(ANode.path(),ANode.value());
 
-	foreach(const QString &childName, ANode.childNames())
+		foreach(const QString &childName, ANode.childNames())
 		foreach(const QString &childNs, ANode.childNSpaces(childName))
-			values.unite(getOptionValues(ANode.node(childName,childNs)));
+		{
+			const QMap<QString, QVariant> childValues = getOptionValues(ANode.node(childName,childNs));
+			for (QMap<QString, QVariant>::const_iterator it = childValues.constBegin(); it != childValues.constEnd(); ++it)
+				values.insert(it.key(), it.value());
+		}
 
 	return values;
 }
@@ -799,7 +803,9 @@ QMap<QString, QVariant> OptionsManager::loadAllOptionValues(const QString &AFile
 	foreach(const QString &resDir, FileStorage::resourcesDirs())
 	{
 		QDir dir(resDir);
-		options.unite(loadOptionValues(dir.absoluteFilePath(AFileName)));
+		const QMap<QString, QVariant> fileValues = loadOptionValues(dir.absoluteFilePath(AFileName));
+		for (QMap<QString, QVariant>::const_iterator it = fileValues.constBegin(); it != fileValues.constEnd(); ++it)
+			options.insert(it.key(), it.value());
 	}
 	return options;
 }

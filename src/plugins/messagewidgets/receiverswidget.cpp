@@ -424,7 +424,7 @@ QMultiMap<Jid, Jid> ReceiversWidget::selectedAddresses() const
 			if (contactIt.value()->checkState() == Qt::Checked)
 			{
 				if (!addresses.contains(streamIt.key(),contactIt.key()))
-					addresses.insertMulti(streamIt.key(),contactIt.key());
+					addresses.insert(streamIt.key(),contactIt.key());
 			}
 		}
 	}
@@ -894,7 +894,7 @@ void ReceiversWidget::onModelItemInserted(QStandardItem *AItem)
 		else if (itemKind == RIK_GROUP)
 			FGroupItems[streamJid].insert(AItem->data(RDR_GROUP).toString(),AItem);
 		else if (itemKind == RIK_CONTACT)
-			FContactItems[streamJid].insertMulti(AItem->data(RDR_PREP_BARE_JID).toString(),AItem);
+			FContactItems[streamJid].insert(AItem->data(RDR_PREP_BARE_JID).toString(),AItem);
 	}
 	updateCheckState(AItem->parent());
 }

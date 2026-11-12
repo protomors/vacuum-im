@@ -319,7 +319,7 @@ void ConsoleWidget::onTextSearchStart()
 	{
 		QTextCursor cursor(ui.tbrConsole->document());
 		do {
-			cursor = ui.tbrConsole->document()->find(ui.lneTextSearch->text(),cursor,0);
+			cursor = ui.tbrConsole->document()->find(ui.lneTextSearch->text(),cursor,QTextDocument::FindFlags());
 			if (!cursor.isNull())
 			{
 				QTextEdit::ExtraSelection selection;

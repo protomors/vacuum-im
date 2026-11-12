@@ -258,7 +258,7 @@ void MainWindow::updateWindowFlags(bool AVisible)
 	{
 		// Window Flags button hints works incorrectly under Gnome, especially under Gnome X11.
 		// XDG_CURRENT_DESKTOP is a colon-separated list of DEs, e.g. "ubuntu:GNOME".
-		QStringList desktops = qEnvironmentVariable("XDG_CURRENT_DESKTOP").split(QLatin1Char(':'), QString::SkipEmptyParts);
+		QStringList desktops = qEnvironmentVariable("XDG_CURRENT_DESKTOP").split(QLatin1Char(':'), Qt::SkipEmptyParts);
 		bool isGnome = false;
 		foreach (const QString &desktop, desktops)
 			isGnome = isGnome || desktop.startsWith("GNOME", Qt::CaseInsensitive);
@@ -302,7 +302,7 @@ void MainWindow::correctWindowPosition()
 	QRect screenRect = qApp->desktop()->availableGeometry(this);
 	if (!screenRect.isEmpty() && !windowRect.isEmpty())
 	{
-		Qt::Alignment align = 0;
+		Qt::Alignment align;
 		if (windowRect.right() <= screenRect.left())
 			align |= Qt::AlignLeft;
 		else if (windowRect.left() >= screenRect.right())

@@ -1,6 +1,7 @@
 #include "traymanager.h"
 
 #include <QApplication>
+#include <QRandomGenerator>
 #include <definitions/resources.h>
 #include <definitions/menuicons.h>
 #include <definitions/actiongroups.h>
@@ -138,9 +139,9 @@ ITrayNotify TrayManager::notifyById(int ANotifyId) const
 
 int TrayManager::appendNotify(const ITrayNotify &ANotify)
 {
-	int notifyId = qrand();
-	while (notifyId<=0 || FNotifyItems.contains(notifyId))
-		notifyId = qrand();
+	int notifyId = QRandomGenerator::global()->bounded(1, 0x7fffffff);
+	while (FNotifyItems.contains(notifyId))
+		notifyId = QRandomGenerator::global()->bounded(1, 0x7fffffff);
 
 	FNotifyOrder.append(notifyId);
 	FNotifyItems.insert(notifyId,ANotify);

@@ -1,4 +1,5 @@
 #include "metacontacts.h"
+#include <utils/qtcompat.h>
 
 #include <QDir>
 #include <QMimeData>
@@ -902,9 +903,9 @@ MetaMergedContact MetaContacts::getMergedContact(const Jid &AStreamJid, const QU
 				meta.name = metaIt->name;
 				meta.groups += metaIt->groups;
 				foreach(const Jid &itemJid, metaIt->items)
-					meta.items.insertMulti(streamIt.key(),itemJid);
+					meta.items.insert(streamIt.key(),itemJid);
 				foreach(const IPresenceItem &pItem, metaIt->presences)
-					meta.presences.insertMulti(streamIt.key(),pItem);
+					meta.presences.insert(streamIt.key(),pItem);
 			}
 		}
 	}
@@ -957,7 +958,7 @@ void MetaContacts::updateMetaIndexes(const Jid &AStreamJid, const QUuid &AMetaId
 				groupMetaIndexMap.insert(metaIndex->data(RDR_GROUP).toString(),metaIndex);
 
 			QSet<QString> metaGroups = !meta.groups.isEmpty() ? meta.groups : QSet<QString>()<<QString();
-			QSet<QString> curGroups = groupMetaIndexMap.keys().toSet();
+			QSet<QString> curGroups = setFromList(groupMetaIndexMap.keys());
 			QSet<QString> newGroups = metaGroups - curGroups;
 			QSet<QString> oldGroups = curGroups - metaGroups;
 
@@ -1048,7 +1049,7 @@ void MetaContacts::updateMetaIndexItems(IRosterIndex *AMetaIndex, const MetaMerg
 
 				FMetaItemProxyToIndex.remove(prevProxyIndex,itemIndex);
 				FMetaItemIndexToProxy.insert(itemIndex,proxyIndex);
-				FMetaItemProxyToIndex.insertMulti(proxyIndex,itemIndex);
+				FMetaItemProxyToIndex.insert(proxyIndex,itemIndex);
 			}
 
 			if (itemIt.key()==AMergedContact.stream && itemIt.value()==AMergedContact.itemJid && FMetaIndexToProxy.value(AMetaIndex)!=itemIndex)
@@ -1133,7 +1134,7 @@ void MetaContacts::updateMetaWindows(const Jid &AStreamJid, const QUuid &AMetaId
 					if (oldItems.contains(itemIt.key(),itemIt.value()))
 						oldItems.remove(itemIt.key(),itemIt.value());
 					else
-						newItems.insertMulti(itemIt.key(),itemIt.value());
+						newItems.insert(itemIt.key(),itemIt.value());
 				}
 
 				for (QMultiMap<Jid, Jid>::const_iterator itemIt=newItems.constBegin(); itemIt!=newItems.constEnd(); ++itemIt)
@@ -1300,7 +1301,7 @@ bool MetaContacts::updateMetaContact(const Jid &AStreamJid, const IMetaContact &
 
 		if (after != before)
 		{
-			QSet<Jid> oldMetaItems = before.items.toSet() - after.items.toSet();
+			QSet<Jid> oldMetaItems = setFromList(before.items) - setFromList(after.items);
 
 			foreach(const Jid &itemJid, oldMetaItems)
 				itemMetaIdRef.remove(itemJid);
@@ -1331,7 +1332,7 @@ bool MetaContacts::updateMetaContact(const Jid &AStreamJid, const IMetaContact &
 
 void MetaContacts::updateMetaContacts(const Jid &AStreamJid, const QList<IMetaContact> &AMetaContacts)
 {
-	QSet<QUuid> oldMetaId = FMetaContacts[AStreamJid].keys().toSet();
+	QSet<QUuid> oldMetaId = setFromList(FMetaContacts[AStreamJid].keys());
 
 	foreach(const IMetaContact &meta, AMetaContacts)
 	{
@@ -1417,7 +1418,7 @@ QList<IRosterIndex *> MetaContacts::indexesProxies(const QList<IRosterIndex *> &
 		}
 	}
 	proxies.removeAll(NULL);
-	return proxies.toSet().toList();
+	return setFromList(proxies).values();
 }
 
 QMap<int, QStringList> MetaContacts::indexesRolesMap(const QList<IRosterIndex *> &AIndexes, const QList<int> &ARoles) const
@@ -1914,7 +1915,7 @@ void MetaContacts::onRostersViewIndexContextMenu(const QList<IRosterIndex *> &AI
 
 			QList<QUuid> uniqueMetas;
 			QMultiMap<Jid, Jid> uniqueContacts;
-			QStringList uniqueKinds = rolesMap.value(RDR_KIND).toSet().toList();
+			QStringList uniqueKinds = setFromList(rolesMap.value(RDR_KIND)).values();
 			for(int i=0; i<rolesMap.value(RDR_STREAM_JID).count(); i++)
 			{
 				Jid streamJid = rolesMap.value(RDR_STREAM_JID).at(i);
@@ -1924,7 +1925,7 @@ void MetaContacts::onRostersViewIndexContextMenu(const QList<IRosterIndex *> &AI
 				if (!metaId.isNull() && !uniqueMetas.contains(metaId))
 					uniqueMetas.append(metaId);
 				else if (metaId.isNull() && !uniqueContacts.contains(streamJid,contactJid))
-					uniqueContacts.insertMulti(streamJid,contactJid);
+					uniqueContacts.insert(streamJid,contactJid);
 			}
 
 			if (isMultiSelection && uniqueMetas.count()+uniqueContacts.count()>1)
@@ -2375,7 +2376,7 @@ void MetaContacts::onShortcutActivated(const QString &AId, QWidget *AWidget)
 		QMap<int, QStringList> rolesMap = indexesRolesMap(indexes,QList<int>()<<RDR_KIND<<RDR_STREAM_JID<<RDR_PREP_BARE_JID<<RDR_METACONTACT_ID);
 		if (isSelectionAccepted(indexes) && isReadyStreams(rolesMap.value(RDR_STREAM_JID)))
 		{
-			QStringList uniqueKinds = rolesMap.value(RDR_KIND).toSet().toList();
+			QStringList uniqueKinds = setFromList(rolesMap.value(RDR_KIND)).values();
 			if (AId==SCT_ROSTERVIEW_RENAME && indexes.count()==1)
 			{
 				IRosterIndex *index = indexes.first();

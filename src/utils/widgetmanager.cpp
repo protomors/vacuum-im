@@ -241,7 +241,7 @@ void WidgetManager::setWidgetAlertEnabled(bool AEnabled)
 
 Qt::Alignment WidgetManager::windowAlignment(const QWidget *AWindow)
 {
-	Qt::Alignment align = 0;
+	Qt::Alignment align;
 	QRect windowRect = AWindow->frameGeometry();
 	QRect screenRect = QApplication::desktop()->availableGeometry(AWindow);
 	if (!screenRect.isEmpty() && !windowRect.isEmpty())

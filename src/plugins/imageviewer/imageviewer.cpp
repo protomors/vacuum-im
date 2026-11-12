@@ -208,26 +208,26 @@ QMultiMap<int, IOptionsDialogWidget *> ImageViewer::optionsDialogWidgets(const Q
 	QMultiMap<int, IOptionsDialogWidget *> widgets;
 	if (FOptionsManager && ANodeId == OPN_MESSAGES)
 	{
-		widgets.insertMulti(OHO_MESSAGES_IMAGES, FOptionsManager->newOptionsDialogHeader(tr("Images"), AParent));
-		widgets.insertMulti(OWO_MESSAGES_IMAGES_AUTOLOAD, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_AUTOLOAD), tr("Automatically load images from message URLs"), AParent));
-		widgets.insertMulti(OWO_MESSAGES_IMAGES_BLOCKPRIVATEIPS, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_BLOCKPRIVATEIPS), tr("Block images from private or local IP addresses"), AParent));
+		widgets.insert(OHO_MESSAGES_IMAGES, FOptionsManager->newOptionsDialogHeader(tr("Images"), AParent));
+		widgets.insert(OWO_MESSAGES_IMAGES_AUTOLOAD, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_AUTOLOAD), tr("Automatically load images from message URLs"), AParent));
+		widgets.insert(OWO_MESSAGES_IMAGES_BLOCKPRIVATEIPS, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_BLOCKPRIVATEIPS), tr("Block images from private or local IP addresses"), AParent));
 		QSpinBox *dlSpin = new QSpinBox(AParent);
 		dlSpin->setRange(1, 256);
 		dlSpin->setSuffix(QStringLiteral(" ") + tr("MB", "Megabyte"));
 		dlSpin->setValue(Options::node(OPV_MESSAGES_IMAGES_MAXDOWNLOADMB).value().toInt());
-		widgets.insertMulti(OWO_MESSAGES_IMAGES_MAXDOWNLOADMB, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_MAXDOWNLOADMB), tr("Maximum download size per image:"), dlSpin, AParent));
+		widgets.insert(OWO_MESSAGES_IMAGES_MAXDOWNLOADMB, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_MAXDOWNLOADMB), tr("Maximum download size per image:"), dlSpin, AParent));
 		QSpinBox *dimSpin = new QSpinBox(AParent);
 		dimSpin->setRange(256, 16384);
 		dimSpin->setSingleStep(64);
 		dimSpin->setSuffix(" px");
 		dimSpin->setValue(Options::node(OPV_MESSAGES_IMAGES_MAXDIMENSION).value().toInt());
-		widgets.insertMulti(OWO_MESSAGES_IMAGES_MAXDIMENSION, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_MAXDIMENSION), tr("Maximum decoded image dimension:"), dimSpin, AParent));
+		widgets.insert(OWO_MESSAGES_IMAGES_MAXDIMENSION, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_MAXDIMENSION), tr("Maximum decoded image dimension:"), dimSpin, AParent));
 		QSpinBox *previewSpin = new QSpinBox(AParent);
 		previewSpin->setRange(IV_MIN_PREVIEW_DIMENSION, IV_MAX_PREVIEW_DIMENSION);
 		previewSpin->setSingleStep(16);
 		previewSpin->setSuffix(" px");
 		previewSpin->setValue(FCacheManager->previewDimension());
-		widgets.insertMulti(OWO_MESSAGES_IMAGES_PREVIEWDIMENSION, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_PREVIEWDIMENSION), tr("Preview image size (longest side):"), previewSpin, AParent));
+		widgets.insert(OWO_MESSAGES_IMAGES_PREVIEWDIMENSION, FOptionsManager->newOptionsDialogWidget(Options::node(OPV_MESSAGES_IMAGES_PREVIEWDIMENSION), tr("Preview image size (longest side):"), previewSpin, AParent));
 	}
 	return widgets;
 }

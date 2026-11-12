@@ -100,8 +100,8 @@ QMultiMap<int, IOptionsDialogWidget *> AutoStatus::optionsDialogWidgets(const QS
 	QMultiMap<int, IOptionsDialogWidget *> widgets;
 	if (ANodeId == OPN_STATUSITEMS)
 	{
-		widgets.insertMulti(OHO_AUTOSTATUS, FOptionsManager->newOptionsDialogHeader(tr("Automatic change of status"),AParent));
-		widgets.insertMulti(OWO_AUTOSTATUS, new AutoStatusOptionsWidget(this,FStatusChanger,AParent));
+		widgets.insert(OHO_AUTOSTATUS, FOptionsManager->newOptionsDialogHeader(tr("Automatic change of status"),AParent));
+		widgets.insert(OWO_AUTOSTATUS, new AutoStatusOptionsWidget(this,FStatusChanger,AParent));
 	}
 	return widgets;
 }
@@ -212,7 +212,7 @@ void AutoStatus::prepareRule(IAutoStatusRule &ARule)
 {
 	replaceDateTime(ARule.text,"\\%\\((.*)\\)",QDateTime::currentDateTime());
 	replaceDateTime(ARule.text,"\\$\\((.*)\\)",QDateTime::currentDateTime().addSecs(0-ARule.time));
-	replaceDateTime(ARule.text,"\\#\\((.*)\\)",QDateTime(QDate::currentDate()).addSecs(ARule.time));
+	replaceDateTime(ARule.text,"\\#\\((.*)\\)",QDate::currentDate().startOfDay().addSecs(ARule.time));
 }
 
 void AutoStatus::setActiveRule(const QUuid &ARuleId)

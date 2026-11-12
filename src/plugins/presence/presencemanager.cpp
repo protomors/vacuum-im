@@ -118,7 +118,7 @@ bool PresenceManager::isOnlineContact(const Jid &AContactJid) const
 
 QList<IPresence *> PresenceManager::contactPresences(const Jid &AContactJid) const
 {
-	return FContactPresences.value(AContactJid).toList();
+	return FContactPresences.value(AContactJid).values();
 }
 
 QList<IPresenceItem> PresenceManager::sortPresenceItems(const QList<IPresenceItem> &AItems) const

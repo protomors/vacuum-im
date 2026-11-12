@@ -122,8 +122,8 @@ AdvancedDelegateItem::AdvancedDelegateItem(quint32 AId)
 	d->id = AId;
 	d->kind = Null;
 	d->flags = 0;
-	d->showStates = 0;
-	d->hideStates = 0;
+	d->showStates = QStyle::State();
+	d->hideStates = QStyle::State();
 	d->widget = NULL;
 
 	c = new ContextData;
@@ -347,7 +347,7 @@ public:
 			case AdvancedDelegateItem::CheckBox:
 				{
 					QStyle *style = FOption.widget ? FOption.widget->style() : QApplication::style();
-					style->proxy()->drawPrimitive(QStyle::PE_IndicatorViewItemCheck, &FOption, APainter, FOption.widget);
+					style->proxy()->drawPrimitive(QStyle::PE_IndicatorItemViewItemCheck, &FOption, APainter, FOption.widget);
 					break;
 				}
 			case AdvancedDelegateItem::CustomWidget:
@@ -715,7 +715,7 @@ AdvancedDelegateItems AdvancedItemDelegate::getIndexItems(const QModelIndex &AIn
 				AdvancedDelegateItem stretchItem(stretchId);
 				stretchItem.d->kind = AdvancedDelegateItem::Stretch;
 				stretchItem.d->sizePolicy = QSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-				stretches.insertMulti(stretchId,stretchItem);
+				stretches.insert(stretchId,stretchItem);
 			}
 		}
 
@@ -726,7 +726,8 @@ AdvancedDelegateItems AdvancedItemDelegate::getIndexItems(const QModelIndex &AIn
 		
 		it->c->blinkOpacity = (itd->flags & AdvancedDelegateItem::Blink)>0 ? FBlinkOpacity : 1.0;
 	}
-	items.unite(stretches);
+	for (AdvancedDelegateItems::const_iterator stretchIt = stretches.constBegin(); stretchIt != stretches.constEnd(); ++stretchIt)
+		items.insert(stretchIt.key(), stretchIt.value());
 	
 	return items;
 }
@@ -917,7 +918,7 @@ AdvancedItemDelegate::ItemsLayout *AdvancedItemDelegate::createItemsLayout(const
 
 			AdvancedDelegateLayoutItem *item = new AdvancedDelegateLayoutItem(it.value(),itemOption);
 			layout->items.insert(it.key(),item);
-			orderedItems[position][floor].insertMulti(order,item);
+			orderedItems[position][floor].insert(order,item);
 		}
 	}
 
@@ -1097,7 +1098,7 @@ QSize AdvancedItemDelegate::itemSizeHint(const AdvancedDelegateItem &AItem, cons
 			default:
 				{
 					if (!AItemOption.text.isEmpty())
-						return AItemOption.fontMetrics.size(AItemOption.direction|Qt::TextSingleLine,AItemOption.text);
+						return AItemOption.fontMetrics.size(int(AItemOption.direction) | int(Qt::TextSingleLine), AItemOption.text);
 					break;
 				}
 			}

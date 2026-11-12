@@ -108,7 +108,7 @@ IDataMedia DataForms::dataMedia(const QDomElement &AMediaElem) const
 			uri.url = uriElem.text().trimmed();
 			if (!uri.url.isEmpty())
 			{
-				QStringList params = uriElem.attribute("type").split(';',QString::SkipEmptyParts);
+				QStringList params = uriElem.attribute("type").split(';',Qt::SkipEmptyParts);
 				foreach(const QString &param, params)
 				{
 					if (param.startsWith("codecs="))

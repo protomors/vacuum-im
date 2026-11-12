@@ -1,4 +1,5 @@
 #include "chatmessagehandler.h"
+#include <functional>
 
 #include <QMouseEvent>
 #include <QApplication>
@@ -367,7 +368,7 @@ INotification ChatMessageHandler::messageNotify(INotifications *ANotifications, 
 					notify.data.insert(NDR_POPUP_TEXT,AMessage.body());
 				}
 
-				FNotifiedMessages.insertMulti(window, AMessage.data(MDR_MESSAGE_ID).toInt());
+				FNotifiedMessages.insert(window, AMessage.data(MDR_MESSAGE_ID).toInt());
 			}
 		}
 		else if (window == NULL)
@@ -566,7 +567,7 @@ void ChatMessageHandler::showHistory(IMessageChatWindow *AWindow)
 
 		QList<Message> pending = FPendingMessages.take(AWindow);
 		IArchiveCollectionBody history = FHistoryMessages.take(AWindow);
-		std::stable_sort(history.messages.begin(),history.messages.end(),qGreater<Message>());
+		std::stable_sort(history.messages.begin(),history.messages.end(),[](const Message &left, const Message &right) { return right < left; });
 
 		// Remove extra history messages
 		if (history.messages.count() > HISTORY_MESSAGES)

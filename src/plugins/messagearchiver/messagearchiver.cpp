@@ -1,4 +1,6 @@
 #include "messagearchiver.h"
+#include <functional>
+#include <utils/qtcompat.h>
 
 #include <QDir>
 #include <QFile>
@@ -422,7 +424,7 @@ void MessageArchiver::stanzaRequestResult(const Jid &AStreamJid, const Stanza &A
 QMultiMap<int, IOptionsDialogWidget *> MessageArchiver::optionsDialogWidgets(const QString &ANodeId, QWidget *AParent)
 {
 	QMultiMap<int, IOptionsDialogWidget *>  widgets;
-	QStringList nodeTree = ANodeId.split(".",QString::SkipEmptyParts);
+	QStringList nodeTree = ANodeId.split(".",Qt::SkipEmptyParts);
 	if (nodeTree.count()==3 && nodeTree.at(0)==OPN_ACCOUNTS && nodeTree.at(2)=="History")
 	{
 		IAccount *account = FAccountManager!=NULL ? FAccountManager->findAccountById(nodeTree.at(1)) : NULL;
@@ -430,8 +432,8 @@ QMultiMap<int, IOptionsDialogWidget *> MessageArchiver::optionsDialogWidgets(con
 		{
 			OptionsNode options = account->optionsNode();
 
-			widgets.insertMulti(OHO_ACCOUNTS_HISTORY_SERVERSETTINGS, FOptionsManager->newOptionsDialogHeader(tr("Archive preferences"),AParent));
-			widgets.insertMulti(OWO_ACCOUNTS_HISTORY_SERVERSETTINGS, new ArchiveAccountOptionsWidget(this,account->streamJid(),AParent));
+			widgets.insert(OHO_ACCOUNTS_HISTORY_SERVERSETTINGS, FOptionsManager->newOptionsDialogHeader(tr("Archive preferences"),AParent));
+			widgets.insert(OWO_ACCOUNTS_HISTORY_SERVERSETTINGS, new ArchiveAccountOptionsWidget(this,account->streamJid(),AParent));
 
 			int replCount = 0;
 			int manualCount = 0;
@@ -445,31 +447,31 @@ QMultiMap<int, IOptionsDialogWidget *> MessageArchiver::optionsDialogWidgets(con
 
 			if (replCount>0 && replCount+manualCount>1)
 			{
-				widgets.insertMulti(OHO_ACCOUNTS_HISTORY_REPLICATION,FOptionsManager->newOptionsDialogHeader(tr("Archive synchronization"),AParent));
-				widgets.insertMulti(OWO_ACCOUNTS_HISTORY_REPLICATION,FOptionsManager->newOptionsDialogWidget(options.node("history-replicate"),tr("Synchronize history between archives"),AParent));
+				widgets.insert(OHO_ACCOUNTS_HISTORY_REPLICATION,FOptionsManager->newOptionsDialogHeader(tr("Archive synchronization"),AParent));
+				widgets.insert(OWO_ACCOUNTS_HISTORY_REPLICATION,FOptionsManager->newOptionsDialogWidget(options.node("history-replicate"),tr("Synchronize history between archives"),AParent));
 			}
 
 			if (isSupported(account->streamJid(), NS_ARCHIVE_AUTO))
 			{
-				widgets.insertMulti(OHO_ACCOUNTS_HISTORY_REPLICATION,FOptionsManager->newOptionsDialogHeader(tr("Archive synchronization"),AParent));
-				widgets.insertMulti(OWO_ACCOUNTS_HISTORY_DUPLICATION,FOptionsManager->newOptionsDialogWidget(options.node("history-duplicate"),tr("Duplicate messages in local archive (not recommended)"),AParent));
+				widgets.insert(OHO_ACCOUNTS_HISTORY_REPLICATION,FOptionsManager->newOptionsDialogHeader(tr("Archive synchronization"),AParent));
+				widgets.insert(OWO_ACCOUNTS_HISTORY_DUPLICATION,FOptionsManager->newOptionsDialogWidget(options.node("history-duplicate"),tr("Duplicate messages in local archive (not recommended)"),AParent));
 			}
 		}
 	}
 	else if (ANodeId == OPN_HISTORY)
 	{
 		int index = 0;
-		widgets.insertMulti(OHO_HISORY_ENGINES, FOptionsManager->newOptionsDialogHeader(tr("Used history archives"),AParent));
+		widgets.insert(OHO_HISORY_ENGINES, FOptionsManager->newOptionsDialogHeader(tr("Used history archives"),AParent));
 		foreach(IArchiveEngine *engine, archiveEngines())
 		{
 			OptionsNode node = Options::node(OPV_HISTORY_ENGINE_ITEM,engine->engineId().toString()).node("enabled");
-			widgets.insertMulti(OWO_HISORY_ENGINE,FOptionsManager->newOptionsDialogWidget(node,engine->engineName(),AParent));
+			widgets.insert(OWO_HISORY_ENGINE,FOptionsManager->newOptionsDialogWidget(node,engine->engineName(),AParent));
 
 			IOptionsDialogWidget *engineSettings = engine->engineSettingsWidget(AParent);
 			if (engineSettings)
 			{
-				widgets.insertMulti(OHO_HISTORY_ENGINNAME + index,FOptionsManager->newOptionsDialogHeader(engine->engineName(),AParent));
-				widgets.insertMulti(OWO_HISTORY_ENGINESETTINGS + index,engineSettings);
+				widgets.insert(OHO_HISTORY_ENGINNAME + index,FOptionsManager->newOptionsDialogHeader(engine->engineName(),AParent));
+				widgets.insert(OWO_HISTORY_ENGINESETTINGS + index,engineSettings);
 				index += 10;
 			}
 		}
@@ -1294,7 +1296,7 @@ void MessageArchiver::elementToCollection(const Jid &AStreamJid, const QDomEleme
 		else if (nodeElem.tagName() == "note")
 		{
 			QString utc = nodeElem.attribute("utc");
-			ACollection.body.notes.insertMulti(DateTime(utc).toLocal(),nodeElem.text());
+			ACollection.body.notes.insert(DateTime(utc).toLocal(),nodeElem.text());
 		}
 		else if(nodeElem.tagName() == "next")
 		{
@@ -1409,7 +1411,7 @@ void MessageArchiver::collectionToElement(const IArchiveCollection &ACollection,
 void MessageArchiver::insertArchiveHandler(int AOrder, IArchiveHandler *AHandler)
 {
 	if (AHandler)
-		FArchiveHandlers.insertMulti(AOrder,AHandler);
+		FArchiveHandlers.insert(AOrder,AHandler);
 }
 
 void MessageArchiver::removeArchiveHandler(int AOrder, IArchiveHandler *AHandler)
@@ -1584,7 +1586,7 @@ void MessageArchiver::applyArchivePrefs(const Jid &AStreamJid, const QDomElement
 			methodElem = methodElem.nextSiblingElement("method");
 		}
 
-		QSet<Jid> oldItemJids = prefs.itemPrefs.keys().toSet();
+		QSet<Jid> oldItemJids = setFromList(prefs.itemPrefs.keys());
 		QDomElement itemElem = AElem.firstChildElement("item");
 		while (!itemElem.isNull())
 		{
@@ -1605,7 +1607,7 @@ void MessageArchiver::applyArchivePrefs(const Jid &AStreamJid, const QDomElement
 			itemElem = itemElem.nextSiblingElement("item");
 		}
 
-		QSet<QString> oldSessionIds = prefs.sessionPrefs.keys().toSet();
+		QSet<QString> oldSessionIds = setFromList(prefs.sessionPrefs.keys());
 		QDomElement sessionElem = AElem.firstChildElement("session");
 		while (!sessionElem.isNull())
 		{
@@ -1814,7 +1816,7 @@ QMultiMap<int, IArchiveEngine *> MessageArchiver::engineOrderByCapability(const 
 		{
 			int engineOrder = (*it)->capabilityOrder(ACapability,AStreamJid);
 			if (engineOrder > 0)
-				order.insertMulti(engineOrder,it.value());
+				order.insert(engineOrder,it.value());
 		}
 	}
 	return order;
@@ -1833,9 +1835,9 @@ void MessageArchiver::processMessagesRequest(const QString &ALocalId, MessagesRe
 	else if (ARequest.headers.isEmpty() || (quint32)ARequest.body.messages.count()>ARequest.request.maxItems)
 	{
 		if (ARequest.request.order == Qt::AscendingOrder)
-			std::sort(ARequest.body.messages.begin(),ARequest.body.messages.end(),qLess<Message>());
+			std::sort(ARequest.body.messages.begin(),ARequest.body.messages.end(),std::less<Message>());
 		else
-			std::sort(ARequest.body.messages.begin(),ARequest.body.messages.end(),qGreater<Message>());
+			std::sort(ARequest.body.messages.begin(),ARequest.body.messages.end(),[](const Message &left, const Message &right) { return right < left; });
 
 		REPORT_TIMING(STMP_HISTORY_MESSAGES_LOAD,Logger::finishTiming(STMP_HISTORY_MESSAGES_LOAD,ALocalId));
 		LOG_DEBUG(QString("Messages successfully loaded, id=%1").arg(ALocalId));
@@ -1875,9 +1877,9 @@ void MessageArchiver::processHeadersRequest(const QString &ALocalId, HeadersRequ
 			}
 
 			if (ARequest.request.order == Qt::AscendingOrder)
-				std::sort(headers.begin(),headers.end(),qLess<IArchiveHeader>());
+				std::sort(headers.begin(),headers.end(),std::less<IArchiveHeader>());
 			else
-				std::sort(headers.begin(),headers.end(),qGreater<IArchiveHeader>());
+				std::sort(headers.begin(),headers.end(),[](const IArchiveHeader &left, const IArchiveHeader &right) { return right < left; });
 
 			if ((quint32)headers.count() > ARequest.request.maxItems)
 				headers = headers.mid(0,ARequest.request.maxItems);
@@ -2640,19 +2642,19 @@ void MessageArchiver::onShortcutActivated(const QString &AId, QWidget *AWidget)
 			{
 				if (index->kind() == RIK_STREAM_ROOT)
 				{
-					addresses.insertMulti(index->data(RDR_STREAM_JID).toString(),Jid::null);
+					addresses.insert(index->data(RDR_STREAM_JID).toString(),Jid::null);
 				}
 				else if (index->kind() == RIK_METACONTACT)
 				{
 					for (int row=0; row<index->childCount(); row++)
 					{
 						IRosterIndex *metaItemIndex = index->childIndex(row);
-						addresses.insertMulti(metaItemIndex->data(RDR_STREAM_JID).toString(),metaItemIndex->data(RDR_PREP_BARE_JID).toString());
+						addresses.insert(metaItemIndex->data(RDR_STREAM_JID).toString(),metaItemIndex->data(RDR_PREP_BARE_JID).toString());
 					}
 				}
 				else
 				{
-					addresses.insertMulti(index->data(RDR_STREAM_JID).toString(),index->data(RDR_PREP_BARE_JID).toString());
+					addresses.insert(index->data(RDR_STREAM_JID).toString(),index->data(RDR_PREP_BARE_JID).toString());
 				}
 			}
 			showArchiveWindow(addresses);
@@ -2795,7 +2797,7 @@ void MessageArchiver::onShowArchiveWindowByAction(bool)
 		QStringList streams = action->data(ADR_STREAM_JID).toStringList();
 		QStringList contacts = action->data(ADR_CONTACT_JID).toStringList();
 		for(int i=0; i<streams.count() && i<contacts.count(); i++)
-			addresses.insertMulti(streams.at(i),contacts.at(i));
+			addresses.insert(streams.at(i),contacts.at(i));
 		showArchiveWindow(addresses);
 	}
 }

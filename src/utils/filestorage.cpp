@@ -1,4 +1,5 @@
 #include "filestorage.h"
+#include <utils/qtcompat.h>
 
 #include <QDir>
 #include <QSet>
@@ -239,8 +240,8 @@ void FileStorage::setResourcesDirs(const QList<QString> &ADirs)
 	if (FResourceDirs != cleanDirs)
 	{
 		QList<FileStorage *> updateStorages;
-		QSet<QString> oldDirs = FResourceDirs.toSet() - cleanDirs.toSet();
-		QSet<QString> newDirs = cleanDirs.toSet() - FResourceDirs.toSet();
+		QSet<QString> oldDirs = setFromList(FResourceDirs) - setFromList(cleanDirs);
+		QSet<QString> newDirs = setFromList(cleanDirs) - setFromList(FResourceDirs);
 
 		foreach(FileStorage *fileStorage, FInstances)
 		{
