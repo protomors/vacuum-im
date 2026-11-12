@@ -1,5 +1,7 @@
 #include "jid.h"
 
+#include <utils/qtcompat.h>
+
 #ifdef USE_SYSTEM_IDN
 #	include <stringprep.h>
 #else
@@ -20,7 +22,7 @@ inline void registerJidStreamOperators()
 	if (!JidStreamOperatorsRegistered)
 	{
 		JidStreamOperatorsRegistered = true;
-		qRegisterMetaTypeStreamOperators<Jid>("Jid");
+		registerStreamOperators<Jid>("Jid");
 	}
 }
 

@@ -28,7 +28,11 @@
 #include <QWidget>
 #include <QCoreApplication>
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray & eventType, void *message, qintptr *result){return false;}
+#else
 bool QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray & eventType, void *message, long *result){return false;}
+#endif
 quint32 QxtGlobalShortcutPrivate::nativeModifiers(Qt::KeyboardModifiers modifiers){return false;}
 quint32 QxtGlobalShortcutPrivate::nativeKeycode(Qt::Key key){return 0;}
 bool QxtGlobalShortcutPrivate::registerShortcut(quint32 nativeKey, quint32 nativeMods){return false;}

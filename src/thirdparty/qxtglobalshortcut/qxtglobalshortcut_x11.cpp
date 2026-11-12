@@ -142,7 +142,11 @@ private:
 } // namespace
 
 bool QxtGlobalShortcutPrivate::nativeEventFilter(const QByteArray & eventType,
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	void *message, qintptr *result)
+#else
 	void *message, long *result)
+#endif
 {
 	Q_UNUSED(result);
 
