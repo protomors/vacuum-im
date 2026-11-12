@@ -29,7 +29,11 @@ int IdlePlatform::secondsIdle() { return 0; }
 
 #else
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QtGui/private/qtx11extras_p.h>
+#else
 #include <QtX11Extras/QX11Info>
+#endif
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

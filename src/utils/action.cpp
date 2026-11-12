@@ -28,7 +28,7 @@ void Action::setMenu(Menu *AMenu)
 		if (AMenu)
 			connect(AMenu,SIGNAL(menuDestroyed(Menu *)),SLOT(onMenuDestroyed(Menu *)));
 		FMenu = AMenu;
-		QAction::setMenu(AMenu);
+		QAction::setMenu(static_cast<QMenu *>(AMenu));
 	}
 }
 
@@ -190,6 +190,6 @@ void Action::onMenuDestroyed(Menu *AMenu)
 	if (AMenu == FMenu)
 	{
 		FMenu = NULL;
-		QAction::setMenu(NULL);
+		QAction::setMenu(static_cast<QMenu *>(nullptr));
 	}
 }

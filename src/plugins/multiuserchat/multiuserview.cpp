@@ -1,5 +1,12 @@
 #include "multiuserview.h"
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#define VIEW_ITEM_OPTIONS() \
+	([&]() { QStyleOptionViewItem option; initViewItemOption(&option); return option; }())
+#else
+#define VIEW_ITEM_OPTIONS() viewOptions()
+#endif
+
 #include <QToolTip>
 #include <QHelpEvent>
 #include <QHeaderView>
@@ -482,7 +489,7 @@ void MultiUserView::repaintUserItem(const QStandardItem *AItem)
 
 QStyleOptionViewItem MultiUserView::indexOption(const QModelIndex &AIndex) const
 {
-	QStyleOptionViewItem option = viewOptions();
+	QStyleOptionViewItem option = VIEW_ITEM_OPTIONS();
 
 	option.index = AIndex;
 	option.rect = visualRect(AIndex);

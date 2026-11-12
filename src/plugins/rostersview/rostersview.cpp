@@ -1,4 +1,11 @@
 #include "rostersview.h"
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#define VIEW_ITEM_OPTIONS() \
+	([&]() { QStyleOptionViewItem option; initViewItemOption(&option); return option; }())
+#else
+#define VIEW_ITEM_OPTIONS() viewOptions()
+#endif
 #include <utils/qtcompat.h>
 
 #include <QRandomGenerator>
@@ -800,12 +807,12 @@ void RostersView::removeLabel(quint32 ALabelId, IRosterIndex *AIndex)
 
 quint32 RostersView::labelAt(const QPoint &APoint, const QModelIndex &AIndex) const
 {
-	return FAdvancedItemDelegate->itemAt(APoint,indexOption(viewOptions(),AIndex),AIndex);
+	return FAdvancedItemDelegate->itemAt(APoint,indexOption(VIEW_ITEM_OPTIONS(),AIndex),AIndex);
 }
 
 QRect RostersView::labelRect(quint32 ALabeld, const QModelIndex &AIndex) const
 {
-	return FAdvancedItemDelegate->itemRect(ALabeld,indexOption(viewOptions(),AIndex),AIndex);
+	return FAdvancedItemDelegate->itemRect(ALabeld,indexOption(VIEW_ITEM_OPTIONS(),AIndex),AIndex);
 }
 
 int RostersView::activeNotify(IRosterIndex *AIndex) const
@@ -1244,7 +1251,7 @@ void RostersView::mouseMoveEvent(QMouseEvent *AEvent)
 			QAbstractItemDelegate *itemDeletage = itemDelegate(FPressedIndex);
 			if (itemDeletage)
 			{
-				QStyleOptionViewItem option = indexOption(viewOptions(),FPressedIndex);
+				QStyleOptionViewItem option = indexOption(VIEW_ITEM_OPTIONS(),FPressedIndex);
 				QPoint indexPos = option.rect.topLeft();
 				option.state &= ~QStyle::State_Selected;
 				option.state &= ~QStyle::State_MouseOver;
