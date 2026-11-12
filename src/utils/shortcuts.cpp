@@ -66,7 +66,7 @@ void Shortcuts::declareGroup(const QString &AId, const QString &ADescription, in
 {
 	if (!AId.isEmpty() && !ADescription.isEmpty())
 	{
-		instance()->d->groups.insert(AId,qMakePair<QString,int>(ADescription,AOrder));
+		instance()->d->groups.insert(AId,qMakePair(ADescription,AOrder));
 		emit instance()->groupDeclared(AId);
 	}
 }

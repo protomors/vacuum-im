@@ -2,6 +2,7 @@
 #include <utils/qtcompat.h>
 
 #include <QDir>
+#include <QTimeZone>
 #include <QDrag>
 #include <QFile>
 #include <QStyle>
@@ -791,7 +792,7 @@ void RecentContacts::createItemIndex(const IRecentItem &AItem)
 
 void RecentContacts::updateItemIndex(const IRecentItem &AItem)
 {
-	static const QDateTime zero = QDateTime::fromTime_t(0);
+		static const QDateTime zero = QDateTime::fromSecsSinceEpoch(0, QTimeZone::utc());
 
 	IRosterIndex *index = FVisibleItems.value(AItem);
 	if (index)
@@ -1169,7 +1170,7 @@ QList<IRosterIndex *> RecentContacts::indexesProxies(const QList<IRosterIndex *>
 		else if (ASelfProxy)
 			proxies.append(index);
 	}
-	proxies.removeAll(NULL);
+		proxies.removeAll(nullptr);
 	return proxies;
 }
 

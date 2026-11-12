@@ -59,7 +59,7 @@ void Address::setAutoAddresses(bool AEnabled)
 
 QMultiMap<Jid, Jid> Address::availAddresses(bool AUnique) const
 {
-	QMap<Jid,Jid> addresses;
+	QMultiMap<Jid,Jid> addresses;
 	for (QMap<Jid, QMultiMap<Jid,Jid> >::const_iterator streamIt=FAddresses.constBegin(); streamIt!=FAddresses.constEnd(); ++streamIt)
 	{
 		QList<Jid> contacts = AUnique ? streamIt->uniqueKeys() : streamIt->values();

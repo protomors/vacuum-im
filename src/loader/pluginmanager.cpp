@@ -8,6 +8,7 @@
 #include <QFileInfo>
 #include <QSettings>
 #include <QLibraryInfo>
+#include <QTimeZone>
 #include <definitions/plugininitorders.h>
 #include <definitions/menuicons.h>
 #include <definitions/resources.h>
@@ -110,7 +111,7 @@ QString PluginManager::revision() const
 QDateTime PluginManager::revisionDate() const
 {
 #if defined GIT_DATE
-	static const QDateTime date = QDateTime::fromTime_t(QString(GIT_DATE).toInt());
+	static const QDateTime date = QDateTime::fromSecsSinceEpoch(QString(GIT_DATE).toInt(), QTimeZone::utc());
 #else
 	static const QDateTime date = QDateTime();
 #endif

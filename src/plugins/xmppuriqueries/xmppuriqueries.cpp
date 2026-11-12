@@ -101,9 +101,9 @@ QString XmppUriQueries::makeXmppUri(const Jid &AContactJid, const QString &AActi
 		url.setPath(AContactJid.full());
 
 		QList< QPair<QString, QString> > queryItems;
-		queryItems.append(qMakePair<QString,QString>(AAction,QString()));
+		queryItems.append(qMakePair(AAction,QString()));
 		for(QMultiMap<QString, QString>::const_iterator it=AParams.constBegin(); it!=AParams.end(); ++it)
-			queryItems.append(qMakePair<QString,QString>(it.key(),it.value()));
+			queryItems.append(qMakePair(it.key(),it.value()));
 		query.setQueryItems(queryItems);
 		url.setQuery(query);
 

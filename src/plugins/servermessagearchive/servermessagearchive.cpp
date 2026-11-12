@@ -2,6 +2,9 @@
 #include <functional>
 
 #include <QTextStream>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QStringConverter>
+#endif
 #include <QDomElement>
 #include <definitions/namespaces.h>
 #include <definitions/optionvalues.h>
@@ -471,7 +474,11 @@ QString ServerMessageArchive::saveServerCollection(const Jid &AStreamJid, const 
 
 		QByteArray uploadData;
 		QTextStream ts(&uploadData, QIODevice::WriteOnly);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		ts.setEncoding(QStringConverter::Utf8);
+#else
 		ts.setCodec("UTF-8");
+#endif
 		int maxUploadSize = Options::node(OPV_SERVERARCHIVE_MAXUPLOADSIZE).value().toInt();
 
 		QString nextRef;

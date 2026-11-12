@@ -3,9 +3,20 @@
 
 #include <QtGlobal>
 #include <QList>
+#include <QMap>
 #include <QMetaType>
 #include <QRegularExpression>
 #include <QSet>
+
+// QMultiMap no longer inherits QMap in Qt 6, so QMapIterator cannot walk one.
+// Qt 5.15 has no QMultiMapIterator; QMapIterator accepts QMultiMap there.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+template <typename Key, typename T>
+using MultiMapIterator = QMultiMapIterator<Key, T>;
+#else
+template <typename Key, typename T>
+using MultiMapIterator = QMapIterator<Key, T>;
+#endif
 
 // QList::toSet() was deprecated in Qt 5.14 and removed in Qt 6.
 template <typename T>

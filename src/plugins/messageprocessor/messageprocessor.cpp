@@ -1,4 +1,5 @@
 #include "messageprocessor.h"
+#include <utils/qtcompat.h>
 
 #include <QRegularExpression>
 #include <QVariant>
@@ -262,7 +263,7 @@ bool MessageProcessor::processMessage(const Jid &AStreamJid, Message &AMessage, 
 	AMessage.setData(MDR_MESSAGE_DIRECTION,ADirection);
 
 	bool hooked = false;
-	QMapIterator<int,IMessageEditor *> it(FMessageEditors);
+	MultiMapIterator<int,IMessageEditor *> it(FMessageEditors);
 	ADirection == DirectionIn ? it.toFront() : it.toBack();
 	while (!hooked && (ADirection==DirectionIn ? it.hasNext() : it.hasPrevious()))
 	{
@@ -329,7 +330,7 @@ void MessageProcessor::removeMessageNotify(int AMessageId)
 bool MessageProcessor::messageHasText(const Message &AMessage, const QString &ALang) const
 {
 	Message messageCopy = AMessage;
-	QMapIterator<int,IMessageWriter *> it(FMessageWriters); it.toFront();
+	MultiMapIterator<int,IMessageWriter *> it(FMessageWriters); it.toFront();
 	while (it.hasNext())
 	{
 		if (it.next().value()->writeMessageHasText(it.key(),messageCopy,ALang))
@@ -343,7 +344,7 @@ bool MessageProcessor::messageToText(const Message &AMessage, QTextDocument *ADo
 	bool changed = false;
 
 	Message messageCopy = AMessage;
-	QMapIterator<int,IMessageWriter *> it(FMessageWriters); it.toFront();
+	MultiMapIterator<int,IMessageWriter *> it(FMessageWriters); it.toFront();
 	while (it.hasNext())
 		changed = it.next().value()->writeMessageToText(it.key(),messageCopy,ADocument,ALang) || changed;
 
@@ -355,7 +356,7 @@ bool MessageProcessor::textToMessage(const QTextDocument *ADocument, Message &AM
 	bool changed = false;
 	
 	QTextDocument *documentCopy = ADocument->clone();
-	QMapIterator<int,IMessageWriter *> it(FMessageWriters); it.toBack();
+	MultiMapIterator<int,IMessageWriter *> it(FMessageWriters); it.toBack();
 	while (it.hasPrevious())
 		changed = it.previous().value()->writeTextToMessage(it.key(),documentCopy,AMessage,ALang) || changed;
 	delete documentCopy;

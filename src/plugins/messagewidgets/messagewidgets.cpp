@@ -172,7 +172,11 @@ bool MessageWidgets::messageEditContentsCreate(int AOrder, IMessageEditWidget *A
 				writer.write(fragment);
 				buffer.close();
 				AData->setData("application/vnd.oasis.opendocument.text", buffer.data());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+				AData->setData("text/html", fragment.toHtml().toUtf8());
+#else
 				AData->setData("text/html", fragment.toHtml("utf-8").toUtf8());
+#endif
 			}
 			AData->setText(fragment.toPlainText());
 		}
@@ -940,7 +944,7 @@ void MessageWidgets::onOptionsOpened()
 	if (tabWindowList().isEmpty())
 		appendTabWindow(tr("Main Tab Window"));
 
-	if (!tabWindowList().contains(Options::node(OPV_MESSAGES_TABWINDOWS_DEFAULT).value().toString()))
+	if (!tabWindowList().contains(QUuid::fromString(Options::node(OPV_MESSAGES_TABWINDOWS_DEFAULT).value().toString())))
 		Options::node(OPV_MESSAGES_TABWINDOWS_DEFAULT).setValue(tabWindowList().value(0).toString());
 
 	QByteArray data = Options::fileValue("messages.tab-window-pages").toByteArray();

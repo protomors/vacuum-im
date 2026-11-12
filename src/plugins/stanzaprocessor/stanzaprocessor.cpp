@@ -1,4 +1,5 @@
 #include "stanzaprocessor.h"
+#include <utils/qtcompat.h>
 
 #include <QSet>
 #include <definitions/xmppstanzahandlerorders.h>
@@ -308,7 +309,7 @@ bool StanzaProcessor::processStanza(const Jid &AStreamJid, Stanza &AStanza, int 
 	bool hooked = false;
 	bool accepted = false;
 
-	QMapIterator<int, int> it(FHandleIdByOrder);
+	MultiMapIterator<int, int> it(FHandleIdByOrder);
 	while (!hooked && it.hasNext())
 	{
 		it.next();

@@ -538,7 +538,7 @@ bool MultiUserChatWindow::messageDisplay(const Message &AMessage, int ADirection
 			displayed = true;
 			if (!AMessage.isDelayed())
 				updateRecentItemActiveTime(NULL);
-			if (FHistoryRequests.values().contains(NULL))
+			if (FHistoryRequests.values().contains(nullptr))
 				FPendingMessages[NULL].append(AMessage);
 
 			if (AMessage.isDelayed() && AMessage.delayedFromJid()!=FMultiChat->roomJid() && AMessage.delayedFromJid().isValid())
@@ -1780,7 +1780,7 @@ void MultiUserChatWindow::showMultiChatUserMessage(const Message &AMessage, cons
 
 void MultiUserChatWindow::requestMultiChatHistory()
 {
-	if (FMessageArchiver && !FHistoryRequests.values().contains(NULL))
+	if (FMessageArchiver && !FHistoryRequests.values().contains(nullptr))
 	{
 		IArchiveRequest request;
 		request.with = FMultiChat->roomJid();
@@ -2618,7 +2618,7 @@ void MultiUserChatWindow::onMultiChatNotifierActiveNotifyChanged(int ANotifyId)
 
 void MultiUserChatWindow::onMultiChatEditWidgetKeyEvent(QKeyEvent *AKeyEvent, bool &AHooked)
 {
-	if (FMultiChat->isOpen() && AKeyEvent->modifiers()+AKeyEvent->key() == NICK_MENU_KEY)
+		if (FMultiChat->isOpen() && AKeyEvent->key() == NICK_MENU_KEY && AKeyEvent->modifiers() == Qt::NoModifier)
 	{
 		QTextEdit *textEdit = FEditWidget->textEdit();
 		QTextCursor cursor = textEdit->textCursor();
@@ -2740,7 +2740,7 @@ void MultiUserChatWindow::onMultiChatUserItemToolTips(QStandardItem *AItem, QMap
 void MultiUserChatWindow::onMultiChatContentAppended(const QString &AHtml, const IMessageStyleContentOptions &AOptions)
 {
 	IMessageViewWidget *widget = qobject_cast<IMessageViewWidget *>(sender());
-	if (widget==FViewWidget && FHistoryRequests.values().contains(NULL))
+	if (widget==FViewWidget && FHistoryRequests.values().contains(nullptr))
 	{
 		WindowContent content;
 		content.html = AHtml;

@@ -215,7 +215,7 @@ void AdvancedItemModel::removeItemDataHolder(int AOrder, AdvancedItemDataHolder 
 
 void AdvancedItemModel::insertChangedItem(QStandardItem *AItem, int ARole)
 {
-	QPair<QStandardItem *, int> item = qMakePair<QStandardItem *, int>(AItem,ARole);
+	QPair<QStandardItem *, int> item = qMakePair(AItem,ARole);
 	if (FChangedItems.isEmpty())
 	{
 		FChangedItems.append(item);

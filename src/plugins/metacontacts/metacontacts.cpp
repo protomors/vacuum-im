@@ -1417,7 +1417,7 @@ QList<IRosterIndex *> MetaContacts::indexesProxies(const QList<IRosterIndex *> &
 			proxies.append(index);
 		}
 	}
-	proxies.removeAll(NULL);
+		proxies.removeAll(nullptr);
 	return setFromList(proxies).values();
 }
 

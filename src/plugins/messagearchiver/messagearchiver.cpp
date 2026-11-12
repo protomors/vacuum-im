@@ -1685,7 +1685,7 @@ void MessageArchiver::loadPendingMessages(const Jid &AStreamJid)
 						message.setTo(AStreamJid.full());
 					else
 						message.setFrom(AStreamJid.full());
-					messages.append(qMakePair<Message,bool>(message,directionIn));
+					messages.append(qMakePair(message,directionIn));
 
 					messageElem = messageElem.nextSiblingElement("message");
 				}
@@ -1796,7 +1796,7 @@ bool MessageArchiver::processMessage(const Jid &AStreamJid, const Message &AMess
 	Jid itemJid = ADirectionIn ? (!AMessage.from().isEmpty() ? AMessage.from() : AStreamJid.domain()) : AMessage.to();
 	if (!isReady(AStreamJid))
 	{
-		FPendingMessages[AStreamJid].append(qMakePair<Message,bool>(AMessage,ADirectionIn));
+		FPendingMessages[AStreamJid].append(qMakePair(AMessage,ADirectionIn));
 		return true;
 	}
 	return saveMessage(AStreamJid,itemJid,AMessage);
