@@ -23,7 +23,7 @@ ViewWidget::ViewWidget(IMessageWidgets *AMessageWidgets, IMessageWindow *AWindow
 	FMessageProcessor = PluginHelper::pluginInstance<IMessageProcessor>();
 
 	QVBoxLayout *layout = new QVBoxLayout(ui.wdtViewer);
-	layout->setMargin(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 }
 
 ViewWidget::~ViewWidget()

@@ -73,7 +73,7 @@ DiscoItemsWindow::DiscoItemsWindow(IServiceDiscovery *ADiscovery, const Jid &ASt
 	FActionsBarChanger->toolBar()->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
 	ui.grbActions->setLayout(new QVBoxLayout);
-	ui.grbActions->layout()->setMargin(2);
+	ui.grbActions->layout()->setContentsMargins(2, 2, 2, 2);
 	ui.grbActions->layout()->addWidget(FActionsBarChanger->toolBar());
 
 	connect(ui.cmbJid->lineEdit(),SIGNAL(returnPressed()),SLOT(onComboReturnPressed()));

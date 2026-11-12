@@ -34,7 +34,7 @@ EditWidget::EditWidget(IMessageWidgets *AMessageWidgets, IMessageWindow *AWindow
 	toolBar->setMovable(false);
 	toolBar->setFloatable(false);
 	toolBar->setIconSize(QSize(16,16));
-	toolBar->layout()->setMargin(0);
+	toolBar->layout()->setContentsMargins(0, 0, 0, 0);
 	toolBar->setStyleSheet("QToolBar { border: none; }");
 	toolBar->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
 
@@ -45,7 +45,7 @@ EditWidget::EditWidget(IMessageWidgets *AMessageWidgets, IMessageWindow *AWindow
 	connect(FEditToolBar,SIGNAL(itemInserted(QAction *, QAction *, Action *, QWidget *, int)),SLOT(onUpdateEditToolBarVisibility()));
 
 	ui.wdtSendToolBar->setLayout(new QHBoxLayout);
-	ui.wdtSendToolBar->layout()->setMargin(0);
+	ui.wdtSendToolBar->layout()->setContentsMargins(0, 0, 0, 0);
 	ui.wdtSendToolBar->layout()->addWidget(toolBar);
 
 	FSendAction = new Action(toolBar);

@@ -214,7 +214,7 @@ AutoRulesOptionsDialog::AutoRulesOptionsDialog(IAutoStatus *AAutoStatus, IStatus
 	hblButtons->addWidget(dbbButtonBox);
 
 	QVBoxLayout *vblLayout = new QVBoxLayout(this);
-	vblLayout->setMargin(5);
+	vblLayout->setContentsMargins(5, 5, 5, 5);
 	vblLayout->addWidget(tbwRules);
 	vblLayout->addLayout(hblButtons);
 

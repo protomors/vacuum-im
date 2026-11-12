@@ -143,7 +143,7 @@ ArchiveViewWindow::ArchiveViewWindow(IMessageArchiver *AArchiver, const QMultiMa
 	FHeadersEmptyLabel->setMargin(3);
 
 	QVBoxLayout *headersLayout = new QVBoxLayout(ui.trvHeaders);
-	headersLayout->setMargin(0);
+	headersLayout->setContentsMargins(0, 0, 0, 0);
 	headersLayout->addStretch();
 	headersLayout->addWidget(FHeadersEmptyLabel);
 	headersLayout->addStretch();
@@ -155,7 +155,7 @@ ArchiveViewWindow::ArchiveViewWindow(IMessageArchiver *AArchiver, const QMultiMa
 	FMessagesEmptyLabel->setMargin(3);
 
 	QVBoxLayout *messagesLayout = new QVBoxLayout(ui.tbrMessages);
-	messagesLayout->setMargin(0);
+	messagesLayout->setContentsMargins(0, 0, 0, 0);
 	messagesLayout->addStretch();
 	messagesLayout->addWidget(FMessagesEmptyLabel);
 	messagesLayout->addStretch();

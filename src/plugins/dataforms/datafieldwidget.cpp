@@ -12,7 +12,7 @@ DataFieldWidget::DataFieldWidget(IDataForms *ADataForms, const IDataField &AFiel
 	FMediaWidget = NULL;
 
 	setLayout(new QVBoxLayout(this));
-	layout()->setMargin(0);
+	layout()->setContentsMargins(0, 0, 0, 0);
 
 	if (FDataForms->isMediaValid(AField.media))
 	{

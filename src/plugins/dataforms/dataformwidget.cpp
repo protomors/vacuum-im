@@ -53,7 +53,7 @@ DataFormWidget::DataFormWidget(IDataForms *ADataForms, const IDataForm &AForm, Q
 	FDataForms = ADataForms;
 
 	QVBoxLayout *formLayout = new QVBoxLayout(this);
-	formLayout->setMargin(0);
+	formLayout->setContentsMargins(0, 0, 0, 0);
 
 	foreach(const QString &text, FForm.instructions)
 	{
@@ -98,7 +98,7 @@ DataFormWidget::DataFormWidget(IDataForms *ADataForms, const IDataForm &AForm, Q
 
 			QWidget *scrollWidget = new QWidget(scroll);
 			QVBoxLayout *scrollLayout = new QVBoxLayout(scrollWidget);
-			scrollLayout->setMargin(0);
+			scrollLayout->setContentsMargins(0, 0, 0, 0);
 
 			bool stretch = true;
 			if (FForm.pages.count() == 0)
@@ -139,7 +139,7 @@ DataFormWidget::DataFormWidget(IDataForms *ADataForms, const IDataForm &AForm, Q
 
 				QWidget *scrollWidget = new QWidget(scroll);
 				QVBoxLayout *scrollLayout = new QVBoxLayout(scrollWidget);
-				scrollLayout->setMargin(0);
+				scrollLayout->setContentsMargins(0, 0, 0, 0);
 
 				if (insertLayout(page,scrollWidget))
 					scrollLayout->addStretch();

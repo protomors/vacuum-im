@@ -121,7 +121,7 @@ NotifyWidget::NotifyWidget(const INotification &ANotification)
 	{
 		QHBoxLayout *buttonsLayout = new QHBoxLayout;
 		ui.wdtButtons->setLayout(buttonsLayout);
-		buttonsLayout->setMargin(0);
+		buttonsLayout->setContentsMargins(0, 0, 0, 0);
 		for (int i=0; i<ANotification.actions.count(); i++)
 		{
 			QToolButton *button = new QToolButton(ui.wdtButtons);
