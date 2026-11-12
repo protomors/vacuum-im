@@ -103,7 +103,6 @@ Statistics::Statistics()
 	FMultiChatManager = NULL;
 
 	FSendHits = true;
-	FDesktopWidget = new QDesktopWidget;
 
 	FNetworkManager = new QNetworkAccessManager(this);
 	connect(FNetworkManager,SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)),
@@ -133,7 +132,6 @@ Statistics::~Statistics()
 {
 	if (!FPendingHits.isEmpty())
 		LOG_WARNING(QString("Failed to send pending statistics hints, count=%1").arg(FPendingHits.count()));
-	delete FDesktopWidget;
 }
 
 void Statistics::pluginInfo(IPluginInfo *APluginInfo)
@@ -731,7 +729,7 @@ void Statistics::onOptionsOpened()
 {
 	FSendHits = Options::node(OPV_COMMON_STATISTICTS_ENABLED).value().toBool();
 
-	FProfileId = Options::node(OPV_STATISTICS_PROFILEID).value().toString();
+	FProfileId = QUuid::fromString(Options::node(OPV_STATISTICS_PROFILEID).value().toString());
 	if (FProfileId.isNull())
 	{
 		FProfileId = QUuid::createUuid();

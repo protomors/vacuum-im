@@ -1,6 +1,8 @@
 #include "notifywidget.h"
 
 #include <QTimer>
+#include <QScreen>
+#include <QApplication>
 #include <QScrollBar>
 #include <QTextFrame>
 #include <QSizePolicy>
@@ -32,7 +34,6 @@
 
 QRect NotifyWidget::FDisplay = QRect();
 QList<NotifyWidget *> NotifyWidget::FWidgets;
-QDesktopWidget *NotifyWidget::FDesktop = new QDesktopWidget;
 
 IMainWindow *NotifyWidget::FMainWindow = NULL;
 QNetworkAccessManager *NotifyWidget::FNetworkManager = NULL;
@@ -167,7 +168,14 @@ void NotifyWidget::appear()
 		setWindowOpacity(ANIMATE_OPACITY_START);
 
 		if (FMainWindow!=NULL && FWidgets.isEmpty())
-			FDisplay = FDesktop->availableGeometry(FMainWindow->instance());
+		{
+			QWidget *mainWindow = FMainWindow->instance();
+			QScreen *screen = mainWindow != NULL ? mainWindow->screen() : NULL;
+			if (screen == NULL)
+				screen = QApplication::primaryScreen();
+			if (screen != NULL)
+				FDisplay = screen->availableGeometry();
+		}
 		FWidgets.prepend(this);
 		layoutWidgets();
 	}
@@ -192,7 +200,11 @@ void NotifyWidget::animateTo(int AYPos)
 	}
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void NotifyWidget::enterEvent(QEnterEvent *AEvent)
+#else
 void NotifyWidget::enterEvent(QEvent *AEvent)
+#endif
 {
 	FTimeOut += UNDER_MOUSE_ADD_TIMEOUT;
 	QFrame::enterEvent(AEvent);

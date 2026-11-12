@@ -2,7 +2,6 @@
 
 #include <QStyle>
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QScreen>
 #include <QAbstractScrollArea>
 #include <QTextEdit>
@@ -25,6 +24,14 @@
 	#define MESSAGE_SOURCE_APPLICATION    1
 	#define MESSAGE_SOURCE_PAGER          2
 #endif //Q_OS_LINUX
+
+static QRect availableScreenGeometry(const QWidget *widget)
+{
+	QScreen *screen = widget != NULL ? widget->screen() : QApplication::primaryScreen();
+	if (screen == NULL)
+		screen = QApplication::primaryScreen();
+	return screen != NULL ? screen->availableGeometry() : QRect();
+}
 
 // WindowSticker
 class WindowSticker :
@@ -92,7 +99,7 @@ bool WindowSticker::eventFilter(QObject *AWatched, QEvent *AEvent)
 		const int delta = 15;
 		QPoint cursorPos = QCursor::pos();
 		QRect windowRect = FCurWindow->frameGeometry();
-		QRect desckRect = QApplication::desktop()->availableGeometry(FCurWindow);
+		QRect desckRect = availableScreenGeometry(FCurWindow);
 
 		int borderTop = cursorPos.y() - windowRect.y();
 		int borderLeft = cursorPos.x() - windowRect.x();
@@ -247,7 +254,7 @@ Qt::Alignment WidgetManager::windowAlignment(const QWidget *AWindow)
 {
 	Qt::Alignment align;
 	QRect windowRect = AWindow->frameGeometry();
-	QRect screenRect = QApplication::desktop()->availableGeometry(AWindow);
+	QRect screenRect = availableScreenGeometry(AWindow);
 	if (!screenRect.isEmpty() && !windowRect.isEmpty())
 	{
 		static const int delta = 4;
@@ -271,7 +278,7 @@ bool WidgetManager::alignWindow(QWidget *AWindow, Qt::Alignment AAlign)
 		QRect windowRect = AWindow->geometry();
 		if (!frameRect.isEmpty() && !windowRect.isEmpty() && frameRect.contains(windowRect))
 		{
-			QRect availRect = QApplication::desktop()->availableGeometry(AWindow);
+			QRect availRect = availableScreenGeometry(AWindow);
 			QRect rect = alignRect(frameRect,availRect,AAlign);
 			rect.adjust(windowRect.left()-frameRect.left(),windowRect.top()-frameRect.top(),windowRect.right()-frameRect.right(),windowRect.bottom()-frameRect.bottom());
 			AWindow->setGeometry(rect);
@@ -305,11 +312,7 @@ QRect WidgetManager::alignRect(const QRect &ARect, const QRect &ABoundary, Qt::A
 
 QRect WidgetManager::alignGeometry(const QSize &ASize, const QWidget *AWidget, Qt::Alignment AAlign)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
-	QRect availRect = AWidget!=NULL ? QApplication::desktop()->availableGeometry(AWidget) :  QApplication::primaryScreen()->availableGeometry();
-#else
-	QRect availRect = AWidget!=NULL ? QApplication::desktop()->availableGeometry(AWidget) : QApplication::desktop()->availableGeometry();
-#endif
+	QRect availRect = availableScreenGeometry(AWidget);
 	return QStyle::alignedRect(Qt::LeftToRight,AAlign,ASize.boundedTo(availRect.size()),availRect);
 }
 

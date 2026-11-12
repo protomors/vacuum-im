@@ -3,8 +3,8 @@
 #include <QHash>
 #include <QAction>
 #include <QVariant>
+#include <QWidget>
 #include <QApplication>
-#include <QDesktopWidget>
 
 #ifdef USE_SYSTEM_QXTGLOBALSHORTCUT
 #       include <qxtglobalshortcut/qxtglobalshortcut.h>
@@ -220,7 +220,8 @@ void Shortcuts::activateShortcut(const QString &AId, QWidget *AWidget)
 
 void Shortcuts::updateObject(QObject *AObject)
 {
-	static QDesktopWidget *deskWidget = QApplication::desktop();
+	// Application shortcuts need a widget that outlives every window.
+	static QWidget *shortcutWidget = new QWidget;
 
 	QString id = instance()->d->objectShortcutsId.value(AObject);
 	if (!id.isEmpty())
@@ -229,8 +230,8 @@ void Shortcuts::updateObject(QObject *AObject)
 		if (descriptor.context == ApplicationShortcut)
 		{
 			QAction *action = qobject_cast<QAction *>(AObject);
-			if (action && !deskWidget->actions().contains(action))
-				deskWidget->addAction(action);
+			if (action && !shortcutWidget->actions().contains(action))
+				shortcutWidget->addAction(action);
 		}
 		AObject->setProperty("shortcut", correctKeySequence(descriptor.activeKey));
 		AObject->setProperty("shortcutContext", convertContext(descriptor.context));
@@ -241,7 +242,7 @@ void Shortcuts::updateObject(QObject *AObject)
 		{
 			QAction *action = qobject_cast<QAction *>(AObject);
 			if (action)
-				deskWidget->removeAction(action);
+				shortcutWidget->removeAction(action);
 		}
 		AObject->setProperty("shortcut",QVariant());
 		AObject->setProperty("shortcutContext",QVariant());

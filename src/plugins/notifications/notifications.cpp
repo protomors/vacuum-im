@@ -1,5 +1,6 @@
 #include "notifications.h"
 
+#include <QUrl>
 #include <QSpinBox>
 #include <QProcess>
 #include <QSystemTrayIcon>
@@ -46,7 +47,9 @@ Notifications::Notifications()
 	FNetworkAccessManager = NULL;
 
 	FNotifyId = 0;
+#ifndef Q_OS_LINUX
 	FSound = NULL;
+#endif
 }
 
 Notifications::~Notifications()
@@ -54,7 +57,9 @@ Notifications::~Notifications()
 	delete FActivateLast;
 	delete FRemoveAll;
 	delete FNotifyMenu;
+#ifndef Q_OS_LINUX
 	delete FSound;
+#endif
 }
 
 void Notifications::pluginInfo(IPluginInfo *APluginInfo)
@@ -385,7 +390,8 @@ int Notifications::appendNotification(const INotification &ANotification)
 				QProcess::startDetached(Options::node(OPV_NOTIFICATIONS_SOUNDCOMMAND).value().toString(),QStringList()<<soundFile);
 #else
 				delete FSound;
-				FSound = new QSound(soundFile);
+				FSound = new QSoundEffect;
+				FSound->setSource(QUrl::fromLocalFile(soundFile));
 				FSound->play();
 #endif
 			}

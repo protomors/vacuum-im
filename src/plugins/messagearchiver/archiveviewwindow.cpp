@@ -1412,12 +1412,11 @@ void ArchiveViewWindow::onHeaderContextMenuRequested(const QPoint &APos)
 void ArchiveViewWindow::onPrintConversationsByAction()
 {
 	QPrinter printer;
+	if (ui.tbrMessages->textCursor().hasSelection())
+		printer.setPrintRange(QPrinter::Selection);
 
 	QPrintDialog *dialog = new QPrintDialog(&printer, this);
 	dialog->setWindowTitle(tr("Print Conversation History"));
-
-	if (ui.tbrMessages->textCursor().hasSelection())
-		dialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
 
 	if (dialog->exec() == QDialog::Accepted)
 		ui.tbrMessages->print(&printer);

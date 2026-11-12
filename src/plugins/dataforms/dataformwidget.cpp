@@ -8,8 +8,16 @@
 #include <QVBoxLayout>
 #include <QMessageBox>
 #include <QTextDocument>
+#include <QScreen>
 #include <QApplication>
-#include <QDesktopWidget>
+
+static QSize availableDesktopSize(const QWidget *widget)
+{
+	QScreen *screen = widget->screen();
+	if (screen == NULL)
+		screen = QApplication::primaryScreen();
+	return screen != NULL ? screen->availableGeometry().size() : QSize();
+}
 
 class ScrollArea : 
 	public QScrollArea
@@ -30,13 +38,11 @@ public:
 		if (widget())
 			sh += widgetResizable() ? widget()->sizeHint() : widget()->size();
 
-		QSize desktopSize = QApplication::desktop()->availableGeometry(this).size();
-		return sh.boundedTo(desktopSize/2);
+		return sh.boundedTo(availableDesktopSize(this)/2);
 	}
 	virtual QSize minimumSizeHint() const
 	{
-		QSize desktopSize = QApplication::desktop()->availableGeometry(this).size();
-		return sizeHint().boundedTo(desktopSize/4);
+		return sizeHint().boundedTo(availableDesktopSize(this)/4);
 	}
 	virtual bool event(QEvent *AEvent)
 	{

@@ -4,7 +4,6 @@
 #include <QClipboard>
 #include <QInputDialog>
 #include <QApplication>
-#include <QDesktopWidget>
 #include <definitions/namespaces.h>
 #include <definitions/resources.h>
 #include <definitions/menuicons.h>

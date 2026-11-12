@@ -3,8 +3,8 @@
 #include <QTimer>
 #include <QCloseEvent>
 #include <QResizeEvent>
+#include <QScreen>
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QStringList>
 #include <definitions/version.h>
 #include <definitions/resources.h>
@@ -299,7 +299,10 @@ void MainWindow::correctWindowPosition()
 	}
 
 	QRect windowRect = geometry();
-	QRect screenRect = qApp->desktop()->availableGeometry(this);
+	QScreen *screen = this->screen();
+	if (screen == NULL)
+		screen = QApplication::primaryScreen();
+	QRect screenRect = screen != NULL ? screen->availableGeometry() : QRect();
 	if (!screenRect.isEmpty() && !windowRect.isEmpty())
 	{
 		Qt::Alignment align;

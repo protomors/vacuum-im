@@ -4,7 +4,6 @@
 #include <QMap>
 #include <QTimer>
 #include <QNetworkReply>
-#include <QDesktopWidget>
 #include <QNetworkAccessManager>
 #include <interfaces/ipluginmanager.h>
 #include <interfaces/ibookmarks.h>
@@ -94,7 +93,6 @@ private:
 	QMap<Jid,Jid> FSoftwareRequests;
 private:
 	QUuid FProfileId;
-	QDesktopWidget *FDesktopWidget;
 	QNetworkAccessManager *FNetworkManager;
 private:
 	bool FSendHits;
