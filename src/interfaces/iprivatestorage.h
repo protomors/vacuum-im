@@ -1,5 +1,6 @@
 #ifndef IPRIVATESTORAGE_H
 #define IPRIVATESTORAGE_H
+#include <QObject>
 
 #include <QDomElement>
 #include <utils/jid.h>

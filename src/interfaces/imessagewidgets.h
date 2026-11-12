@@ -1,5 +1,6 @@
 #ifndef IMESSAGEWIDGETS_H
 #define IMESSAGEWIDGETS_H
+#include <QObject>
 
 #include <QUuid>
 #include <QMultiMap>

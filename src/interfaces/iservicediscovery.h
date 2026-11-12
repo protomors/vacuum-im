@@ -1,5 +1,6 @@
 #ifndef ISERVICEDISCOVERY_H
 #define ISERVICEDISCOVERY_H
+#include <QObject>
 
 #include <QIcon>
 #include <QStringList>

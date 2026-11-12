@@ -1,5 +1,6 @@
 #ifndef IBOOKMARKS_H
 #define IBOOKMARKS_H
+#include <QObject>
 
 #include <QUrl>
 #include <QDialog>

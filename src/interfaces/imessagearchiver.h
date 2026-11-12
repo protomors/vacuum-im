@@ -1,5 +1,6 @@
 #ifndef IMESSAGEARCHIVER_H
 #define IMESSAGEARCHIVER_H
+#include <QObject>
 
 #include <QRegExp>
 #include <QMainWindow>

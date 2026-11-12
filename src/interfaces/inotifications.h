@@ -1,5 +1,6 @@
 #ifndef INOTIFICATIONS_H
 #define INOTIFICATIONS_H
+#include <QObject>
 
 #include <QMap>
 #include <QIcon>

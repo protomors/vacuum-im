@@ -1,5 +1,6 @@
 #ifndef IVCARDMANAGER_H
 #define IVCARDMANAGER_H
+#include <QObject>
 
 #include <QHash>
 #include <QImage>

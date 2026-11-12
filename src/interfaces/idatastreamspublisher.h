@@ -1,5 +1,6 @@
 #ifndef IDATASTREAMSPUBLISHER_H
 #define IDATASTREAMSPUBLISHER_H
+#include <QObject>
 
 #include <QMap>
 #include <QVariant>

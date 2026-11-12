@@ -1,5 +1,6 @@
 #ifndef IROSTERMODEL_H
 #define IROSTERMODEL_H
+#include <QObject>
 
 #include <QVariant>
 #include <QAbstractItemModel>

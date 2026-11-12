@@ -1,5 +1,6 @@
 #ifndef ISTATUSICONS_H
 #define ISTATUSICONS_H
+#include <QObject>
 
 #include <QIcon>
 #include <QString>

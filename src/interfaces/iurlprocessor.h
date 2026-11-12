@@ -1,5 +1,6 @@
 #ifndef IURLPROCESSOR_H
 #define IURLPROCESSOR_H
+#include <QObject>
 
 #include <QNetworkReply>
 #include <QNetworkAccessManager>

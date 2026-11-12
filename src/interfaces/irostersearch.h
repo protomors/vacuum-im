@@ -1,5 +1,6 @@
 #ifndef IROSTERSEARCH_H
 #define IROSTERSEARCH_H
+#include <QObject>
 
 #include <utils/menu.h>
 

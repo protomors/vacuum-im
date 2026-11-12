@@ -1,5 +1,6 @@
 #ifndef IEMOTICONS_H
 #define IEMOTICONS_H
+#include <QObject>
 
 #include <QUrl>
 #include <QMap>

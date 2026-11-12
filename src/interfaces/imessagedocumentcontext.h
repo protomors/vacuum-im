@@ -1,5 +1,6 @@
 #ifndef IMESSAGEDOCUMENTCONTEXT_H
 #define IMESSAGEDOCUMENTCONTEXT_H
+#include <QObject>
 
 #include <QPointer>
 #include <QTextCursor>

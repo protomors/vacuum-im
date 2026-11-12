@@ -1,5 +1,6 @@
 #ifndef ITRAYMANAGER_H
 #define ITRAYMANAGER_H
+#include <QObject>
 
 #include <QSystemTrayIcon>
 #include <utils/menu.h>

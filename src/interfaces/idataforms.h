@@ -1,5 +1,6 @@
 #ifndef IDATAFORMS_H
 #define IDATAFORMS_H
+#include <QObject>
 
 #include <QUrl>
 #include <QDialog>

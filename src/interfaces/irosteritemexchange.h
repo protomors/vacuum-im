@@ -1,5 +1,6 @@
 #ifndef IROSTERITEMEXCHANGE_H
 #define IROSTERITEMEXCHANGE_H
+#include <QObject>
 
 #include <QSet>
 #include <utils/jid.h>

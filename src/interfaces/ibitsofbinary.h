@@ -1,5 +1,6 @@
 #ifndef IBITSOFBINARY_H
 #define IBITSOFBINARY_H
+#include <QObject>
 
 #include <QString>
 #include <QByteArray>

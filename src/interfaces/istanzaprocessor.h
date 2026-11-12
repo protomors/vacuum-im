@@ -1,5 +1,6 @@
 #ifndef ISTANZAPROCESSOR_H
 #define ISTANZAPROCESSOR_H
+#include <QObject>
 
 #include <QList>
 #include <utils/jid.h>

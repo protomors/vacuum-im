@@ -1,5 +1,6 @@
 #ifndef IGATEWAYS_H
 #define IGATEWAYS_H
+#include <QObject>
 
 #include <QDialog>
 #include <interfaces/iservicediscovery.h>

@@ -1,5 +1,6 @@
 #ifndef IROSTERMANAGER_H
 #define IROSTERMANAGER_H
+#include <QObject>
 
 #include <QSet>
 #include <QList>

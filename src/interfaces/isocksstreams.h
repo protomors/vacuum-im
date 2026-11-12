@@ -1,5 +1,6 @@
 #ifndef ISOCKSSTREAMS_H
 #define ISOCKSSTREAMS_H
+#include <QObject>
 
 #include <QIODevice>
 #include <QTcpSocket>

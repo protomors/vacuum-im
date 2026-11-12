@@ -1,5 +1,6 @@
 #ifndef IBIRTHDAYREMINDER_H
 #define IBIRTHDAYREMINDER_H
+#include <QObject>
 
 #include <QDate>
 #include <QImage>

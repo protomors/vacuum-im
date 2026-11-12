@@ -1,5 +1,6 @@
 #ifndef IFILESTREAMSMANAGER_H
 #define IFILESTREAMSMANAGER_H
+#include <QObject>
 
 #include <QUuid>
 #include <QWidget>

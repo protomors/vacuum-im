@@ -1,5 +1,6 @@
 #ifndef ISESSIONNEGOTIATION_H
 #define ISESSIONNEGOTIATION_H
+#include <QObject>
 
 #include <QHash>
 #include <interfaces/idataforms.h>

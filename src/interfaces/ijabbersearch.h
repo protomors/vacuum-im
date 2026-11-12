@@ -1,5 +1,6 @@
 #ifndef IJABBERSEARCH_H
 #define IJABBERSEARCH_H
+#include <QObject>
 
 #include <interfaces/idataforms.h>
 #include <utils/jid.h>

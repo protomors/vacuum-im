@@ -1,5 +1,6 @@
 #ifndef IFILETRANSFER_H
 #define IFILETRANSFER_H
+#include <QObject>
 
 #include <QString>
 #include <interfaces/ifilestreamsmanager.h>

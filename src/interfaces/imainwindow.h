@@ -1,5 +1,6 @@
 #ifndef IMAINWINDOW_H
 #define IMAINWINDOW_H
+#include <QObject>
 
 #include <QToolBar>
 #include <QTabWidget>

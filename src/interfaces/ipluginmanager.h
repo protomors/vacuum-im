@@ -1,5 +1,6 @@
 #ifndef IPLUGINMANAGER_H
 #define IPLUGINMANAGER_H
+#include <QObject>
 
 #include <QUrl>
 #include <QUuid>

@@ -1,5 +1,6 @@
 #ifndef ISTATISTICS_H
 #define ISTATISTICS_H
+#include <QObject>
 
 #include <QUuid>
 #include <QDateTime>

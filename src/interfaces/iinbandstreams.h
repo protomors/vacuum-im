@@ -1,5 +1,6 @@
 #ifndef IINBANDSTREAMS_H
 #define IINBANDSTREAMS_H
+#include <QObject>
 
 #include <QIODevice>
 #include <interfaces/idatastreamsmanager.h>

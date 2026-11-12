@@ -1,5 +1,6 @@
 #ifndef IXMPPURIQUERIES_H
 #define IXMPPURIQUERIES_H
+#include <QObject>
 
 #include <QUrl>
 #include <QMultiMap>

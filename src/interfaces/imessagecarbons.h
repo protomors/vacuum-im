@@ -1,5 +1,6 @@
 #ifndef IMESSAGECARBOMS_H
 #define IMESSAGECARBOMS_H
+#include <QObject>
 
 #include <QString>
 #include <utils/jid.h>

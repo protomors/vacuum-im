@@ -1,5 +1,6 @@
 #ifndef IPRIVACYLISTS_H
 #define IPRIVACYLISTS_H
+#include <QObject>
 
 #include <QDialog>
 #include <interfaces/irostermanager.h>

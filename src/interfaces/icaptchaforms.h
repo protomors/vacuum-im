@@ -1,5 +1,6 @@
 #ifndef ICAPTCHAFORMS_H
 #define ICAPTCHAFORMS_H
+#include <QObject>
 
 #include <QString>
 #include <interfaces/idataforms.h>

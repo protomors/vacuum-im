@@ -1,5 +1,6 @@
 #ifndef IMULTIUSERCHAT_H
 #define IMULTIUSERCHAT_H
+#include <QObject>
 
 #include <QMenuBar>
 #include <QTreeView>

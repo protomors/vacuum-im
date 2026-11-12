@@ -1,5 +1,6 @@
 #ifndef IROSTERSVIEW_H
 #define IROSTERSVIEW_H
+#include <QObject>
 
 #include <QMap>
 #include <QVariant>

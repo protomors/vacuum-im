@@ -1,5 +1,6 @@
 #ifndef IMESSAGESTYLEMANAGER_H
 #define IMESSAGESTYLEMANAGER_H
+#include <QObject>
 
 #include <QUrl>
 #include <QString>

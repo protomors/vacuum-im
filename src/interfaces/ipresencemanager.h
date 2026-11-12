@@ -1,5 +1,6 @@
 #ifndef IPRESENCEMANAGER_H
 #define IPRESENCEMANAGER_H
+#include <QObject>
 
 #include <QList>
 #include <QDateTime>

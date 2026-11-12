@@ -1,5 +1,6 @@
 #ifndef IDATASTREAMSMANAGER_H
 #define IDATASTREAMSMANAGER_H
+#include <QObject>
 
 #include <QMap>
 #include <QUuid>

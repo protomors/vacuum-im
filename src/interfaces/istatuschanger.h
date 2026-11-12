@@ -1,5 +1,6 @@
 #ifndef ISTATUSCHANGER_H
 #define ISTATUSCHANGER_H
+#include <QObject>
 
 #include <utils/jid.h>
 #include <utils/menu.h>

@@ -1,5 +1,6 @@
 #ifndef IAVATARS_H
 #define IAVATARS_H
+#include <QObject>
 
 #include <QImage>
 #include <utils/jid.h>

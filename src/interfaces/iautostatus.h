@@ -1,5 +1,6 @@
 #ifndef IAUTOSTATUS_H
 #define IAUTOSTATUS_H
+#include <QObject>
 
 #include <QUuid>
 

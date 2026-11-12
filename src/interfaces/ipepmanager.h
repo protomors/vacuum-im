@@ -1,5 +1,6 @@
 #ifndef IPEPMANAGER_H
 #define IPEPMANAGER_H
+#include <QObject>
 
 #include <QDomElement>
 #include <utils/jid.h>

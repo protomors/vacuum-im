@@ -1,5 +1,6 @@
 #ifndef ICOMMANDS_H
 #define ICOMMANDS_H
+#include <QObject>
 
 #include <QDomElement>
 #include <interfaces/idataforms.h>

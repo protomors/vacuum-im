@@ -1,5 +1,6 @@
 #ifndef IREGISTRATION_H
 #define IREGISTRATION_H
+#include <QObject>
 
 #include <QUrl>
 #include <interfaces/idataforms.h>

@@ -1,5 +1,6 @@
 #ifndef IFILEMESSAGEARCHIVE_H
 #define IFILEMESSAGEARCHIVE_H
+#include <QObject>
 
 #include <interfaces/imessagearchiver.h>
 

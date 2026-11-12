@@ -1,5 +1,6 @@
 #ifndef IANNOTATIONS_H
 #define IANNOTATIONS_H
+#include <QObject>
 
 #include <QDialog>
 #include <QDateTime>

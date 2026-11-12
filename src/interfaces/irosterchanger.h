@@ -1,5 +1,6 @@
 #ifndef IROSTERCHANGER_H
 #define IROSTERCHANGER_H
+#include <QObject>
 
 #include <QDialog>
 #include <QVBoxLayout>

@@ -1,5 +1,6 @@
 #ifndef IMETACONTACTS_H
 #define IMETACONTACTS_H
+#include <QObject>
 
 #include <QSet>
 #include <QUuid>

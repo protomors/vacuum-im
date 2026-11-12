@@ -1,5 +1,6 @@
 #ifndef IMESSAGEPROCESSOR_H
 #define IMESSAGEPROCESSOR_H
+#include <QObject>
 
 #include <QTextDocument>
 #include <interfaces/inotifications.h>

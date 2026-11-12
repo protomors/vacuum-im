@@ -1,5 +1,6 @@
 #ifndef ICLIENTINFO_H
 #define ICLIENTINFO_H
+#include <QObject>
 
 #include <QDateTime>
 #include <utils/jid.h>

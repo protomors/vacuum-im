@@ -1,5 +1,6 @@
 #ifndef ICHATSTATES_H
 #define ICHATSTATES_H
+#include <QObject>
 
 #include <utils/jid.h>
 

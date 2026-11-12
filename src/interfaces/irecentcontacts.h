@@ -1,5 +1,6 @@
 #ifndef IRECENTCONTACTS_H
 #define IRECENTCONTACTS_H
+#include <QObject>
 
 #include <QIcon>
 #include <QList>

@@ -1,5 +1,6 @@
 #ifndef ISERVERMESSAGEARCHIVE_H
 #define ISERVERMESSAGEARCHIVE_H
+#include <QObject>
 
 #include <interfaces/imessagearchiver.h>
 

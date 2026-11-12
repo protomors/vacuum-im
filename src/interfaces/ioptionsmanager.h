@@ -1,5 +1,6 @@
 #ifndef IOPTIONSMANAGER_H
 #define IOPTIONSMANAGER_H
+#include <QObject>
 
 #include <QList>
 #include <QString>

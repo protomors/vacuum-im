@@ -1,5 +1,6 @@
 #ifndef IACCOUNTMANAGER_H
 #define IACCOUNTMANAGER_H
+#include <QObject>
 
 #include <QUuid>
 #include <QString>
