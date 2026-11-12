@@ -1,7 +1,8 @@
 #include "textmanager.h"
 #include <functional>
 
-#include <QRegExp>
+#include <QRegularExpression>
+#include <QStringView>
 #include <QTextBlock>
 #include <QTextCursor>
 
@@ -14,14 +15,15 @@ TextManager::TextManager()
 
 QString TextManager::getDocumentBody(const QTextDocument &ADocument)
 {
-	QRegExp body("<body.*>(.*)</body>");
-	body.setMinimal(false);
+	const QRegularExpression body("<body.*>(.*)</body>");
 
 	QString html = ADocument.toHtml();
-	html = html.indexOf(body)>=0 ? body.cap(1).trimmed() : html;
+	const QRegularExpressionMatch bodyMatch = body.match(html);
+	html = bodyMatch.hasMatch() ? bodyMatch.captured(1).trimmed() : html;
 
 	// XXX Replace <P> inserted by QTextDocument with <SPAN>
-	if (html.leftRef(3).compare(QString("<p "), Qt::CaseInsensitive)==0 && html.rightRef(4).compare(QString("</p>"), Qt::CaseInsensitive)==0)
+	const QStringView htmlView(html);
+	if (htmlView.left(3).compare(QLatin1String("<p "), Qt::CaseInsensitive)==0 && htmlView.right(4).compare(QLatin1String("</p>"), Qt::CaseInsensitive)==0)
 	{
 		html.replace(1, 1, "span");
 		html.replace(html.length() - 2, 1, "span");

@@ -181,7 +181,7 @@ QString Jid::pBare() const
 QString Jid::uBare() const
 {
 	QString ubare;
-	if (d->FNode.string())
+	if (!d->FNode.isNull())
 	{
 		ubare += unescape(d->FNode.toString());
 		ubare += CharDog;
@@ -203,7 +203,7 @@ QString Jid::pFull() const
 QString Jid::uFull() const
 {
 	QString ufull = uBare();
-	if (d->FResource.string())
+	if (!d->FResource.isNull())
 	{
 		ufull += CharSlash;
 		ufull += d->FResource.toString();
@@ -411,58 +411,53 @@ Jid &Jid::parseFromString(const QString &AJidStr)
 				slash = AJidStr.size();
 			int at = AJidStr.lastIndexOf(CharDog, slash-AJidStr.size()-1);
 
-			// Build normal JID
+			// Build normal JID. Views are taken after FFull stops changing:
+			// QStringView points at the character data, unlike QStringRef.
 			dd->FFull = QString();
+			int nodePos = -1, nodeLen = 0;
+			int domainPos = -1, domainLen = 0;
+			int resourcePos = -1, resourceLen = 0;
 
 			if (at > 0)
 			{
+				nodePos = dd->FFull.size();
 				dd->FFull += AJidStr.left(at);
-				dd->FNode = QStringRef(&dd->FFull,0,dd->FFull.size());
+				nodeLen = dd->FFull.size() - nodePos;
 				dd->FFull.append(CharDog);
-			}
-			else
-			{
-				dd->FNode = QStringRef(NULL,0,0);
 			}
 
 			if (slash-at-1 > 0)
 			{
-				int nodeSize = dd->FFull.size();
+				domainPos = dd->FFull.size();
 				dd->FFull += AJidStr.mid(at+1,slash-at-1);
-				dd->FDomain = QStringRef(&dd->FFull,nodeSize,dd->FFull.size()-nodeSize);
-			}
-			else
-			{
-				dd->FDomain = QStringRef(NULL,0,0);
+				domainLen = dd->FFull.size() - domainPos;
 			}
 
-			if (!dd->FFull.isEmpty())
-			{
-				dd->FBare = QStringRef(&dd->FFull,0,dd->FFull.size());
-			}
-			else
-			{
-				dd->FBare = QStringRef(NULL,0,0);
-			}
+			const int bareEnd = dd->FFull.size();
 
 			if (slash<AJidStr.size()-1)
 			{
 				dd->FFull.append(CharSlash);
-				int bareSize = dd->FFull.size();
+				resourcePos = dd->FFull.size();
 				dd->FFull += AJidStr.right(AJidStr.size()-slash-1);
-				dd->FResource = QStringRef(&dd->FFull,bareSize,dd->FFull.size()-bareSize);
-			}
-			else
-			{
-				dd->FResource = QStringRef(NULL,0,0);
+				resourceLen = dd->FFull.size() - resourcePos;
 			}
 
-			//Build prepared JID
+			dd->FNode = nodePos<0 ? QStringView() : QStringView(dd->FFull).mid(nodePos, nodeLen);
+			dd->FDomain = domainPos<0 ? QStringView() : QStringView(dd->FFull).mid(domainPos, domainLen);
+			dd->FBare = dd->FFull.isEmpty() ? QStringView() : QStringView(dd->FFull).mid(0, bareEnd);
+			dd->FResource = resourcePos<0 ? QStringView() : QStringView(dd->FFull).mid(resourcePos, resourceLen);
+
+			// Build prepared JID. Views are taken after FPrepFull stops changing.
 			dd->FPrepFull = QString();
+			int prepNodePos = -1, prepNodeLen = 0;
+			int prepDomainPos = -1, prepDomainLen = 0;
+			int prepResourcePos = -1, prepResourceLen = 0;
 
-			if (dd->FNode.string())
+			if (!dd->FNode.isNull())
 			{
 				QString prepNode = nodePrepare(dd->FNode.toString());
+				prepNodePos = 0;
 				if (!prepNode.isEmpty())
 				{
 					dd->FPrepFull += prepNode;
@@ -473,18 +468,17 @@ Jid &Jid::parseFromString(const QString &AJidStr)
 					dd->FPrepFull += dd->FNode.toString();
 					dd->FNodeValid = false;
 				}
-				dd->FPrepNode = QStringRef(&dd->FPrepFull,0,dd->FPrepFull.size());
+				prepNodeLen = dd->FPrepFull.size();
 				dd->FPrepFull.append(CharDog);
 			}
 			else
 			{
-				dd->FPrepNode = QStringRef(NULL,0,0);
 				dd->FNodeValid = true;
 			}
 
-			if (dd->FDomain.string())
+			if (!dd->FDomain.isNull())
 			{
-				int nodeSize = dd->FPrepFull.size();
+				prepDomainPos = dd->FPrepFull.size();
 				QString prepDomain = domainPrepare(dd->FDomain.toString());
 				if (!prepDomain.isEmpty())
 				{
@@ -496,27 +490,19 @@ Jid &Jid::parseFromString(const QString &AJidStr)
 					dd->FPrepFull += dd->FDomain.toString();
 					dd->FDomainValid = false;
 				}
-				dd->FPrepDomain = QStringRef(&dd->FPrepFull,nodeSize,dd->FPrepFull.size()-nodeSize);
+				prepDomainLen = dd->FPrepFull.size() - prepDomainPos;
 			}
 			else
 			{
-				dd->FPrepDomain = QStringRef(NULL,0,0);
 				dd->FDomainValid = false;
 			}
 
-			if (!dd->FPrepFull.isEmpty())
-			{
-				dd->FPrepBare = QStringRef(&dd->FPrepFull,0,dd->FPrepFull.size());
-			}
-			else
-			{
-				dd->FPrepBare = QStringRef(NULL,0,0);
-			}
+			const int prepBareEnd = dd->FPrepFull.size();
 
-			if (dd->FResource.string())
+			if (!dd->FResource.isNull())
 			{
 				dd->FPrepFull.append(CharSlash);
-				int bareSize = dd->FPrepFull.size();
+				prepResourcePos = dd->FPrepFull.size();
 				QString prepResource = resourcePrepare(dd->FResource.toString());
 				if (!prepResource.isEmpty())
 				{
@@ -528,21 +514,25 @@ Jid &Jid::parseFromString(const QString &AJidStr)
 					dd->FPrepFull += dd->FResource.toString();
 					dd->FResourceValid = false;
 				}
-				dd->FPrepResource = QStringRef(&dd->FPrepFull,bareSize,dd->FPrepFull.size()-bareSize);
+				prepResourceLen = dd->FPrepFull.size() - prepResourcePos;
 			}
 			else
 			{
-				dd->FPrepResource = QStringRef(NULL,0,0);
 				dd->FResourceValid = true;
 			}
+
+			dd->FPrepNode = prepNodePos<0 ? QStringView() : QStringView(dd->FPrepFull).mid(prepNodePos, prepNodeLen);
+			dd->FPrepDomain = prepDomainPos<0 ? QStringView() : QStringView(dd->FPrepFull).mid(prepDomainPos, prepDomainLen);
+			dd->FPrepBare = dd->FPrepFull.isEmpty() ? QStringView() : QStringView(dd->FPrepFull).mid(0, prepBareEnd);
+			dd->FPrepResource = prepResourcePos<0 ? QStringView() : QStringView(dd->FPrepFull).mid(prepResourcePos, prepResourceLen);
 		}
 		else
 		{
 			dd->FFull = dd->FPrepFull = QString();
-			dd->FBare = dd->FPrepBare = QStringRef(NULL,0,0);
-			dd->FNode = dd->FPrepNode = QStringRef(NULL,0,0);
-			dd->FDomain = dd->FPrepDomain = QStringRef(NULL,0,0);
-			dd->FResource = dd->FPrepResource = QStringRef(NULL,0,0);
+			dd->FBare = dd->FPrepBare = QStringView();
+			dd->FNode = dd->FPrepNode = QStringView();
+			dd->FDomain = dd->FPrepDomain = QStringView();
+			dd->FResource = dd->FPrepResource = QStringView();
 			dd->FNodeValid = dd->FDomainValid = dd->FResourceValid = false;
 		}
 		FJidCache.insert(AJidStr,*this);

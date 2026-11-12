@@ -3,7 +3,6 @@
 
 #include <QDir>
 #include <QUuid>
-#include <QStringRef>
 #include <QMutexLocker>
 #include <QDirIterator>
 #include <QMapIterator>
