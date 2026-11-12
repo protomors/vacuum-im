@@ -1,5 +1,7 @@
 #include "rostersearch.h"
 
+#include <utils/qtcompat.h>
+
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <definitions/actiongroups.h>
@@ -208,11 +210,11 @@ void RosterSearch::startSearch()
 		}
 	}
 
-	if (filterRegExp().pattern() != pattern)
+	const QRegularExpression expression = regularExpressionFromWildcard(pattern, Qt::CaseInsensitive, false);
+	if (filterRegularExpression() != expression)
 	{
 		LOG_DEBUG(QString("Changing roster search pattern to='%1'").arg(pattern));
-		QRegExp regExp(pattern,Qt::CaseInsensitive,QRegExp::Wildcard);
-		setFilterRegExp(regExp);
+		setFilterRegularExpression(expression);
 	}
 	invalidate();
 
@@ -366,7 +368,7 @@ bool RosterSearch::filterAcceptsRow(int ARow, const QModelIndex &AParent) const
 		if (!sourceModel()->hasChildren(index))
 		{
 			bool accept = true;
-			const QRegExp regExp = filterRegExp();
+			const QRegularExpression regExp = filterRegularExpression();
 			foreach(int dataField, FFieldActions.keys())
 			{
 				if (isSearchFieldEnabled(dataField))

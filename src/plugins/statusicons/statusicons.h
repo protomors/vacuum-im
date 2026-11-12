@@ -1,7 +1,6 @@
 #ifndef STATUSICONS_H
 #define STATUSICONS_H
 
-#include <QRegExp>
 #include <interfaces/ipluginmanager.h>
 #include <interfaces/istatusicons.h>
 #include <interfaces/irostermanager.h>

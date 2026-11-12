@@ -1,4 +1,5 @@
 #include "archiveviewwindow.h"
+#include <QRegularExpression>
 #include <utils/qtcompat.h>
 
 #include <QLocale>
@@ -1046,11 +1047,11 @@ QString ArchiveViewWindow::showMessage(const Message &AMessage, const IMessageSt
 		bool meMessage = false;
 		if (!AOptions.senderName.isEmpty())
 		{
-			static const QRegExp me("/me\\s");
+			static const QRegularExpression me(QRegularExpression::anchoredPattern("/me\\s"));
 
 			QTextCursor cursor(&doc);
 			cursor.movePosition(QTextCursor::NextCharacter,QTextCursor::KeepAnchor,4);
-			if (me.exactMatch(cursor.selectedText()))
+			if (me.match(cursor.selectedText()).hasMatch())
 			{
 				meMessage = true;
 				cursor.removeSelectedText();

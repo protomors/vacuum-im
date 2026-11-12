@@ -1,5 +1,7 @@
 #include "spellhighlighter.h"
 
+#include <QRegularExpression>
+
 #include "spellchecker.h"
 #include "spellbackend.h"
 
@@ -25,18 +27,21 @@ void SpellHighlighter::highlightBlock(const QString &AText)
 	if (FEnabled)
 	{
 		// Match words (minimally) excluding digits within a word
-		static const QRegExp expression("\\b[^\\s\\d]+\\b");
+		static const QRegularExpression expression("\\b[^\\s\\d]+\\b");
 
 		int index = 0;
-		while ((index = expression.indexIn(AText, index)) != -1)
+		QRegularExpressionMatch match = expression.match(AText, index);
+		while (match.hasMatch())
 		{
-			int length = expression.matchedLength();
-			if (!isUserNickName(expression.cap()))
+			index = match.capturedStart();
+			const int length = match.capturedLength();
+			if (!isUserNickName(match.captured()))
 			{
-				if (!SpellBackend::instance()->isCorrect(expression.cap()))
+				if (!SpellBackend::instance()->isCorrect(match.captured()))
 					setFormat(index, length, FCharFormat);
 			}
 			index += length;
+			match = expression.match(AText, index);
 		}
 	}
 }

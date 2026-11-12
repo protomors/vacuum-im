@@ -1,5 +1,7 @@
 #include "createmultichatwizard.h"
 
+#include <QRegularExpression>
+
 #include <QSpacerItem>
 #include <QGridLayout>
 #include <QVBoxLayout>
@@ -835,14 +837,13 @@ void RoomPage::onDiscoItemsRecieved(const IDiscoItems &AItems)
 
 				if (!discoItem.name.isEmpty())
 				{
-					QRegExp rx("\\((\\d+)\\)$");
-
-					int pos = rx.indexIn(discoItem.name);
-					if (pos != -1)
+					const QRegularExpression rx("\\((\\d+)\\)$");
+					const QRegularExpressionMatch users = rx.match(discoItem.name);
+					if (users.hasMatch())
 					{
-						nameItem->setText(QString("%1 (%2)").arg(discoItem.name.left(pos).trimmed(),discoItem.itemJid.uNode()));
-						usersItem->setText(rx.cap(1));
-						usersItem->setData(rx.cap(1).toInt(), RMR_SORT);
+						nameItem->setText(QString("%1 (%2)").arg(discoItem.name.left(users.capturedStart()).trimmed(),discoItem.itemJid.uNode()));
+						usersItem->setText(users.captured(1));
+						usersItem->setData(users.captured(1).toInt(), RMR_SORT);
 					}
 					else
 					{

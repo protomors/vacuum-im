@@ -2,6 +2,7 @@
 #define IDATAFORMS_H
 #include <QObject>
 
+#include <QRegularExpression>
 #include <QUrl>
 #include <QDialog>
 #include <QTableWidget>
@@ -66,7 +67,7 @@ struct IDataValidate
 	QString method;
 	QString min;
 	QString max;
-	QRegExp regexp;
+	QRegularExpression regexp;
 	QString listMin;
 	QString listMax;
 };

@@ -1,4 +1,6 @@
 #include "multiuserchatwindow.h"
+
+#include <QRegularExpression>
 #include <utils/qtcompat.h>
 
 #include <QPair>
@@ -1586,8 +1588,8 @@ bool MultiUserChatWindow::isMentionMessage(const Message &AMessage) const
 		nick += 'z';
 	}
 
-	QRegExp mention(QString("\\b%1\\b").arg(QRegExp::escape(nick)));
-	return message.indexOf(mention)>=0;
+	const QRegularExpression mention(QString("\\b%1\\b").arg(QRegularExpression::escape(nick)));
+	return mention.match(message).hasMatch();
 }
 
 void MultiUserChatWindow::setMultiChatMessageStyle()

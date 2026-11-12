@@ -2,6 +2,10 @@
 
 #include <QTimer>
 #include <QRegularExpression>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include <QRegExp>
+#endif
+#include <utils/qtcompat.h>
 
 #define FIRST_VALID_ROLE 0
 
@@ -131,7 +135,7 @@ QList<QStandardItem *> AdvancedItemModel::findItems(const QMultiMap<int, QVarian
 							.match(itemValue.toString()).hasMatch();
 						break;
 					case Qt::MatchWildcard:
-						accepted = QRegExp(findValue.toString(), cs, QRegExp::Wildcard).exactMatch(itemValue.toString());
+						accepted = regularExpressionFromWildcard(findValue.toString(), cs, true).match(itemValue.toString()).hasMatch();
 						break;
 					case Qt::MatchStartsWith:
 						accepted = itemValue.toString().startsWith(findValue.toString(), cs);

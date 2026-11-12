@@ -1,6 +1,7 @@
 #include "autostatus.h"
 
 #include <QCursor>
+#include <QRegularExpression>
 #include <definitions/optionnodes.h>
 #include <definitions/optionvalues.h>
 #include <definitions/optionwidgetorders.h>
@@ -197,14 +198,16 @@ void AutoStatus::removeRule(const QUuid &ARuleId)
 
 void AutoStatus::replaceDateTime(QString &AText, const QString &APattern, const QDateTime &ADateTime)
 {
+	const QRegularExpression regExp(APattern, QRegularExpression::InvertedGreedinessOption);
 	int pos = 0;
-	QRegExp regExp(APattern);
-	regExp.setMinimal(true);
-	while ((pos = regExp.indexIn(AText, pos)) != -1)
+	QRegularExpressionMatch match = regExp.match(AText, pos);
+	while (match.hasMatch())
 	{
-		QString replText = !regExp.cap(1).isEmpty() ? ADateTime.toString(regExp.cap(1)) : ADateTime.toString();
-		AText.replace(pos,regExp.matchedLength(),replText);
+		pos = match.capturedStart();
+		QString replText = !match.captured(1).isEmpty() ? ADateTime.toString(match.captured(1)) : ADateTime.toString();
+		AText.replace(pos, match.capturedLength(), replText);
 		pos += replText.size();
+		match = regExp.match(AText, pos);
 	}
 }
 

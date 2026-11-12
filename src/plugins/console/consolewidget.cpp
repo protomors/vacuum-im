@@ -1,6 +1,6 @@
 #include "consolewidget.h"
 
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QLineEdit>
 #include <QInputDialog>
 #include <definitions/optionvalues.h>
@@ -168,15 +168,16 @@ void ConsoleWidget::colorXml(QString &AXml) const
 
 	for (int i=0; i<changesCount; i++)
 	{
-		QRegExp regexp(changes[i].regexp);
-		regexp.setMinimal(changes[i].minimal);
-		AXml.replace(regexp,changes[i].replace);
+		QRegularExpression::PatternOptions options = QRegularExpression::NoPatternOption;
+		if (changes[i].minimal)
+			options |= QRegularExpression::InvertedGreedinessOption;
+		AXml.replace(QRegularExpression(changes[i].regexp, options), changes[i].replace);
 	}
 }
 
 void ConsoleWidget::hidePasswords(QString &AXml) const
 {
-	static const QRegExp passRegExp("<password>.*</password>", Qt::CaseInsensitive);
+	static const QRegularExpression passRegExp("<password>.*</password>", QRegularExpression::CaseInsensitiveOption);
 	static const QString passNewStr = "<password>[password]</password>";
 	AXml.replace(passRegExp,passNewStr);
 }

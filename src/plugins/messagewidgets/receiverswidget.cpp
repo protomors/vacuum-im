@@ -1,5 +1,7 @@
 #include "receiverswidget.h"
 
+#include <utils/qtcompat.h>
+
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -98,7 +100,7 @@ bool ReceiversProxyModel::filterAcceptsRow(int AModelRow, const QModelIndex &AMo
 				return true;
 		return false;
 	}
-	else if (!FOfflineVisible && filterRegExp().isEmpty() && index.data(RDR_SHOW).isValid())
+	else if (!FOfflineVisible && filterRegularExpression().pattern().isEmpty() && index.data(RDR_SHOW).isValid())
 	{
 		int show = index.data(RDR_SHOW).toInt();
 		if (show==IPresence::Offline || show==IPresence::Error)
@@ -970,14 +972,14 @@ void ReceiversWidget::onModelItemDataChanged(QStandardItem *AItem, int ARole)
 void ReceiversWidget::onViewIndexExpanded(const QModelIndex &AIndex)
 {
 	QStandardItem *item = mapViewToModel(AIndex);
-	if (item!=NULL && FProxyModel->filterRegExp().isEmpty())
+	if (item!=NULL && FProxyModel->filterRegularExpression().pattern().isEmpty())
 		item->setData(false,RIDR_ITEM_COLLAPSED);
 }
 
 void ReceiversWidget::onViewIndexCollapsed(const QModelIndex &AIndex)
 {
 	QStandardItem *item = mapViewToModel(AIndex);
-	if (item!=NULL && FProxyModel->filterRegExp().isEmpty())
+	if (item!=NULL && FProxyModel->filterRegularExpression().pattern().isEmpty())
 		item->setData(true,RIDR_ITEM_COLLAPSED);
 }
 
@@ -1204,8 +1206,8 @@ void ReceiversWidget::onDeleteDelayedItems()
 
 void ReceiversWidget::onStartSearchContacts()
 {
-	FProxyModel->setFilterWildcard(ui.sleSearch->text());
-	if (!FProxyModel->filterRegExp().isEmpty())
+	FProxyModel->setFilterRegularExpression(regularExpressionFromWildcard(ui.sleSearch->text(), Qt::CaseSensitive, false));
+	if (!FProxyModel->filterRegularExpression().pattern().isEmpty())
 		ui.trvReceivers->expandAll();
 	else
 		restoreExpandState(FModel->invisibleRootItem());

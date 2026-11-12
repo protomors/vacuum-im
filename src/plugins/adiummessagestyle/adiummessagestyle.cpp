@@ -3,7 +3,7 @@
 #include <QUrl>
 #include <QDir>
 #include <QFile>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QMimeData>
 #include <QWebFrame>
 #include <QTextBlock>
@@ -630,10 +630,9 @@ void AdiumMessageStyle::fillContentKeywords(QString &AHtml, const IMessageStyleC
 	QString time = AOptions.time.toString(timeFormat).toHtmlEscaped();
 	AHtml.replace("%time%", time);
 
-	QRegExp timeRegExp("%time\\{([^}]*)\\}%");
-	for (int pos=0; pos!=-1; pos = timeRegExp.indexIn(AHtml, pos))
-		if (!timeRegExp.cap(0).isEmpty())
-			AHtml.replace(pos, timeRegExp.cap(0).length(), time);
+	const QRegularExpression timeRegExp("%time\\{([^}]*)\\}%");
+	for (QRegularExpressionMatch match = timeRegExp.match(AHtml); match.hasMatch() && !match.captured(0).isEmpty(); match = timeRegExp.match(AHtml, match.capturedStart()))
+		AHtml.replace(match.capturedStart(), match.capturedLength(), time);
 
 	QString senderColor = AOptions.senderColor;
 	if (senderColor.isEmpty())
@@ -645,10 +644,9 @@ void AdiumMessageStyle::fillContentKeywords(QString &AHtml, const IMessageStyleC
 	}
 	AHtml.replace("%senderColor%",senderColor);
 
-	QRegExp scolorRegExp("%senderColor\\{([^}]*)\\}%");
-	for (int pos=0; pos!=-1; pos = scolorRegExp.indexIn(AHtml, pos))
-		if (!scolorRegExp.cap(0).isEmpty())
-			AHtml.replace(pos, scolorRegExp.cap(0).length(), senderColor);
+	const QRegularExpression scolorRegExp("%senderColor\\{([^}]*)\\}%");
+	for (QRegularExpressionMatch match = scolorRegExp.match(AHtml); match.hasMatch() && !match.captured(0).isEmpty(); match = scolorRegExp.match(AHtml, match.capturedStart()))
+		AHtml.replace(match.capturedStart(), match.capturedLength(), senderColor);
 
 	if (AOptions.kind == IMessageStyleContentOptions::KindStatus)
 	{
@@ -664,26 +662,23 @@ void AdiumMessageStyle::fillContentKeywords(QString &AHtml, const IMessageStyleC
 
 		QString rgbaColor;
 		QColor bgColor(AOptions.textBGColor);
-		QRegExp colorRegExp("%textbackgroundcolor\\{([^}]*)\\}%");
-		for (int pos=0; pos!=-1; pos = colorRegExp.indexIn(AHtml, pos))
+		const QRegularExpression colorRegExp("%textbackgroundcolor\\{([^}]*)\\}%");
+		for (QRegularExpressionMatch match = colorRegExp.match(AHtml); match.hasMatch() && !match.captured(0).isEmpty(); match = colorRegExp.match(AHtml, match.capturedStart()))
 		{
-			if (!colorRegExp.cap(0).isEmpty())
+			if (bgColor.isValid())
 			{
-				if (bgColor.isValid())
-				{
-					int r,g,b;
-					bool ok = false;
-					qreal a = colorRegExp.cap(1).toDouble(&ok);
-					bgColor.setAlphaF(ok ? a : 1.0);
-					bgColor.getRgb(&r,&g,&b);
-					rgbaColor = QString("rgba(%1, %2, %3, %4)").arg(r).arg(g).arg(b).arg(a);
-				}
-				else if (rgbaColor.isEmpty())
-				{
-					rgbaColor = "inherit";
-				}
-				AHtml.replace(pos, colorRegExp.cap(0).length(), rgbaColor);
+				int r,g,b;
+				bool ok = false;
+				qreal a = match.captured(1).toDouble(&ok);
+				bgColor.setAlphaF(ok ? a : 1.0);
+				bgColor.getRgb(&r,&g,&b);
+				rgbaColor = QString("rgba(%1, %2, %3, %4)").arg(r).arg(g).arg(b).arg(a);
 			}
+			else if (rgbaColor.isEmpty())
+			{
+				rgbaColor = "inherit";
+			}
+			AHtml.replace(match.capturedStart(), match.capturedLength(), rgbaColor);
 		}
 	}
 }

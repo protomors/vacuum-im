@@ -1,5 +1,6 @@
 #include "messageprocessor.h"
 
+#include <QRegularExpression>
 #include <QVariant>
 #include <QTextCursor>
 #include <definitions/namespaces.h>
@@ -153,8 +154,7 @@ bool MessageProcessor::writeMessageToText(int AOrder, Message &AMessage, QTextDo
 	}
 	else if (AOrder == MWO_MESSAGEPROCESSOR_ANCHORS)
 	{
-		QRegExp regexp("\\b((https?|ftp)://|www\\.|xmpp:|magnet:|mailto:)\\S+(/|#|~|@|&|=|-|\\+|\\*|\\$|\\b)");
-		regexp.setCaseSensitivity(Qt::CaseInsensitive);
+		const QRegularExpression regexp("\\b((https?|ftp)://|www\\.|xmpp:|magnet:|mailto:)\\S+(/|#|~|@|&|=|-|\\+|\\*|\\$|\\b)", QRegularExpression::CaseInsensitiveOption);
 		for (QTextCursor cursor = ADocument->find(regexp); !cursor.isNull(); cursor = ADocument->find(regexp,cursor))
 		{
 			QTextCharFormat linkFormat = cursor.charFormat();

@@ -1,6 +1,7 @@
 #include "statusicons.h"
 
 #include <QTimer>
+#include <QRegularExpression>
 #include <QComboBox>
 #include <definitions/resources.h>
 #include <definitions/statusicons.h>
@@ -242,7 +243,7 @@ QString StatusIcons::ruleIconset(const QString &APattern, RuleType ARuleType) co
 
 void StatusIcons::insertRule(const QString &APattern, const QString &ASubStorage, RuleType ARuleType)
 {
-	if (!APattern.isEmpty() && !ASubStorage.isEmpty() && QRegExp(APattern).isValid())
+	if (!APattern.isEmpty() && !ASubStorage.isEmpty() && QRegularExpression(APattern).isValid())
 	{
 		switch (ARuleType)
 		{
@@ -317,22 +318,17 @@ QString StatusIcons::iconsetByJid(const Jid &AContactJid) const
 	QString &substorage = FJid2Storage[AContactJid];
 	if (substorage.isEmpty())
 	{
-		QRegExp regExp;
-		regExp.setCaseSensitivity(Qt::CaseSensitive);
-
 		QString contactStr = AContactJid.pFull();
 
 		for (QMap<QString, QString>::const_iterator it=FUserRules.constBegin(); substorage.isEmpty() && it!=FUserRules.constEnd(); ++it)
 		{
-			regExp.setPattern(it.key());
-			if (contactStr.contains(regExp))
+			if (contactStr.contains(QRegularExpression(it.key())))
 				substorage = it.value();
 		}
 
 		for (QMap<QString, QString>::const_iterator it=FDefaultRules.constBegin(); substorage.isEmpty() && it!=FDefaultRules.constEnd(); ++it)
 		{
-			regExp.setPattern(it.key());
-			if (contactStr.contains(regExp))
+			if (contactStr.contains(QRegularExpression(it.key())))
 				substorage = it.value();
 		}
 
@@ -532,7 +528,7 @@ void StatusIcons::onRostersViewIndexContextMenu(const QList<IRosterIndex *> &AIn
 		
 		QStringList patterns;
 		foreach(const QString &contactJid, rolesMap.value(RDR_PREP_BARE_JID))
-			patterns.append(QRegExp::escape(contactJid));
+			patterns.append(QRegularExpression::escape(contactJid));
 		updateCustomIconMenu(patterns);
 
 		if (AIndexes.count() > 1)
@@ -547,7 +543,7 @@ void StatusIcons::onRostersViewIndexContextMenu(const QList<IRosterIndex *> &AIn
 void StatusIcons::onMultiUserContextMenu(IMultiUserChatWindow *AWindow, IMultiUser *AUser, Menu *AMenu)
 {
 	Q_UNUSED(AWindow);
-	QString pattern = QString(".*@%1/%2").arg(QRegExp::escape(AUser->userJid().pDomain())).arg(QRegExp::escape(AUser->nick()));
+	QString pattern = QString(".*@%1/%2").arg(QRegularExpression::escape(AUser->userJid().pDomain())).arg(QRegularExpression::escape(AUser->nick()));
 	updateCustomIconMenu(QStringList() << pattern);
 	FCustomIconMenu->setIcon(iconByJidStatus(AUser->userJid(),IPresence::Online,SUBSCRIPTION_BOTH,false));
 	AMenu->addAction(FCustomIconMenu->menuAction(),AG_MUCM_STATUSICONS_CUSTOM,true);

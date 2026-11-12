@@ -2,7 +2,6 @@
 #define IMESSAGEARCHIVER_H
 #include <QObject>
 
-#include <QRegExp>
 #include <QMainWindow>
 #include <QStandardItemModel>
 #include <interfaces/ipluginmanager.h>

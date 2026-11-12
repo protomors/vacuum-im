@@ -1,4 +1,5 @@
 #include "viewwidget.h"
+#include <QRegularExpression>
 
 #include <QTextFrame>
 #include <QTextTable>
@@ -142,11 +143,11 @@ bool ViewWidget::appendMessage(const Message &AMessage, const IMessageStyleConte
 		IMessageStyleContentOptions options = AOptions;
 		if (AOptions.kind==IMessageStyleContentOptions::KindMessage && !AOptions.senderName.isEmpty())
 		{
-			static const QRegExp me("/me\\s");
+			static const QRegularExpression me(QRegularExpression::anchoredPattern("/me\\s"));
 
 			QTextCursor cursor(&doc);
 			cursor.movePosition(QTextCursor::NextCharacter,QTextCursor::KeepAnchor,4);
-			if (me.exactMatch(cursor.selectedText()))
+			if (me.match(cursor.selectedText()).hasMatch())
 			{
 				options.kind = IMessageStyleContentOptions::KindMeCommand;
 				cursor.removeSelectedText();
