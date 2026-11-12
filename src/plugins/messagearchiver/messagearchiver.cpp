@@ -4,6 +4,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QActionGroup>
 #include <definitions/resources.h>
 #include <definitions/menuicons.h>
 #include <definitions/shortcuts.h>

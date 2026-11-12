@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QDesktopServices>
 #include <QCryptographicHash>
+#include <QStandardPaths>
 #include <definitions/actiongroups.h>
 #include <definitions/commandline.h>
 #include <definitions/resources.h>

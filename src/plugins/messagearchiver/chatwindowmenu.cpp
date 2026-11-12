@@ -6,6 +6,7 @@
 #include <definitions/shortcuts.h>
 #include <utils/pluginhelper.h>
 #include <utils/menu.h>
+#include <QActionGroup>
 
 #define SFP_LOGGING           "logging"
 #define SFV_MUSTNOT_LOGGING   "mustnot"

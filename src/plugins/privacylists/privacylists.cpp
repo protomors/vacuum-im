@@ -11,6 +11,7 @@
 #include <definitions/menuicons.h>
 #include <definitions/stanzahandlerorders.h>
 #include <utils/logger.h>
+#include <QActionGroup>
 
 #define SHC_PRIVACY         "/iq[@type='set']/query[@xmlns='" NS_JABBER_PRIVACY "']"
 #define SHC_ROSTER          "/iq/query[@xmlns='" NS_JABBER_ROSTER "']"

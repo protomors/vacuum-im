@@ -3,6 +3,7 @@
 
 #include <QMouseEvent>
 #include <QApplication>
+#include <QActionGroup>
 #include <definitions/actiongroups.h>
 #include <definitions/toolbargroups.h>
 #include <definitions/resources.h>
