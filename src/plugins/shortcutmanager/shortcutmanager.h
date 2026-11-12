@@ -10,7 +10,8 @@
 #include <interfaces/irostersview.h>
 #include "shortcutoptionswidget.h"
 
-#define SHORTCUTMANAGER_UUID "{3F6D20F1-401D-4832-92C3-DB6687891EFD}"
+#include <QUuid>
+#define SHORTCUTMANAGER_UUID QUuid::fromString(QLatin1String("{3F6D20F1-401D-4832-92C3-DB6687891EFD}"))
 
 class ShortcutManager : 
 	public QObject,

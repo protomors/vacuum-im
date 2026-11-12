@@ -8,7 +8,8 @@
 #include <utils/jid.h>
 #include <utils/action.h>
 
-#define NOTIFICATIONS_UUID  "{59887A91-A483-4a7c-A2DE-227A01D6BC5E}"
+#include <QUuid>
+#define NOTIFICATIONS_UUID  QUuid::fromString(QLatin1String("{59887A91-A483-4a7c-A2DE-227A01D6BC5E}"))
 
 struct INotification 
 {

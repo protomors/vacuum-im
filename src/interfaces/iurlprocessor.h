@@ -5,7 +5,8 @@
 #include <QNetworkReply>
 #include <QNetworkAccessManager>
 
-#define URLPROCESSOR_UUID "{c2d1eba4-a18d-bf31-da24-bc61d33f3205}"
+#include <QUuid>
+#define URLPROCESSOR_UUID QUuid::fromString(QLatin1String("{c2d1eba4-a18d-bf31-da24-bc61d33f3205}"))
 
 class IUrlHandler
 {

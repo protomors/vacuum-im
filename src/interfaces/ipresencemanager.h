@@ -7,7 +7,8 @@
 #include <interfaces/ixmppstreammanager.h>
 #include <utils/jid.h>
 
-#define PRESENCE_UUID "{511A07C4-FFA4-43ce-93B0-8C50409AFC0E}"
+#include <QUuid>
+#define PRESENCE_UUID QUuid::fromString(QLatin1String("{511A07C4-FFA4-43ce-93B0-8C50409AFC0E}"))
 
 #define PRESENCE_TYPE_AVAILABLE     ""
 #define PRESENCE_TYPE_INVISIBLE     "invisible"

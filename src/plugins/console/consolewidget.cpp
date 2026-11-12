@@ -271,7 +271,7 @@ void ConsoleWidget::onAddContextClicked()
 
 void ConsoleWidget::onRemoveContextClicked()
 {
-	QUuid oldId = ui.cmbContext->itemData(ui.cmbContext->currentIndex()).toString();
+	QUuid oldId = QUuid::fromString(ui.cmbContext->itemData(ui.cmbContext->currentIndex()).toString());
 	if (!oldId.isNull())
 	{
 		ui.cmbContext->removeItem(ui.cmbContext->findData(oldId.toString()));
@@ -282,7 +282,7 @@ void ConsoleWidget::onRemoveContextClicked()
 void ConsoleWidget::onContextChanged(int AIndex)
 {
 	saveContext(FContext);
-	FContext = ui.cmbContext->itemData(AIndex).toString();
+	FContext = QUuid::fromString(ui.cmbContext->itemData(AIndex).toString());
 	loadContext(FContext);
 }
 

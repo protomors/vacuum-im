@@ -7,7 +7,8 @@
 #include <interfaces/ixmppstreammanager.h>
 #include "compressfeature.h"
 
-#define COMPRESS_UUID "{061D0687-B954-416d-B690-D1BA7D845D83}"
+#include <QUuid>
+#define COMPRESS_UUID QUuid::fromString(QLatin1String("{061D0687-B954-416d-B690-D1BA7D845D83}"))
 
 class CompressFeatureFactory :
 	public QObject,

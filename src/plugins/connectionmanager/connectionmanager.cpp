@@ -140,7 +140,7 @@ QList<QUuid> ConnectionManager::proxyList() const
 {
 	QList<QUuid> plist;
 	foreach(const QString &proxyId, Options::node(OPV_PROXY_ROOT).childNSpaces("proxy"))
-		plist.append(proxyId);
+		plist.append(QUuid::fromString(proxyId));
 	return plist;
 }
 
@@ -207,7 +207,7 @@ void ConnectionManager::removeProxy(const QUuid &AProxyId)
 
 QUuid ConnectionManager::defaultProxy() const
 {
-	return Options::node(OPV_PROXY_DEFAULT).value().toString();
+	return QUuid::fromString(Options::node(OPV_PROXY_DEFAULT).value().toString());
 }
 
 void ConnectionManager::setDefaultProxy(const QUuid &AProxyId)
@@ -241,7 +241,7 @@ void ConnectionManager::saveProxySettings(IOptionsDialogWidget *AWidget, Options
 
 QUuid ConnectionManager::loadProxySettings(const OptionsNode &ANode) const
 {
-	return ANode.value().toString();
+	return QUuid::fromString(ANode.value().toString());
 }
 
 QList<QSslCertificate> ConnectionManager::trustedCaCertificates(bool AWithUsers) const
@@ -431,7 +431,7 @@ void ConnectionManager::onOptionsChanged(const OptionsNode &ANode)
 {
 	if (ANode.path() == OPV_PROXY_DEFAULT)
 	{
-		QUuid proxyId = ANode.value().toString();
+		QUuid proxyId = QUuid::fromString(ANode.value().toString());
 		QNetworkProxy::setApplicationProxy(proxyById(proxyId).proxy);
 		updateConnectionSettings();
 		emit defaultProxyChanged(proxyId);

@@ -12,7 +12,8 @@
 #include <utils/menubarchanger.h>
 #include <utils/toolbarchanger.h>
 
-#define MAINWINDOW_UUID "{A6F3D775-8464-4599-AB79-97BA1BAA6E96}"
+#include <QUuid>
+#define MAINWINDOW_UUID QUuid::fromString(QLatin1String("{A6F3D775-8464-4599-AB79-97BA1BAA6E96}"))
 
 class IMainTabPage
 {

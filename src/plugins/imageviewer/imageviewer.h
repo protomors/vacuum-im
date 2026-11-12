@@ -22,7 +22,7 @@
 #include "cachemanager.h"
 #include "networkmanager.h"
 
-#define IMAGEVIEWER_UUID "{B7D4E8F2-3A1C-4D5E-9F0B-8C7A6D5E4F3A}"
+#define IMAGEVIEWER_UUID QUuid::fromString(QLatin1String("{B7D4E8F2-3A1C-4D5E-9F0B-8C7A6D5E4F3A}"))
 
 // Distance between the images of the gallery
 #define IV_GALLERY_SPACING           4

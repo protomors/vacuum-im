@@ -6,7 +6,8 @@
 #include <utils/jid.h>
 #include <utils/xmpperror.h>
 
-#define ROSTERITEMEXCHANGE_UUID "{281C3ACA-AC60-401a-B592-81DFC071A766}"
+#include <QUuid>
+#define ROSTERITEMEXCHANGE_UUID QUuid::fromString(QLatin1String("{281C3ACA-AC60-401a-B592-81DFC071A766}"))
 
 #define ROSTEREXCHANGE_ACTION_ADD       "add"
 #define ROSTEREXCHANGE_ACTION_DELETE    "delete"

@@ -16,7 +16,8 @@
 #include <utils/menu.h>
 #include <utils/jid.h>
 
-#define MULTIUSERCHAT_UUID "{EB960F92-59A9-4322-A646-F9AB4913706C}"
+#include <QUuid>
+#define MULTIUSERCHAT_UUID QUuid::fromString(QLatin1String("{EB960F92-59A9-4322-A646-F9AB4913706C}"))
 
 #define MUC_ROLE_NONE                   "none"
 #define MUC_ROLE_VISITOR                "visitor"

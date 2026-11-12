@@ -5,7 +5,8 @@
 #include <utils/jid.h>
 #include <utils/menu.h>
 
-#define STATUSCHANGER_UUID "{F0D57BD2-0CD4-4606-9CEE-15977423F8DC}"
+#include <QUuid>
+#define STATUSCHANGER_UUID QUuid::fromString(QLatin1String("{F0D57BD2-0CD4-4606-9CEE-15977423F8DC}"))
 
 #define STATUS_NULL_ID                      0
 #define STATUS_CONNECTING_ID                -3

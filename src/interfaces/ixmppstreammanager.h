@@ -8,7 +8,8 @@
 #include <utils/stanza.h>
 #include <utils/xmpperror.h>
 
-#define XMPPSTREAMS_UUID "{8074A197-3B77-4bb0-9BD3-6F06D5CB8D15}"
+#include <QUuid>
+#define XMPPSTREAMS_UUID QUuid::fromString(QLatin1String("{8074A197-3B77-4bb0-9BD3-6F06D5CB8D15}"))
 
 class IXmppStream;
 class IConnection;

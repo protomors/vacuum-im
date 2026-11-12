@@ -387,7 +387,7 @@ ArchiveHeader ArchiveViewWindow::itemHeader(const QStandardItem *AItem) const
 		header.subject = AItem->data(HDR_HEADER_SUBJECT).toString();
 		header.threadId = AItem->data(HDR_HEADER_THREAD).toString();
 		header.version = AItem->data(HDR_HEADER_VERSION).toInt();
-		header.engineId = AItem->data(HDR_HEADER_ENGINE).toString();
+		header.engineId = QUuid::fromString(AItem->data(HDR_HEADER_ENGINE).toString());
 	}
 	return header;
 }

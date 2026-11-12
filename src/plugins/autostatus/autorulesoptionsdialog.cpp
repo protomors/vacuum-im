@@ -301,7 +301,7 @@ void AutoRulesOptionsDialog::onDialogButtonBoxClicked(QAbstractButton *AButton)
 			rule.text = tbwRules->item(row,RTC_TEXT)->data(SDR_VALUE).toString();
 			rule.priority = tbwRules->item(row,RTC_PRIORITY)->data(SDR_VALUE).toInt();
 
-			QUuid ruleId = tbwRules->item(row,RTC_ENABLED)->data(SDR_VALUE).toString();
+			QUuid ruleId = QUuid::fromString(tbwRules->item(row,RTC_ENABLED)->data(SDR_VALUE).toString());
 			if (!ruleId.isNull())
 			{
 				IAutoStatusRule oldRule = FAutoStatus->ruleValue(ruleId);

@@ -6,7 +6,8 @@
 #include <utils/jid.h>
 #include <utils/xmpperror.h>
 
-#define JABBERSEARCH_UUID "{F66BCFC9-F6BB-43b2-8101-8CA41EF227AF}"
+#include <QUuid>
+#define JABBERSEARCH_UUID QUuid::fromString(QLatin1String("{F66BCFC9-F6BB-43b2-8101-8CA41EF227AF}"))
 
 struct ISearchItem 
 {

@@ -5,7 +5,7 @@
 #include <QUuid>
 #include <QDateTime>
 
-#define STATISTICS_UUID "{C9344821-9406-4089-A9D0-D6FD4919CF8F}"
+#define STATISTICS_UUID QUuid::fromString(QLatin1String("{C9344821-9406-4089-A9D0-D6FD4919CF8F}"))
 
 // Measurement Protocol - https://developers.google.com/analytics/devguides/collection/protocol/v1/
 

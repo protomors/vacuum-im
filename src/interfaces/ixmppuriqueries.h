@@ -6,7 +6,8 @@
 #include <QMultiMap>
 #include <utils/jid.h>
 
-#define XMPPURIQUERIES_UUID "{fdd3ab79-25da-4f96-a3d5-add3188047aa}"
+#include <QUuid>
+#define XMPPURIQUERIES_UUID QUuid::fromString(QLatin1String("{fdd3ab79-25da-4f96-a3d5-add3188047aa}"))
 
 #define XMPP_URI_SCHEME     "xmpp"
 

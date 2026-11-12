@@ -7,7 +7,8 @@
 #include "adiummessagestyle.h"
 #include "adiumoptionswidget.h"
 
-#define ADIUMMESSAGESTYLE_UUID    "{703bae73-1905-4840-a186-c70b359d4f21}"
+#include <QUuid>
+#define ADIUMMESSAGESTYLE_UUID    QUuid::fromString(QLatin1String("{703bae73-1905-4840-a186-c70b359d4f21}"))
 
 class AdiumMessageStyleEngine :
 	public QObject,

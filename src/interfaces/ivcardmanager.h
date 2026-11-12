@@ -11,7 +11,8 @@
 #include <utils/jid.h>
 #include <utils/xmpperror.h>
 
-#define VCARD_UUID "{8AD31549-AD09-4e84-BD6F-41928B3BDA7E}"
+#include <QUuid>
+#define VCARD_UUID QUuid::fromString(QLatin1String("{8AD31549-AD09-4e84-BD6F-41928B3BDA7E}"))
 
 #define VCARD_GENDER_MALE        "Male"
 #define VCARD_GENDER_FEMALE      "Female"

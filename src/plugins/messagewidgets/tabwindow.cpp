@@ -609,7 +609,7 @@ void TabWindow::onOptionsChanged(const OptionsNode &ANode)
 {
 	if (ANode.path() == OPV_MESSAGES_TABWINDOWS_DEFAULT)
 	{
-		FSetAsDefault->setChecked(FWindowId==ANode.value().toString());
+		FSetAsDefault->setChecked(FWindowId==QUuid::fromString(ANode.value().toString()));
 		FDeleteWindow->setVisible(!FSetAsDefault->isChecked());
 	}
 	else if (ANode.path() == OPV_MESSAGES_COMBINEWITHROSTER)
@@ -732,7 +732,7 @@ void TabWindow::onTabMenuActionTriggered(bool)
 		}
 		else if (tabAction == JoinTabAction)
 		{
-			IMessageTabWindow *window = FMessageWidgets->getTabWindow(action->data(ADR_TABWINDOWID).toString());
+			IMessageTabWindow *window = FMessageWidgets->getTabWindow(QUuid::fromString(action->data(ADR_TABWINDOWID).toString()));
 			removeTabPage(page);
 			window->addTabPage(page);
 			window->showWindow();

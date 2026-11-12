@@ -7,7 +7,8 @@
 #include <utils/jid.h>
 #include <utils/xmpperror.h>
 
-#define GATEWAYS_UUID "{BF34165C-DD9A-43eb-949B-926DD411E1A8}"
+#include <QUuid>
+#define GATEWAYS_UUID QUuid::fromString(QLatin1String("{BF34165C-DD9A-43eb-949B-926DD411E1A8}"))
 
 class IGateways
 {

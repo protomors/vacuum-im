@@ -2,11 +2,11 @@
 #define ICONNECTIONMANAGER_H
 #include <QObject>
 
-#define CONNECTIONMANAGER_UUID      "{B54F3B5E-3595-48c2-AB6F-249D4AD18327}"
-
-#define APPLICATION_PROXY_REF_UUID  "{b919d5c9-6def-43ba-87aa-892d49b9ac67}"
-
 #include <QUuid>
+#define CONNECTIONMANAGER_UUID      QUuid::fromString(QLatin1String("{B54F3B5E-3595-48c2-AB6F-249D4AD18327}"))
+
+#define APPLICATION_PROXY_REF_UUID  QUuid::fromString(QLatin1String("{b919d5c9-6def-43ba-87aa-892d49b9ac67}"))
+
 #include <QDialog>
 #include <QNetworkProxy>
 #include <QSslCertificate>

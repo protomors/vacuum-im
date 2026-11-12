@@ -8,7 +8,8 @@
 #include <utils/xmpperror.h>
 #include <utils/jid.h>
 
-#define REGISTRATION_UUID "{441F0DD4-C2DF-4417-B2F7-1D180C125EE3}"
+#include <QUuid>
+#define REGISTRATION_UUID QUuid::fromString(QLatin1String("{441F0DD4-C2DF-4417-B2F7-1D180C125EE3}"))
 
 struct IRegisterFields 
 {

@@ -126,7 +126,7 @@ void EditProxyDialog::onDialogButtonBoxAccepted()
 	for (int row = 0; row < ui.ltwProxyList->count(); row++)
 	{
 		QListWidgetItem *proxyItem = ui.ltwProxyList->item(row);
-		QUuid id = proxyItem->data(PDR_UUID).toString();
+		QUuid id = QUuid::fromString(proxyItem->data(PDR_UUID).toString());
 		if (!id.isNull())
 		{
 			IConnectionProxy proxy;

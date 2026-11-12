@@ -2,7 +2,8 @@
 #define IDEFAULTCONNECTION_H
 #include <QObject>
 
-#define DEFAULTCONNECTION_UUID "{68F9B5F2-5898-43f8-9DD1-19F37E9779AC}"
+#include <QUuid>
+#define DEFAULTCONNECTION_UUID QUuid::fromString(QLatin1String("{68F9B5F2-5898-43f8-9DD1-19F37E9779AC}"))
 
 #include <QSslKey>
 #include <QSslSocket>

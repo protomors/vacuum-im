@@ -115,7 +115,7 @@ QList<QUuid> AutoStatus::rules() const
 {
 	QList<QUuid> rulesIdList;
 	foreach(const QString &ruleId, Options::node(OPV_AUTOSTARTUS_ROOT).childNSpaces("rule"))
-		rulesIdList.append(ruleId);
+		rulesIdList.append(QUuid::fromString(ruleId));
 	return rulesIdList;
 }
 

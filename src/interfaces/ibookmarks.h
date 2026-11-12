@@ -7,7 +7,8 @@
 #include <QDomElement>
 #include <utils/jid.h>
 
-#define BOOKMARKS_UUID "{16C96115-9BF6-4404-BD9A-383A0EF2B346}"
+#include <QUuid>
+#define BOOKMARKS_UUID QUuid::fromString(QLatin1String("{16C96115-9BF6-4404-BD9A-383A0EF2B346}"))
 
 struct IBookmark
 {

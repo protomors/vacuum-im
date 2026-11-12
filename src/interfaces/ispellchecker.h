@@ -4,7 +4,8 @@
 #include <QObject>
 #include <QString>
 
-#define SPELLCHECKER_UUID "{0dc5fbd9-2dd4-4720-9c95-8c3393a577a5}"
+#include <QUuid>
+#define SPELLCHECKER_UUID QUuid::fromString(QLatin1String("{0dc5fbd9-2dd4-4720-9c95-8c3393a577a5}"))
 
 class ISpellChecker
 {

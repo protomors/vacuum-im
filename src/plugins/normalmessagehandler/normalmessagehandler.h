@@ -1,7 +1,8 @@
 #ifndef NORMALMESSAGEHANDLER_H
 #define NORMALMESSAGEHANDLER_H
 
-#define NORMALMESSAGEHANDLER_UUID "{8592e3c3-ef5e-42a9-91c9-faf1ed9a91cc}"
+#include <QUuid>
+#define NORMALMESSAGEHANDLER_UUID QUuid::fromString(QLatin1String("{8592e3c3-ef5e-42a9-91c9-faf1ed9a91cc}"))
 
 #include <QQueue>
 #include <QMultiMap>

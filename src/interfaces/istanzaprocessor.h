@@ -7,7 +7,8 @@
 #include <utils/stanza.h>
 #include <utils/xmpperror.h>
 
-#define STANZAPROCESSOR_UUID "{1175D470-5D4A-4c29-A69E-EDA46C2BC387}"
+#include <QUuid>
+#define STANZAPROCESSOR_UUID QUuid::fromString(QLatin1String("{1175D470-5D4A-4c29-A69E-EDA46C2BC387}"))
 
 class IStanzaHandler
 {

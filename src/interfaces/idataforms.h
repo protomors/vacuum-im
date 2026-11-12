@@ -10,7 +10,8 @@
 #include <utils/xmpperror.h>
 #include <utils/toolbarchanger.h>
 
-#define DATAFORMS_UUID "{2B8F89D0-EAA7-46eb-B2FD-AE30DF60E440}"
+#include <QUuid>
+#define DATAFORMS_UUID QUuid::fromString(QLatin1String("{2B8F89D0-EAA7-46eb-B2FD-AE30DF60E440}"))
 
 #define DATAVALIDATE_TYPE_STRING        "xs:string"
 #define DATAVALIDATE_TYPE_URI           "xs:anyURI"

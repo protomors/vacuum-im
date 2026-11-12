@@ -7,7 +7,8 @@
 #include <utils/message.h>
 #include <utils/xmpperror.h>
 
-#define MESSAGECARBONS_UUID "{C1F8895F-9DF4-4e95-8780-C2D88A520808}"
+#include <QUuid>
+#define MESSAGECARBONS_UUID QUuid::fromString(QLatin1String("{C1F8895F-9DF4-4e95-8780-C2D88A520808}"))
 
 class IMessageCarbons
 {

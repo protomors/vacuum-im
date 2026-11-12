@@ -7,7 +7,8 @@
 #include <utils/jid.h>
 #include <utils/xmpperror.h>
 
-#define PRIVACYLISTS_UUID "{B7B7F21A-DF0E-4f3e-B0C2-AA14976B546F}"
+#include <QUuid>
+#define PRIVACYLISTS_UUID QUuid::fromString(QLatin1String("{B7B7F21A-DF0E-4f3e-B0C2-AA14976B546F}"))
 
 #define PRIVACY_TYPE_JID              "jid"
 #define PRIVACY_TYPE_GROUP            "group"

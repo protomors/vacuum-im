@@ -4,7 +4,8 @@
 
 #include <utils/menu.h>
 
-#define ROSTERSEARCH_UUID "{69632D37-C382-8b0d-C5DA-627A65D9DC8A}"
+#include <QUuid>
+#define ROSTERSEARCH_UUID QUuid::fromString(QLatin1String("{69632D37-C382-8b0d-C5DA-627A65D9DC8A}"))
 
 class IRosterSearch 
 {

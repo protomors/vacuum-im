@@ -7,7 +7,8 @@
 #include <interfaces/ixmppstreammanager.h>
 #include <utils/jid.h>
 
-#define ROSTER_UUID "{5306971C-2488-40d9-BA8E-C83327B2EED5}"
+#include <QUuid>
+#define ROSTER_UUID QUuid::fromString(QLatin1String("{5306971C-2488-40d9-BA8E-C83327B2EED5}"))
 
 #define SUBSCRIPTION_BOTH             "both"
 #define SUBSCRIPTION_TO               "to"

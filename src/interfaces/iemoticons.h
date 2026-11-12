@@ -9,7 +9,8 @@
 #include <QStringList>
 #include <QTextDocument>
 
-#define EMOTICONS_UUID "{B22901A6-4CDC-4218-A0C9-831131DDC8BA}"
+#include <QUuid>
+#define EMOTICONS_UUID QUuid::fromString(QLatin1String("{B22901A6-4CDC-4218-A0C9-831131DDC8BA}"))
 
 class IEmoticons
 {

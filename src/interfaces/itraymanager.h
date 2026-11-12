@@ -5,7 +5,8 @@
 #include <QSystemTrayIcon>
 #include <utils/menu.h>
 
-#define TRAYMANAGER_UUID "{DF738BB8-B22B-4307-9EF8-F5833D7D2204}"
+#include <QUuid>
+#define TRAYMANAGER_UUID QUuid::fromString(QLatin1String("{DF738BB8-B22B-4307-9EF8-F5833D7D2204}"))
 
 struct ITrayNotify 
 {

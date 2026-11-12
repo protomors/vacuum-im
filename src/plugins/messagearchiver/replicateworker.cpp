@@ -361,9 +361,9 @@ void ReplicateTaskLoadModifications::run(QSqlDatabase &ADatabase)
 				qint64 version = loadModificationsQuery.value(3).toLongLong();
 				modification.action = version!=DELETED_HEADER_VERSION ? IArchiveModification::Changed : IArchiveModification::Removed;
 				foreach(const QString &engine, loadModificationsQuery.value(4).toString().split(",",Qt::SkipEmptyParts))
-					modification.sources.append(engine);
+					modification.sources.append(QUuid::fromString(engine));
 				foreach(const QString &engine, loadModificationsQuery.value(5).toString().split(",",Qt::SkipEmptyParts))
-					modification.destinations.append(engine);
+					modification.destinations.append(QUuid::fromString(engine));
 				FModifications.append(modification);
 			}
 		}

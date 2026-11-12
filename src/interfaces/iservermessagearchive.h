@@ -4,7 +4,8 @@
 
 #include <interfaces/imessagearchiver.h>
 
-#define SERVERMESSAGEARCHIVE_UUID "{5309B204-651E-4cc8-9993-6A50D66301AA}"
+#include <QUuid>
+#define SERVERMESSAGEARCHIVE_UUID QUuid::fromString(QLatin1String("{5309B204-651E-4cc8-9993-6A50D66301AA}"))
 
 class IServerMesssageArchive :
 	public IArchiveEngine

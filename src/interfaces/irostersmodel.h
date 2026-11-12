@@ -8,7 +8,8 @@
 #include <utils/advanceditem.h>
 #include <utils/advanceditemmodel.h>
 
-#define ROSTERSMODEL_UUID "{C1A1BBAB-06AF-41c8-BFBE-959F1065D80D}"
+#include <QUuid>
+#define ROSTERSMODEL_UUID QUuid::fromString(QLatin1String("{C1A1BBAB-06AF-41c8-BFBE-959F1065D80D}"))
 
 class IRosterIndex;
 class IRosterDataHolder

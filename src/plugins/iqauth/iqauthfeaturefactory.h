@@ -6,7 +6,8 @@
 #include <interfaces/ixmppstreammanager.h>
 #include "iqauthfeature.h"
 
-#define IQAUTH_UUID "{1E3645BC-313F-49e9-BD00-4CC062EE76A7}"
+#include <QUuid>
+#define IQAUTH_UUID QUuid::fromString(QLatin1String("{1E3645BC-313F-49e9-BD00-4CC062EE76A7}"))
 
 class IqAuthFeatureFactory :
 	public QObject,

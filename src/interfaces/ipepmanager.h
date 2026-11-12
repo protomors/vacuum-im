@@ -6,7 +6,8 @@
 #include <utils/jid.h>
 #include <utils/stanza.h>
 
-#define PEPMANAGER_UUID "{36dbd5c1-a3cd-11df-87fc-001cbf2edcfc}"
+#include <QUuid>
+#define PEPMANAGER_UUID QUuid::fromString(QLatin1String("{36dbd5c1-a3cd-11df-87fc-001cbf2edcfc}"))
 
 class IPEPHandler
 {

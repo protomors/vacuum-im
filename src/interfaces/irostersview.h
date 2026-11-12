@@ -11,7 +11,8 @@
 #include <utils/menu.h>
 #include <utils/advanceditemdelegate.h>
 
-#define ROSTERSVIEW_UUID "{BDD12B32-9C88-4e3c-9B36-2DCB5075288F}"
+#include <QUuid>
+#define ROSTERSVIEW_UUID QUuid::fromString(QLatin1String("{BDD12B32-9C88-4e3c-9B36-2DCB5075288F}"))
 
 struct IRostersNotify
 {

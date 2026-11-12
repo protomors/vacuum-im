@@ -6,7 +6,8 @@
 #include <QImage>
 #include <utils/jid.h>
 
-#define BIRTHDAYREMINDER_UUID "{3F41AF10-AB69-499a-B628-F5C4E6756BC7}"
+#include <QUuid>
+#define BIRTHDAYREMINDER_UUID QUuid::fromString(QLatin1String("{3F41AF10-AB69-499a-B628-F5C4E6756BC7}"))
 
 class IBirthdayReminder
 {

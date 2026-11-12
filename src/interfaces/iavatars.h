@@ -5,7 +5,8 @@
 #include <QImage>
 #include <utils/jid.h>
 
-#define AVATARTS_UUID "{22F84EAF-683E-4a20-B5E5-1FE363FD206C}"
+#include <QUuid>
+#define AVATARTS_UUID QUuid::fromString(QLatin1String("{22F84EAF-683E-4a20-B5E5-1FE363FD206C}"))
 
 class IAvatars
 {

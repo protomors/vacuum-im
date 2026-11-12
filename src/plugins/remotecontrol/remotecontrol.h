@@ -13,7 +13,8 @@
 #include <interfaces/istanzaprocessor.h>
 #include <interfaces/inotifications.h>
 
-#define REMOTECONTROL_UUID "{152A3172-9A38-11DF-A3E4-001CBF2EDCFC}"
+#include <QUuid>
+#define REMOTECONTROL_UUID QUuid::fromString(QLatin1String("{152A3172-9A38-11DF-A3E4-001CBF2EDCFC}"))
 
 class RemoteControl :
 	public QObject,

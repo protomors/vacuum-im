@@ -5,7 +5,8 @@
 #include <QDomElement>
 #include <utils/jid.h>
 
-#define PRIVATESTORAGE_UUID "{E601766D-8867-47c5-B639-92DDEC224B33}"
+#include <QUuid>
+#define PRIVATESTORAGE_UUID QUuid::fromString(QLatin1String("{E601766D-8867-47c5-B639-92DDEC224B33}"))
 
 class IPrivateStorage
 {

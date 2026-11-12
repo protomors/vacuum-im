@@ -8,7 +8,8 @@
 #include <utils/jid.h>
 #include <utils/message.h>
 
-#define MESSAGEPROCESSOR_UUID "{1282bedb-f58f-48e8-96f6-62abb15dc6e1}"
+#include <QUuid>
+#define MESSAGEPROCESSOR_UUID QUuid::fromString(QLatin1String("{1282bedb-f58f-48e8-96f6-62abb15dc6e1}"))
 
 class IMessageHandler
 {

@@ -428,7 +428,7 @@ QMultiMap<int, IOptionsDialogWidget *> MessageArchiver::optionsDialogWidgets(con
 	QStringList nodeTree = ANodeId.split(".",Qt::SkipEmptyParts);
 	if (nodeTree.count()==3 && nodeTree.at(0)==OPN_ACCOUNTS && nodeTree.at(2)=="History")
 	{
-		IAccount *account = FAccountManager!=NULL ? FAccountManager->findAccountById(nodeTree.at(1)) : NULL;
+		IAccount *account = FAccountManager!=NULL ? FAccountManager->findAccountById(QUuid::fromString(nodeTree.at(1))) : NULL;
 		if (account!=NULL && isReady(account->streamJid()))
 		{
 			OptionsNode options = account->optionsNode();
@@ -2909,7 +2909,7 @@ void MessageArchiver::onOptionsChanged(const OptionsNode &ANode)
 {
 	if (ANode.cleanPath() == OPV_HISTORY_ENGINE_ENABLED)
 	{
-		QUuid id = ANode.parent().nspace();
+		QUuid id = QUuid::fromString(ANode.parent().nspace());
 		emit archiveEngineEnableChanged(id,ANode.value().toBool());
 		emit totalCapabilitiesChanged(Jid::null);
 	}
