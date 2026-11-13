@@ -1,21 +1,19 @@
-#.github/workflows/cmake.yml 
-
 name: Vacuum-IM Build
 
 on: [push]
 
 jobs:
   build:
-    name: ubuntu 18.04
-    runs-on: ubuntu-18.04
-    
+    name: ubuntu 24.04
+    runs-on: ubuntu-24.04
+
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: packages
-      run: sudo apt update && sudo apt install build-essential qt5-default cmake openssl libqt5svg5-dev libqt5x11extras5-dev libx11-dev qtmultimedia5-dev zlib1g-dev libidn11-dev libxss-dev qttools5-dev-tools qttools5-dev libhunspell-dev
+      run: sudo apt update && sudo apt install build-essential cmake ninja-build pkg-config qt6-base-dev qt6-base-private-dev qt6-svg-dev qt6-multimedia-dev qt6-tools-dev qt6-tools-dev-tools libgl1-mesa-dev libx11-dev libxss-dev zlib1g-dev libidn-dev libhunspell-dev libssl-dev
     - name: cmake configure
-      run: mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DPLUGIN_adiummessagestyle=OFF -DSPELLCHECKER_BACKEND=HUNSPELL
-    - name: make
-      run: cd build && cmake --build . --parallel 4 
-    - name: make install
-      run: cd build && sudo make install
+      run: cmake -S . -B build -G Ninja -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DSPELLCHECKER_BACKEND=HUNSPELL
+    - name: build
+      run: cmake --build build --parallel 4
+    - name: install
+      run: sudo cmake --install build

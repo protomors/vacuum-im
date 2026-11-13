@@ -1,9 +1,9 @@
 #ifndef HUNSPELLCHECKER_H
 #define HUNSPELLCHECKER_H
 
+#include <QByteArray>
 #include <QList>
 #include <QString>
-#include <QTextCodec>
 #include "spellbackend.h"
 
 class Hunspell;
@@ -32,7 +32,7 @@ private:
 private:
 	Hunspell *FHunSpell;
 	QString FActualLang;
-	QTextCodec *FDictCodec;
+	QByteArray FDictEncoding;
 	QString FPersonalDictPath;
 	QList<QString> FDictsPaths;
 };

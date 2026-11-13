@@ -13,6 +13,41 @@ static const QChar NsCloseChar = ']';
 
 const OptionsNode OptionsNode::null = OptionsNode(QDomElement());
 
+// Qt 5 stored GUI metatype ids from 64. Qt 6 moved them to 0x1000 and 0x2000.
+// Core ids are unchanged, so accounts, passwords, and geometry still load.
+static int storedMetaType(int typeId)
+{
+	switch (typeId)
+	{
+	case 64: return QMetaType::QFont;
+	case 65: return QMetaType::QPixmap;
+	case 66: return QMetaType::QBrush;
+	case 67: return QMetaType::QColor;
+	case 68: return QMetaType::QPalette;
+	case 69: return QMetaType::QIcon;
+	case 70: return QMetaType::QImage;
+	case 71: return QMetaType::QPolygon;
+	case 72: return QMetaType::QRegion;
+	case 73: return QMetaType::QBitmap;
+	case 74: return QMetaType::QCursor;
+	case 75: return QMetaType::QKeySequence;
+	case 76: return QMetaType::QPen;
+	case 77: return QMetaType::QTextLength;
+	case 78: return QMetaType::QTextFormat;
+	case 79: return QMetaType::QTransform;
+	case 80: return QMetaType::QTransform;
+	case 81: return QMetaType::QMatrix4x4;
+	case 82: return QMetaType::QVector2D;
+	case 83: return QMetaType::QVector3D;
+	case 84: return QMetaType::QVector4D;
+	case 85: return QMetaType::QQuaternion;
+	case 86: return QMetaType::QPolygonF;
+	case 87: return QMetaType::QColorSpace;
+	case 121: return QMetaType::QSizePolicy;
+	default: return typeId;
+	}
+}
+
 static void splitOptionsPath(const QString &APath, const QString &ANSpace, QString &ANodeName, QString &ANodeNS, QString &ASubPath)
 {
 	int nsStartAt=-1, nsStopAt=-1, subStartAt=-1;
@@ -78,7 +113,7 @@ static void exportOptionNode(const OptionsNode &ANode, QDomElement &AToElem)
 			text.setData(Options::variantToString(value));
 		else
 			AToElem.appendChild(AToElem.ownerDocument().createTextNode(Options::variantToString(value)));
-		AToElem.setAttribute("type",value.type());
+		AToElem.setAttribute("type",value.typeId());
 	}
 	else if (AToElem.hasAttribute("type"))
 	{
@@ -107,7 +142,7 @@ static void importOptionNode(OptionsNode &ANode, const QDomElement &AFromElem)
 	if (AFromElem.hasAttribute("type"))
 	{
 		QString stringValue = findChildText(AFromElem).data();
-		ANode.setValue(Options::stringToVariant(!stringValue.isNull() ? stringValue : QString(""), (QVariant::Type)AFromElem.attribute("type").toInt()));
+		ANode.setValue(Options::stringToVariant(!stringValue.isNull() ? stringValue : QString(""), storedMetaType(AFromElem.attribute("type").toInt())));
 	}
 	else
 	{
@@ -398,7 +433,7 @@ QVariant OptionsNode::value(const QString &APath, const QString &ANSpace) const
 		if (d->node.hasAttribute("type"))
 		{
 			QString stringValue = findChildText(d->node).data();
-			return Options::stringToVariant(!stringValue.isNull() ? stringValue : QString(""), (QVariant::Type)d->node.attribute("type").toInt());
+			return Options::stringToVariant(!stringValue.isNull() ? stringValue : QString(""), storedMetaType(d->node.attribute("type").toInt()));
 		}
 		return Options::defaultValue(path());
 	}
@@ -420,7 +455,7 @@ void OptionsNode::setValue(const QVariant &AValue, const QString &APath, const Q
 						text.setData(Options::variantToString(AValue));
 					else
 						d->node.appendChild(d->node.ownerDocument().createTextNode(Options::variantToString(AValue)));
-					d->node.setAttribute("type",AValue.type());
+					d->node.setAttribute("type",AValue.typeId());
 					emit Options::instance()->optionsChanged(*this);
 				}
 				else if (d->node.hasAttribute("type"))
@@ -630,7 +665,7 @@ QByteArray Options::encrypt(const QVariant &AValue, const QByteArray &AKey)
 		for (int i = 0; i<cryptData.size(); i+=16)
 			xtea2_encipher(XTEA_ITERATIONS,(quint32 *)(cryptData.data()+i),(const quint32 *)cryptKey.constData());
 
-		return QByteArray::number(AValue.type()) + QByteArray(1,';') + cryptData.toBase64();
+		return QByteArray::number(AValue.typeId()) + QByteArray(1,';') + cryptData.toBase64();
 	}
 	return QByteArray();
 }
@@ -640,7 +675,7 @@ QVariant Options::decrypt(const QByteArray &AData, const QByteArray &AKey)
 	if (!AData.isEmpty() && !AKey.isEmpty())
 	{
 		QList<QByteArray> parts = AData.split(';');
-		QVariant::Type valType = parts.count()>1 ? (QVariant::Type)parts.value(0).toInt() : QVariant::String;
+		int valType = parts.count()>1 ? storedMetaType(parts.value(0).toInt()) : int(QMetaType::QString);
 
 		QByteArray cryptData = QByteArray::fromBase64(parts.value(parts.count()>1 ? 1 : 0));
 		if ((cryptData.size() % 16) == 0)
@@ -665,72 +700,72 @@ QVariant Options::decrypt(const QByteArray &AData, const QByteArray &AKey)
 
 QString Options::variantToString(const QVariant &AValue)
 {
-	if (AValue.type() == QVariant::Rect)
+	if (AValue.typeId() == QMetaType::QRect)
 	{
 		QRect rect = AValue.toRect();
 		return QString("%1;%2;%3;%4").arg(rect.left()).arg(rect.top()).arg(rect.width()).arg(rect.height());
 	}
-	else if (AValue.type() == QVariant::Point)
+	else if (AValue.typeId() == QMetaType::QPoint)
 	{
 		QPoint point = AValue.toPoint();
 		return QString("%1;%2").arg(point.x()).arg(point.y());
 	}
-	else if (AValue.type() == QVariant::Size)
+	else if (AValue.typeId() == QMetaType::QSize)
 	{
 		QSize size = AValue.toSize();
 		return QString("%1;%2").arg(size.width()).arg(size.height());
 	}
-	else if (AValue.type() == QVariant::ByteArray)
+	else if (AValue.typeId() == QMetaType::QByteArray)
 	{
 		return AValue.toByteArray().toBase64();
 	}
-	else if (AValue.type() == QVariant::StringList)
+	else if (AValue.typeId() == QMetaType::QStringList)
 	{
 		return AValue.toStringList().join(" ;; ");
 	}
-	else if (AValue.type() == QVariant::KeySequence)
+	else if (AValue.typeId() == QMetaType::QKeySequence)
 	{
 		return AValue.value<QKeySequence>().toString(QKeySequence::PortableText);
 	}
 	return AValue.toString();
 }
 
-QVariant Options::stringToVariant(const QString &AValue, QVariant::Type AType)
+QVariant Options::stringToVariant(const QString &AValue, int ATypeId)
 {
-	if (AType == QVariant::Rect)
+	if (ATypeId == QMetaType::QRect)
 	{
 		QList<QString> parts = AValue.split(";",Qt::SkipEmptyParts);
 		if (parts.count() == 4)
 			return QRect(parts.at(0).toInt(),parts.at(1).toInt(),parts.at(2).toInt(),parts.at(3).toInt());
 	}
-	else if (AType == QVariant::Point)
+	else if (ATypeId == QMetaType::QPoint)
 	{
 		QList<QString> parts = AValue.split(";",Qt::SkipEmptyParts);
 		if (parts.count() == 2)
 			return QPoint(parts.at(0).toInt(),parts.at(1).toInt());
 	}
-	else if (AType == QVariant::Size)
+	else if (ATypeId == QMetaType::QSize)
 	{
 		QList<QString> parts = AValue.split(";",Qt::SkipEmptyParts);
 		if (parts.count() == 2)
 			return QSize(parts.at(0).toInt(),parts.at(1).toInt());
 	}
-	else if (AType == QVariant::ByteArray)
+	else if (ATypeId == QMetaType::QByteArray)
 	{
 		return QByteArray::fromBase64(AValue.toLatin1());
 	}
-	else if (AType == QVariant::StringList)
+	else if (ATypeId == QMetaType::QStringList)
 	{
 		return !AValue.isEmpty() ? AValue.split(" ;; ") : QStringList();
 	}
-	else if(AType == QVariant::KeySequence)
+	else if(ATypeId == QMetaType::QKeySequence)
 	{
 		return QKeySequence::fromString(AValue,QKeySequence::PortableText);
 	}
 	else
 	{
 		QVariant var = QVariant(AValue);
-		if (var.convert(AType))
+		if (var.convert(QMetaType(ATypeId)))
 			return var;
 	}
 	return QVariant();

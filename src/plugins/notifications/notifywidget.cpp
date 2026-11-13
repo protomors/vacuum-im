@@ -200,11 +200,7 @@ void NotifyWidget::animateTo(int AYPos)
 	}
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void NotifyWidget::enterEvent(QEnterEvent *AEvent)
-#else
-void NotifyWidget::enterEvent(QEvent *AEvent)
-#endif
 {
 	FTimeOut += UNDER_MOUSE_ADD_TIMEOUT;
 	QFrame::enterEvent(AEvent);

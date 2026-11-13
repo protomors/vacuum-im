@@ -10,9 +10,7 @@
 #include <QNetworkProxy>
 #include <QAuthenticator>
 #include <QNetworkRequest>
-#if QT_VERSION >= 0x050900
 #include <QOperatingSystemVersion>
-#endif
 #include <definitions/version.h>
 #include <definitions/optionnodes.h>
 #include <definitions/optionvalues.h>
@@ -365,12 +363,6 @@ QString Statistics::userAgent() const
 			// Platform
 #ifdef Q_OS_MACOS
 			"Macintosh; "
-#elif defined Q_WS_QWS
-			"QtEmbedded; "
-#elif defined Q_WS_MAEMO_5
-			"Maemo"
-#elif defined Q_WS_MAEMO_6
-			"MeeGo"
 #elif defined Q_OS_WIN
 			""
 #elif defined Q_OS_LINUX
@@ -483,14 +475,15 @@ QString Statistics::userAgent() const
 
 QString Statistics::windowsVersion() const
 {
-#if QT_VERSION >= 0x050900 && defined Q_OS_WIN
+#ifdef Q_OS_WIN
 	QOperatingSystemVersion currentWindows = QOperatingSystemVersion::current();
 	int majorVersion = currentWindows.majorVersion();
 	int minorVersion = currentWindows.minorVersion();
 
 	return QString("Windows NT %1.%2").arg(majorVersion).arg(minorVersion);
-#endif
+#else
 	return QString();
+#endif
 }
 
 QUrl Statistics::buildHitUrl(const IStatisticsHit &AHit) const

@@ -28,11 +28,7 @@ QSize CloseButton::sizeHint() const
 	return icon().actualSize(iconSize());
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void CloseButton::enterEvent(QEnterEvent *AEvent)
-#else
-void CloseButton::enterEvent(QEvent *AEvent)
-#endif
 {
 	if (isEnabled())
 		update();

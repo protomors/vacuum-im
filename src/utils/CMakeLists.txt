@@ -62,9 +62,9 @@ if (APPLE)
 	list(APPEND ADD_LIBS "-framework Carbon -framework IOKit -framework Cocoa")
 endif (APPLE)
 
-target_link_libraries(${VACUUM_UTILS_NAME} ${ADD_LIBS} Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network)
+target_link_libraries(${VACUUM_UTILS_NAME} ${ADD_LIBS} Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network)
 if(UNIX AND NOT APPLE)
-	target_link_libraries(${VACUUM_UTILS_NAME} Qt${QT_VERSION_MAJOR}::X11Extras)
+	target_link_libraries(${VACUUM_UTILS_NAME} Qt6::GuiPrivate)
 endif()
 
 if (WIN32)

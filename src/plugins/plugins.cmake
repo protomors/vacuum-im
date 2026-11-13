@@ -27,7 +27,7 @@ if (IS_ENABLED)
 
 	add_translations(TRANSLATIONS ${PLUGIN_NAME} ${HEADERS} ${SOURCES} ${UIS})
 	add_library(${PLUGIN_NAME} SHARED ${SOURCES} ${MOC_SOURCES} ${UI_HEADERS} ${TRANSLATIONS})
-	target_link_libraries(${PLUGIN_NAME} ${VACUUM_UTILS_NAME} ${ADD_LIBS} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network)
+	target_link_libraries(${PLUGIN_NAME} ${VACUUM_UTILS_NAME} ${ADD_LIBS} Qt6::Widgets Qt6::Xml Qt6::Network)
 	if (APPLE)
 		set_target_properties(${PLUGIN_NAME} PROPERTIES
 			LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${INSTALL_PLUGINS}"

@@ -2,9 +2,6 @@
 
 #include <QTimer>
 #include <QRegularExpression>
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#include <QRegExp>
-#endif
 #include <utils/qtcompat.h>
 
 #define FIRST_VALID_ROLE 0
@@ -124,11 +121,6 @@ QList<QStandardItem *> AdvancedItemModel::findItems(const QMultiMap<int, QVarian
 					case Qt::MatchExactly:
 						accepted = (findValue==itemValue);
 						break;
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-					case 4: // Qt::MatchRegExp. Qt 6 reuses this value for MatchRegularExpression.
-						accepted = QRegExp(findValue.toString(),cs).exactMatch(itemValue.toString());
-						break;
-#endif
 					case Qt::MatchRegularExpression:
 						accepted = QRegularExpression(QRegularExpression::anchoredPattern(findValue.toString()),
 							cs==Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption)

@@ -172,11 +172,7 @@ bool MessageWidgets::messageEditContentsCreate(int AOrder, IMessageEditWidget *A
 				writer.write(fragment);
 				buffer.close();
 				AData->setData("application/vnd.oasis.opendocument.text", buffer.data());
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 				AData->setData("text/html", fragment.toHtml().toUtf8());
-#else
-				AData->setData("text/html", fragment.toHtml("utf-8").toUtf8());
-#endif
 			}
 			AData->setText(fragment.toPlainText());
 		}

@@ -1086,13 +1086,8 @@ bool FileMessageArchive::checkRequestFile(const QString &AFileName, const IArchi
 
 						if (textState == Qt::PartiallyChecked)
 						{
-#if QT_VERSION >= QT_VERSION_CHECK(4,8,0)
 							if (reader.attributes().value("subject").contains(ARequest.text,Qt::CaseInsensitive))
 								textState = Qt::Checked;
-#else
-							if (reader.attributes().value("subject").toString().contains(ARequest.text,Qt::CaseInsensitive))
-								textState = Qt::Checked;
-#endif
 						}
 					}
 				}
@@ -1105,13 +1100,8 @@ bool FileMessageArchive::checkRequestFile(const QString &AFileName, const IArchi
 			{
 				if (checkElemText)
 				{
-#if QT_VERSION >= QT_VERSION_CHECK(4,8,0)
 					if (reader.text().contains(ARequest.text,Qt::CaseInsensitive))
 						textState = Qt::Checked;
-#else
-					if (reader.text().toString().contains(ARequest.text,Qt::CaseInsensitive))
-						textState = Qt::Checked;
-#endif
 				}
 			}
 			else if (reader.isEndElement())

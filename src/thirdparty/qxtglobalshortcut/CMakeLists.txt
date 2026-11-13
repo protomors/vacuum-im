@@ -25,9 +25,9 @@ qt_wrap_cpp(MOC_SOURCES ${HEADERS})
 add_library(qxtglobalshortcut STATIC ${SOURCES} ${MOC_SOURCES})
 
 if (UNIX AND NOT APPLE)
-    target_link_libraries(qxtglobalshortcut Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::X11Extras)
+    target_link_libraries(qxtglobalshortcut Qt6::Widgets Qt6::GuiPrivate)
 else(UNIX AND NOT APPLE)
-    target_link_libraries(qxtglobalshortcut Qt${QT_VERSION_MAJOR}::Widgets)
+    target_link_libraries(qxtglobalshortcut Qt6::Widgets)
 endif (UNIX AND NOT APPLE)
 
 set_target_properties(qxtglobalshortcut PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/libs"

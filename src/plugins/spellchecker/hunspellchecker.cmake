@@ -23,7 +23,3 @@ endif (UNIX)
 
 set(SOURCES ${SOURCES} "hunspellchecker.cpp")
 set(HEADERS ${HEADERS} "hunspellchecker.h")
-
-if(QT_VERSION_MAJOR EQUAL 6)
-	list(APPEND ADD_LIBS Qt6::Core5Compat)
-endif()

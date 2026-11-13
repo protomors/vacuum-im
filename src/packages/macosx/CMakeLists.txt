@@ -18,24 +18,25 @@ if (APPLE)
 
 	foreach(LANG ${LOCALIZED_LANGS})
 		string(SUBSTRING ${LANG} 0 2 SHORTLANG)
-		if(EXISTS "${_qt5Core_install_prefix}/translations/qtbase_${SHORTLANG}.qm")
-			file(COPY "${_qt5Core_install_prefix}/translations/qtbase_${SHORTLANG}.qm"
+		if(EXISTS "${QT6_INSTALL_PREFIX}/translations/qtbase_${SHORTLANG}.qm")
+			file(COPY "${QT6_INSTALL_PREFIX}/translations/qtbase_${SHORTLANG}.qm"
 					DESTINATION "${CMAKE_BINARY_DIR}/${INSTALL_TRANSLATIONS}/${LANG}")
 			file(RENAME "${CMAKE_BINARY_DIR}/${INSTALL_TRANSLATIONS}/${LANG}/qtbase_${SHORTLANG}.qm"
 						"${CMAKE_BINARY_DIR}/${INSTALL_TRANSLATIONS}/${LANG}/qt_${SHORTLANG}.qm" )
-		else()
-			file(COPY "${_qt5Core_install_prefix}/translations/qt_${SHORTLANG}.qm"
+		elseif(EXISTS "${QT6_INSTALL_PREFIX}/translations/qt_${SHORTLANG}.qm")
+			file(COPY "${QT6_INSTALL_PREFIX}/translations/qt_${SHORTLANG}.qm"
 					DESTINATION "${CMAKE_BINARY_DIR}/${INSTALL_TRANSLATIONS}/${LANG}")
 		endif()
 	endforeach(LANG)
 
-	list(APPEND QtBinaries ${Qt5Gui_PLUGINS})
-	list(APPEND QtBinaries Qt5::CoreAudioPlugin)
-	list(APPEND QtBinaries Qt5::QCocoaPrinterSupportPlugin)
-	list(APPEND QtBinaries Qt5::QGenericEnginePlugin)
-	list(APPEND QtBinaries Qt5::QSQLiteDriverPlugin)
-	list(APPEND QtBinaries Qt5::QSvgPlugin)
-	list(APPEND QtBinaries Qt5::QSvgIconPlugin)
+	foreach(_candidate Qt6::QCocoaIntegrationPlugin Qt6::QMacStylePlugin
+			Qt6::QSvgPlugin Qt6::QSvgIconPlugin Qt6::QSQLiteDriverPlugin
+			Qt6::QDarwinMediaPlugin Qt6::QDarwinAudioPlugin Qt6::QFFmpegMediaPlugin
+			Qt6::QSecureTransportBackendPlugin Qt6::QTlsBackendOpenSSLPlugin)
+		if(TARGET ${_candidate})
+			list(APPEND QtBinaries ${_candidate})
+		endif()
+	endforeach()
 
 	foreach(_qtbinary ${QtBinaries})
 		get_target_property(_qtbinary_fullpath ${_qtbinary} LOCATION)
@@ -50,7 +51,7 @@ if (APPLE)
 	get_property(_plugins GLOBAL PROPERTY ALL_PLUGINS_FULLPATHS)
 	list(APPEND DYLIB_FILES "${_plugins}")
 
-	list(APPEND DYLIB_DIRS ${_qt5Core_install_prefix}/lib)
+	list(APPEND DYLIB_DIRS ${QT6_INSTALL_PREFIX}/lib)
 	list(APPEND DYLIB_DIRS ${CMAKE_INSTALL_PREFIX}/${INSTALL_APP_DIR}/Contents/Frameworks)
 	list(APPEND DYLIB_DIRS ${CMAKE_INSTALL_PREFIX}/${INSTALL_APP_DIR}/Contents/PlugIns)
 

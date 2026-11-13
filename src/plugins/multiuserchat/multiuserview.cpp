@@ -1,11 +1,7 @@
 #include "multiuserview.h"
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #define VIEW_ITEM_OPTIONS() \
 	([&]() { QStyleOptionViewItem option; initViewItemOption(&option); return option; }())
-#else
-#define VIEW_ITEM_OPTIONS() viewOptions()
-#endif
 
 #include <QToolTip>
 #include <QHelpEvent>
