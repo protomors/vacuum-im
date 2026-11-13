@@ -9,15 +9,7 @@ if(APPLE)
 	 set_property(GLOBAL PROPERTY ALL_PLUGINS_FULLPATHS "")
 endif()
 
-find_package (Qt5PrintSupport)
-find_package (Qt5Multimedia)
-find_package (Qt5Sql)
-find_package (Qt5Svg)
-find_package (Qt5Widgets REQUIRED)
-find_package (Qt5Network REQUIRED)
-find_package (Qt5Xml REQUIRED)
-find_package (Qt5Concurrent REQUIRED)
-find_package (Qt5LinguistTools REQUIRED)
+include("src/make/qt.cmake")
 
 add_custom_target(updatets)
 

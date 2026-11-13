@@ -1,5 +1,10 @@
 project(adiummessagestyle)
 
+# Qt WebKit is not part of Qt 6.
+if(QT_VERSION_MAJOR EQUAL 6)
+	set(PLUGIN_adiummessagestyle OFF CACHE BOOL "Adium message styles require Qt WebKit, which Qt 6 does not ship" FORCE)
+endif()
+
 set(PLUGIN_NAME "adiummessagestyle")
 set(PLUGIN_DISPLAY_NAME "Adium message style")
 
