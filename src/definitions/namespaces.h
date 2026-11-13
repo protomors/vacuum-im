@@ -94,6 +94,8 @@
 
 #define NS_MESSAGE_CARBONS                      "urn:xmpp:carbons:2"
 #define NS_MESSAGE_FORWARD                      "urn:xmpp:forward:0"
+#define NS_MAM                                  "urn:xmpp:mam:2"
+#define NS_XMPP_DELAY                           "urn:xmpp:delay"
 
 #define NS_VACUUM_PRIVATESTORAGE_UPDATE         "vacuum:privatestorage:update"
 

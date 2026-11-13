@@ -26,6 +26,8 @@
 #  define OWO_ACCOUNTS_PARAMS_CONNECTION          310
 
 //Node = ON_ACCOUNTS.[id].History
+#define OHO_ACCOUNTS_HISTORY_MAM                  100
+#  define OWO_ACCOUNTS_HISTORY_MAM                110
 #define OHO_ACCOUNTS_HISTORY_REPLICATION          300
 #  define OWO_ACCOUNTS_HISTORY_REPLICATION        310
 #  define OWO_ACCOUNTS_HISTORY_DUPLICATION        320

@@ -34,6 +34,9 @@
 // MessageArchiver
 #define OPV_ACCOUNT_HISTORYREPLICATE                    "accounts.account.history-replicate"
 #define OPV_ACCOUNT_HISTORYDUPLICATE                    "accounts.account.history-duplicate"
+#define OPV_ACCOUNT_MAM_DOWNLOAD                        "accounts.account.mam-download"
+#define OPV_ACCOUNT_MAM_CONFERENCES                     "accounts.account.mam-conferences"
+#define OPV_ACCOUNT_MAM_START                           "accounts.account.mam-start"
 
 // Avatars
 #define OPV_AVATARS_SMALLSIZE                           "avatars.small-size"

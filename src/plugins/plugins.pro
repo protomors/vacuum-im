@@ -69,6 +69,7 @@ SUBDIRS += servermessagearchive
 SUBDIRS += rosteritemexchange 
 SUBDIRS += spellchecker 
 SUBDIRS += messagecarbons
+SUBDIRS += mamarchive
 SUBDIRS += recentcontacts 
 SUBDIRS += metacontacts 
 SUBDIRS += statistics
