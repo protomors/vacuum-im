@@ -21,14 +21,36 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - uses: docker/setup-buildx-action@v4
       - name: Prepare pinned Arch build environment
-        run: docker build -t vacuum-linux -f .github/containers/linux.Dockerfile .
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: .github/containers/linux.Dockerfile
+          tags: vacuum-linux:latest
+          load: true
+          cache-from: type=gha,scope=linux-toolchain
+          cache-to: type=gha,scope=linux-toolchain,mode=max,ignore-error=true
+      - name: Restore Linux compiler cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/ccache-linux
+          key: linux-ccache-v1-${{ hashFiles('.github/containers/linux.Dockerfile') }}-${{ github.sha }}
+          restore-keys: |
+            linux-ccache-v1-${{ hashFiles('.github/containers/linux.Dockerfile') }}-
       - name: Build, package and check extracted archive
         run: |
+          mkdir -p "$RUNNER_TEMP/ccache-linux"
           docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$RUNNER_TEMP/ccache-linux:/ccache" \
+            -e CCACHE_DIR=/ccache -e CCACHE_MAXSIZE=1G \
+            -e CCACHE_BASEDIR=/src -e CCACHE_COMPILERCHECK=content \
             -v "$GITHUB_WORKSPACE:/src" -w /src vacuum-linux bash -euc '
-              cmake --preset release -B build/linux -DVACUUM_DEPENDENCY_PROVIDER=SYSTEM
+              ccache --zero-stats
+              cmake --preset release -B build/linux -DVACUUM_DEPENDENCY_PROVIDER=SYSTEM \
+                -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
               cmake --build build/linux --parallel 4
+              ccache --show-stats
               cpack --config build/linux/CPackConfig.cmake -C Release
               python .github/scripts/check_archive.py "build/linux/packages/*.tar.gz"
             '
@@ -43,6 +65,9 @@ jobs:
     name: Windows x86_64 (Qt and GStreamer bundled)
     runs-on: windows-2022
     timeout-minutes: 60
+    env:
+      SCCACHE_GHA_ENABLED: 'true'
+      SCCACHE_GHA_VERSION: vacuum-windows-x64-v1
     defaults:
       run:
         shell: pwsh
@@ -60,14 +85,36 @@ jobs:
           aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@5a49f2b391ae8ee1d3c0dd87f8b33c1d49a4deb7'
           arch: win64_msvc2022_64
           modules: 'qtmultimedia'
-      - name: Install pkg-config
-        run: choco install pkgconfiglite --yes --no-progress
-      - name: Install pinned GStreamer runtime and development files
-        run: ./.github/scripts/install-gstreamer.ps1
+          cache: true
+          cache-key-prefix: qt-windows-x64-v1
+      - name: Restore GStreamer SDK
+        id: gstreamer-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ runner.temp }}/gstreamer-sdk
+          key: gstreamer-windows-2022-x64-v1-${{ hashFiles('.github/scripts/install-gstreamer.ps1') }}
+      - name: Prepare pinned GStreamer runtime and development files
+        run: ./.github/scripts/install-gstreamer.ps1 -UseCachedSdk:('${{ steps.gstreamer-cache.outputs.cache-hit }}' -eq 'true')
+      - name: Save GStreamer SDK
+        if: steps.gstreamer-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ runner.temp }}/gstreamer-sdk
+          key: ${{ steps.gstreamer-cache.outputs.cache-primary-key }}
+      - name: Prepare Windows compiler cache
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          version: v0.19.0
       - name: Configure
-        run: cmake --preset release -DVACUUM_DEPENDENCY_PROVIDER=BUNDLED -DBUNDLE_WINDOWS_DEPENDENCIES=ON "-DVACUUM_GSTREAMER_ROOT=$env:VACUUM_GSTREAMER_ROOT"
+        run: >-
+          cmake --preset release -DVACUUM_DEPENDENCY_PROVIDER=BUNDLED
+          -DBUNDLE_WINDOWS_DEPENDENCIES=ON "-DVACUUM_GSTREAMER_ROOT=$env:VACUUM_GSTREAMER_ROOT"
+          "-DPKG_CONFIG_EXECUTABLE=$env:VACUUM_GSTREAMER_ROOT/bin/pkg-config.exe"
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
       - name: Build
         run: cmake --build --preset release --parallel 4
+      - name: Windows compiler cache statistics
+        run: sccache --show-stats
       - name: Package
         run: cpack --config build/release/CPackConfig.cmake -C Release
       - name: Check extracted archive with SDKs hidden

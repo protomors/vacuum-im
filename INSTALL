@@ -124,6 +124,20 @@ and removes development PATH entries. The check script can also be run locally:
 
   python .github/scripts/check_archive.py /path/to/archive.tar.gz
 
+CI caches the Arch container's dependency layer, the Windows Qt installation,
+and the installed GStreamer SDK. Changing the Dockerfile or GStreamer installer
+script invalidates the corresponding preparation cache; Qt's cache key includes
+its version, architecture and selected modules. The GStreamer SDK is saved as
+soon as installation succeeds, even if a later compilation step fails.
+Windows configuration uses pkg-config.exe from that SDK.
+
+Compilation uses ccache on Linux (a cache capped at 1 GiB) and sccache with
+GitHub's cache backend on Windows. Compiler caches reuse object files based on
+compiler, options, source and headers. CMake configuration, linking, packaging
+and archive validation still run. Build directories are not cached. The first
+run populates the caches; later runs report hits/misses in their compiler-cache
+statistics. Cache entries can be removed from the repository's Actions cache UI.
+
 
 Development and configuration
 -----------------------------
