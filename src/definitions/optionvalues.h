@@ -137,6 +137,7 @@
 #define OPV_MUC_ARCHIVESTATUS                           "muc.archive-status"
 #define OPV_MUC_REJOINAFTERKICK                         "muc.rejoin-after-kick"
 #define OPV_MUC_QUITONWINDOWCLOSE                       "muc.quit-on-window-close"
+#define OPV_MUC_SELFPINGINTERVAL                        "muc.self-ping-interval"
 #define OPV_MUC_REFERENUMERATION                        "muc.refer-enumeration"
 #define OPV_MUC_NICKNAMESUFFIX                          "muc.nickname-suffix"
 #define OPV_MUC_USERVIEWMODE                            "muc.user-view-mode"
@@ -272,6 +273,7 @@
 #define OPV_XMPPSTREAMS_TIMEOUT_KEEPALIVE               "xmppstreams.timeout.keepalive"
 #define OPV_XMPPSTREAMS_TIMEOUT_DISCONNECT              "xmppstreams.timeout.disconnect"
 #define OPV_XMPPSTREAMS_STREAMMANAGEMENT                "xmppstreams.stream-management"
+#define OPV_XMPPSTREAMS_CLIENTSTATE                     "xmppstreams.client-state-indication"
 // RosterPlugin
 #define OPV_XMPPSTREAMS_TIMEOUT_ROSTERREQUEST           "xmppstreams.timeout.roster-request"
 

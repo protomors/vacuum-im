@@ -56,7 +56,12 @@ IXmppStream *SASLSessionFeature::xmppStream() const
 
 bool SASLSessionFeature::start(const QDomElement &AElem)
 {
-	if (AElem.tagName() == "session")
+	if (AElem.tagName()=="session" && !AElem.firstChildElement("optional").isNull())
+	{
+		// RFC 6121: the server does not require session establishment
+		LOG_STRM_INFO(FXmppStream->streamJid(),"Session establishment is optional, skipped");
+	}
+	else if (AElem.tagName() == "session")
 	{
 		Stanza session(STANZA_KIND_IQ);
 		session.setType(STANZA_TYPE_SET).setId("session");

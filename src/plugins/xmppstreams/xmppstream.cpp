@@ -2,6 +2,7 @@
 #include <utils/qtcompat.h>
 
 #include <QTextDocument>
+#include <QGuiApplication>
 #include <definitions/namespaces.h>
 #include <definitions/optionvalues.h>
 #include <definitions/internalerrors.h>
@@ -13,6 +14,7 @@
 #define SM_REQUEST_DELAY          1000
 #define SM_DEFAULT_RESUME_TIME    300
 #define SM_RESEND_MAX_AGE         600
+#define CSI_INACTIVE_DELAY        60000
 
 XmppStream::XmppStream(IXmppStreamManager *AXmppStreamManager, const Jid &AStreamJid) : QObject(AXmppStreamManager->instance())
 {
@@ -54,6 +56,15 @@ XmppStream::XmppStream(IXmppStreamManager *AXmppStreamManager, const Jid &AStrea
 
 	FSmResumeTimer.setSingleShot(true);
 	connect(&FSmResumeTimer,SIGNAL(timeout()),SLOT(onSmResumeTimeout()));
+
+	FCsiSupported = false;
+	FCsiActive = true;
+	FCsiSentActive = true;
+	FCsiInactiveTimer.setSingleShot(true);
+	connect(&FCsiInactiveTimer,SIGNAL(timeout()),SLOT(onClientInactiveTimeout()));
+	if (QGuiApplication::applicationState() != Qt::ApplicationActive)
+		FCsiInactiveTimer.start(CSI_INACTIVE_DELAY);
+	connect(qApp,SIGNAL(applicationStateChanged(Qt::ApplicationState)),SLOT(onApplicationStateChanged(Qt::ApplicationState)));
 }
 
 XmppStream::~XmppStream()
@@ -536,6 +547,11 @@ void XmppStream::openStream()
 	LOG_STRM_INFO(streamJid(),QString("XMPP stream opened, stream_management=%1, resumable=%2").arg(FSmEnabled).arg(FSmResumable));
 	emit opened();
 	flushSmResendMessages();
+
+	// Server assumes the client is active on a new session
+	FCsiSupported = !findServerFeature(NS_CLIENT_STATE).isNull();
+	FCsiSentActive = true;
+	updateClientState(false);
 }
 
 void XmppStream::resetConnectionState()
@@ -721,6 +737,7 @@ void XmppStream::onConnectionDisconnected()
 		setKeepAliveTimerActive(false);
 		removeXmppStanzaHandler(XSHO_XMPP_STREAM,this);
 		finishSmSession(!userClose);
+		FCsiSupported = false;
 
 		LOG_STRM_INFO(streamJid(),"XMPP stream closed");
 		emit closed();
@@ -933,6 +950,9 @@ void XmppStream::processSmElement(const QDomElement &AElem)
 		foreach(const SmOutStanza &out, FSmOutQueue)
 			sendData(out.data);
 		sendSmRequest();
+
+		FCsiSupported = !findServerFeature(NS_CLIENT_STATE).isNull();
+		updateClientState(true);
 	}
 	else if (tag == "failed")
 	{
@@ -1082,6 +1102,43 @@ void XmppStream::connectionLost(const XmppError &AError)
 		startSmResume(AError);
 	else
 		abort(AError);
+}
+
+void XmppStream::updateClientState(bool AForce)
+{
+	if (FCsiSupported && FStreamState==SS_ONLINE && !FSmResuming && (AForce || FCsiSentActive!=FCsiActive))
+	{
+		if (Options::node(OPV_XMPPSTREAMS_CLIENTSTATE).value().toBool() || !FCsiSentActive)
+		{
+			bool active = FCsiActive || !Options::node(OPV_XMPPSTREAMS_CLIENTSTATE).value().toBool();
+			Stanza state(active ? "active" : "inactive",NS_CLIENT_STATE);
+			if (sendStanza(state) >= 0)
+			{
+				FCsiSentActive = active;
+				LOG_STRM_DEBUG(streamJid(),QString("Client state indicated, active=%1").arg(active));
+			}
+		}
+	}
+}
+
+void XmppStream::onApplicationStateChanged(Qt::ApplicationState AState)
+{
+	if (AState == Qt::ApplicationActive)
+	{
+		FCsiInactiveTimer.stop();
+		FCsiActive = true;
+		updateClientState(false);
+	}
+	else if (FCsiActive && !FCsiInactiveTimer.isActive())
+	{
+		FCsiInactiveTimer.start(CSI_INACTIVE_DELAY);
+	}
+}
+
+void XmppStream::onClientInactiveTimeout()
+{
+	FCsiActive = false;
+	updateClientState(false);
 }
 
 void XmppStream::onSmRequestTimeout()

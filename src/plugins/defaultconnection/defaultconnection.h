@@ -9,6 +9,7 @@
 struct SrvRecord {
 	QString target;
 	quint16 port;
+	bool directTls;
 };
 
 class DefaultConnection :
@@ -64,6 +65,7 @@ signals:
 	void sslErrorsOccured(const QList<QSslError> &AErrors);
 protected:
 	void connectToNextHost();
+	void appendDnsRecords(const QDnsLookup &ALookup, bool ADirectTls, QList< QPair<int,SrvRecord> > &ARecords) const;
 protected slots:
 	void onDnsLookupFinished();
 	void onSocketProxyAuthenticationRequired(const QNetworkProxy &AProxy, QAuthenticator *AAuth);
@@ -77,6 +79,8 @@ private:
 	IConnectionEngine *FEngine;
 private:
 	QDnsLookup FDnsLookup;
+	QDnsLookup FDnsTlsLookup;
+	QString FDomain;
 	QList<SrvRecord> FRecords;
 	bool FSSLError;
 	bool FDisconnecting;

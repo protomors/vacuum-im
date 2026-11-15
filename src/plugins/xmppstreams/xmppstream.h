@@ -111,6 +111,9 @@ protected:
 	void finishSmSession(bool AKeepMessages);
 	void flushSmResendMessages();
 	void connectionLost(const XmppError &AError);
+protected:
+	//Client State Indication (XEP-0352)
+	void updateClientState(bool AForce);
 protected slots:
 	//IStreamConnection
 	void onConnectionConnected();
@@ -131,6 +134,9 @@ protected slots:
 	//Stream Management
 	void onSmRequestTimeout();
 	void onSmResumeTimeout();
+	//Client State Indication
+	void onApplicationStateChanged(Qt::ApplicationState AState);
+	void onClientInactiveTimeout();
 private:
 	IConnection *FConnection;
 	IXmppStreamManager *FXmppStreamManager;
@@ -176,6 +182,11 @@ private:
 	QList<SmOutStanza> FSmResendMessages;
 	QTimer FSmRequestTimer;
 	QTimer FSmResumeTimer;
+private:
+	bool FCsiSupported;
+	bool FCsiActive;
+	bool FCsiSentActive;
+	QTimer FCsiInactiveTimer;
 };
 
 #endif // XMPPSTREAM_H

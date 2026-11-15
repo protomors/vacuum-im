@@ -1,6 +1,7 @@
 #ifndef MULTIUSERCHAT_H
 #define MULTIUSERCHAT_H
 
+#include <QTimer>
 #include <interfaces/imultiuserchat.h>
 #include <interfaces/ipluginmanager.h>
 #include <interfaces/imessageprocessor.h>
@@ -113,6 +114,9 @@ protected:
 	bool processPresence(const Stanza &AStanza);
 	void closeRoom(const IPresenceItem &APresence);
 	Stanza makePresenceStanza(const QString &ANick, int AShow, const QString &AStatus, int APriority) const;
+	void restartSelfPing();
+protected slots:
+	void onSelfPingTimeout();
 protected slots:
 	void onUserChanged(int AData, const QVariant &ABefore);
 	void onDiscoveryInfoReceived(const IDiscoInfo &AInfo);
@@ -138,6 +142,8 @@ private:
 	QMap<QString, QString> FAffilListLoadId;
 	QMap<QString, QList<IMultiUserListItem> > FAffilListUpdateId;
 	QMap<QString, QString> FRoomDestroyId;
+	QString FSelfPingId;
+	QTimer FSelfPingTimer;
 private:
 	bool FIsolated;
 	bool FAutoPresence;

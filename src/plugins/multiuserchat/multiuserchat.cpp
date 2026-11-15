@@ -6,6 +6,8 @@
 #include <definitions/messageeditororders.h>
 #include <definitions/stanzahandlerorders.h>
 #include <utils/xmpperror.h>
+#include <definitions/optionvalues.h>
+#include <utils/options.h>
 #include <utils/logger.h>
 
 #define SHC_PRESENCE        "/presence"
@@ -13,6 +15,7 @@
 
 #define MUC_IQ_TIMEOUT      30000
 #define MUC_LIST_TIMEOUT    60000
+#define MUC_SELFPING_TIMEOUT 60000
 
 #define DIC_CONFERENCE      "conference"
 
@@ -31,6 +34,9 @@ MultiUserChat::MultiUserChat(const Jid &AStreamJid, const Jid &ARoomJid, const Q
 	FStreamJid = AStreamJid;
 	FNickname = ANickName;
 	FPassword = APassword;
+
+	FSelfPingTimer.setSingleShot(true);
+	connect(&FSelfPingTimer,SIGNAL(timeout()),SLOT(onSelfPingTimeout()));
 
 	if (FStanzaProcessor)
 	{
@@ -98,6 +104,7 @@ bool MultiUserChat::stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanz
 	if (AStreamJid==FStreamJid && FRoomJid.pBare()==Jid(AStanza.from()).pBare())
 	{
 		AAccept = true;
+		restartSelfPing();
 		if (AHandlerId == FSHIPresence)
 			processPresence(AStanza);
 		else if (AHandlerId == FSHIMessage)
@@ -109,7 +116,41 @@ bool MultiUserChat::stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanz
 
 void MultiUserChat::stanzaRequestResult(const Jid &AStreamJid, const Stanza &AStanza)
 {
-	if (FRoleUpdateId.contains(AStanza.id()))
+	if (!FSelfPingId.isEmpty() && FSelfPingId==AStanza.id())
+	{
+		// XEP-0410: work out from the reply whether we are still in the room
+		FSelfPingId.clear();
+		XmppStanzaError err = AStanza.isResult() ? XmppStanzaError::null : XmppStanzaError(AStanza);
+		switch (err.conditionCode())
+		{
+		case XmppStanzaError::EC_NOT_ACCEPTABLE:
+		case XmppStanzaError::EC_ITEM_NOT_FOUND:
+			if (FState == IMultiUserChat::Opened)
+			{
+				LOG_STRM_WARNING(AStreamJid,QString("Conference self-ping failed, not joined anymore, room=%1: %2").arg(FRoomJid.bare(),err.condition()));
+				IPresenceItem presence;
+				presence.itemJid = Jid(FRoomJid.node(),FRoomJid.domain(),FNickname);
+				presence.show = IPresence::Offline;
+				closeRoom(presence);
+				if (FAutoPresence)
+				{
+					LOG_STRM_INFO(AStreamJid,QString("Rejoining conference, room=%1").arg(FRoomJid.bare()));
+					sendStreamPresence();
+				}
+			}
+			break;
+		case XmppStanzaError::EC_REMOTE_SERVER_NOT_FOUND:
+		case XmppStanzaError::EC_REMOTE_SERVER_TIMEOUT:
+			LOG_STRM_INFO(AStreamJid,QString("Conference self-ping got no answer, room=%1: %2").arg(FRoomJid.bare(),err.condition()));
+			restartSelfPing();
+			break;
+		default:
+			// Result, service-unavailable, feature-not-implemented and other errors mean we are still joined
+			LOG_STRM_DEBUG(AStreamJid,QString("Conference self-ping succeeded, room=%1").arg(FRoomJid.bare()));
+			restartSelfPing();
+		}
+	}
+	else if (FRoleUpdateId.contains(AStanza.id()))
 	{
 		QString nick = FRoleUpdateId.take(AStanza.id());
 		if (AStanza.isResult())
@@ -994,12 +1035,15 @@ void MultiUserChat::setState(ChatState AState)
 
 		if (FState == IMultiUserChat::Opened)
 		{
+			restartSelfPing();
 			if (FResendPresence)
 				sendStreamPresence();
 		}
 		else if (FState == IMultiUserChat::Closed)
 		{
 			FResendPresence = false;
+			FSelfPingId.clear();
+			FSelfPingTimer.stop();
 		}
 
 		emit stateChanged(AState);
@@ -1344,6 +1388,32 @@ Stanza MultiUserChat::makePresenceStanza(const QString &ANick, int AShow, const 
 	}
 
 	return presence;
+}
+
+void MultiUserChat::restartSelfPing()
+{
+	if (FState == IMultiUserChat::Opened)
+		FSelfPingTimer.start(qMax(Options::node(OPV_MUC_SELFPINGINTERVAL).value().toInt(),5000));
+}
+
+void MultiUserChat::onSelfPingTimeout()
+{
+	if (FStanzaProcessor && FState==IMultiUserChat::Opened && FSelfPingId.isEmpty())
+	{
+		Stanza ping(STANZA_KIND_IQ);
+		ping.setType(STANZA_TYPE_GET).setTo(Jid(FRoomJid.node(),FRoomJid.domain(),FNickname).full()).setUniqueId();
+		ping.addElement("ping",NS_XMPP_PING);
+		if (FStanzaProcessor->sendStanzaRequest(this,FStreamJid,ping,MUC_SELFPING_TIMEOUT))
+		{
+			LOG_STRM_DEBUG(FStreamJid,QString("Conference self-ping sent, room=%1, id=%2").arg(FRoomJid.bare(),ping.id()));
+			FSelfPingId = ping.id();
+		}
+		else
+		{
+			LOG_STRM_WARNING(FStreamJid,QString("Failed to send conference self-ping, room=%1").arg(FRoomJid.bare()));
+			restartSelfPing();
+		}
+	}
 }
 
 void MultiUserChat::onUserChanged(int AData, const QVariant &ABefore)

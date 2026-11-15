@@ -229,6 +229,7 @@ bool MultiUserChatManager::initObjects()
 bool MultiUserChatManager::initSettings()
 {
 	Options::setDefaultValue(OPV_MUC_SHOWENTERS,true);
+	Options::setDefaultValue(OPV_MUC_SELFPINGINTERVAL,300000);
 	Options::setDefaultValue(OPV_MUC_SHOWSTATUS,true);
 	Options::setDefaultValue(OPV_MUC_ARCHIVESTATUS,false);
 	Options::setDefaultValue(OPV_MUC_QUITONWINDOWCLOSE,false);

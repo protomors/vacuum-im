@@ -1,6 +1,7 @@
 #include "defaultconnection.h"
 
 #include <QSslConfiguration>
+#include <algorithm>
 #include <QNetworkProxy>
 #include <QAuthenticator>
 #include <definitions/internalerrors.h>
@@ -22,6 +23,9 @@ DefaultConnection::DefaultConnection(IConnectionEngine *AEngine, QObject *AParen
 	FDnsLookup.setType(QDnsLookup::SRV);
 	connect(&FDnsLookup,SIGNAL(finished()),SLOT(onDnsLookupFinished()));
 
+	FDnsTlsLookup.setType(QDnsLookup::SRV);
+	connect(&FDnsTlsLookup,SIGNAL(finished()),SLOT(onDnsLookupFinished()));
+
 	FSocket.setSocketOption(QAbstractSocket::KeepAliveOption,1);
 	connect(&FSocket, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)),
 		SLOT(onSocketProxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)));
@@ -32,9 +36,11 @@ DefaultConnection::DefaultConnection(IConnectionEngine *AEngine, QObject *AParen
 	connect(&FSocket, SIGNAL(sslErrors(const QList<QSslError> &)), SLOT(onSocketSSLErrors(const QList<QSslError> &)));
 	connect(&FSocket, SIGNAL(disconnected()), SLOT(onSocketDisconnected()));
 
-	// Make FDnsLookup.isFinished to be true
+	// Make lookups isFinished to be true
 	FDnsLookup.lookup();
 	FDnsLookup.abort();
+	FDnsTlsLookup.lookup();
+	FDnsTlsLookup.abort();
 }
 
 DefaultConnection::~DefaultConnection()
@@ -60,7 +66,7 @@ bool DefaultConnection::isEncryptionSupported() const
 
 bool DefaultConnection::connectToHost()
 {
-	if (FDnsLookup.isFinished() && FSocket.state()==QAbstractSocket::UnconnectedState)
+	if (FDnsLookup.isFinished() && FDnsTlsLookup.isFinished() && FSocket.state()==QAbstractSocket::UnconnectedState)
 	{
 		emit aboutToConnect();
 
@@ -70,23 +76,28 @@ bool DefaultConnection::connectToHost()
 		QString host = option(IDefaultConnection::Host).toString();
 		quint16 port = option(IDefaultConnection::Port).toInt();
 		QString domain = option(IDefaultConnection::Domain).toString();
+		FDomain = domain;
 		FUseLegacySSL = option(IDefaultConnection::UseLegacySsl).toBool();
 		FVerifyMode = (CertificateVerifyMode)option(IDefaultConnection::CertVerifyMode).toInt();
 
 		SrvRecord record;
 		record.target = !host.isEmpty() ? host : domain;
 		record.port = port;
+		record.directTls = false;
 		FRecords.append(record);
 
 		if (host.isEmpty())
 		{
+			// XEP-0368: look up both STARTTLS and Direct TLS services
 			LOG_DEBUG(QString("Starting DNS SRV lookup, domain=%1").arg(domain));
 			FDnsLookup.setName(QString("_xmpp-client._tcp.%1.").arg(domain));
 			FDnsLookup.lookup();
+			FDnsTlsLookup.setName(QString("_xmpps-client._tcp.%1.").arg(domain));
+			FDnsTlsLookup.lookup();
 		}
 		else
 		{
-			LOG_ERROR("Failed to init DNS SRV lookup");
+			LOG_DEBUG(QString("Using configured host, skipping DNS SRV lookup, host=%1").arg(host));
 			connectToNextHost();
 		}
 		return true;
@@ -130,9 +141,12 @@ void DefaultConnection::disconnectFromHost()
 				FSocket.abort();
 			}
 		}
-		else if (!FDnsLookup.isFinished())
+		else
 		{
-			FDnsLookup.abort();
+			if (!FDnsLookup.isFinished())
+				FDnsLookup.abort();
+			if (!FDnsTlsLookup.isFinished())
+				FDnsTlsLookup.abort();
 		}
 
 		emit disconnected();
@@ -226,6 +240,7 @@ void DefaultConnection::addCaSertificates(const QList<QSslCertificate> &ACertifi
 			QSslConfiguration config = FSocket.sslConfiguration();
 			config.addCaCertificate(cert);
 			FSocket.setSslConfiguration(config);
+		FSocket.setPeerVerifyName(QString());
 		}
 	}
 }
@@ -265,8 +280,19 @@ void DefaultConnection::connectToNextHost()
 	if (!FRecords.isEmpty())
 	{
 		SrvRecord record = FRecords.takeFirst();
+		FUseLegacySSL = option(IDefaultConnection::UseLegacySsl).toBool() || record.directTls;
 
-		if (FUseLegacySSL)
+		QSslConfiguration config = FSocket.sslConfiguration();
+		config.setAllowedNextProtocols(record.directTls ? QList<QByteArray>() << QByteArray("xmpp-client") : QList<QByteArray>());
+		FSocket.setSslConfiguration(config);
+
+		if (record.directTls)
+		{
+			// The certificate must match the XMPP domain, not the SRV target
+			LOG_INFO(QString("Connecting to host with Direct TLS, host=%1, port=%2, domain=%3").arg(record.target).arg(record.port).arg(FDomain));
+			FSocket.connectToHostEncrypted(record.target, record.port, FDomain);
+		}
+		else if (FUseLegacySSL)
 		{
 			LOG_INFO(QString("Connecting to host with encryption, host=%1, port=%2").arg(record.target).arg(record.port));
 			FSocket.connectToHostEncrypted(record.target, record.port);
@@ -279,22 +305,46 @@ void DefaultConnection::connectToNextHost()
 	}
 }
 
-void DefaultConnection::onDnsLookupFinished()
+void DefaultConnection::appendDnsRecords(const QDnsLookup &ALookup, bool ADirectTls, QList< QPair<int,SrvRecord> > &ARecords) const
 {
-	if (!FRecords.isEmpty())
+	if (ALookup.error() == QDnsLookup::NoError)
 	{
-		QList<QDnsServiceRecord> dnsRecords = FDnsLookup.serviceRecords();
-		LOG_DEBUG(QString("SRV records received, count=%1").arg(dnsRecords.count()));
-		if (!dnsRecords.isEmpty())
+		foreach (const QDnsServiceRecord &dnsRecord, ALookup.serviceRecords())
 		{
-			FRecords.clear();
-			foreach (const QDnsServiceRecord &dnsRecord, dnsRecords)
+			// A target of "." means the service is decidedly not available
+			QString target = dnsRecord.target();
+			if (target.endsWith('.'))
+				target.chop(1);
+			if (!target.isEmpty())
 			{
 				SrvRecord srvRecord;
-				srvRecord.target = dnsRecord.target();
+				srvRecord.target = target;
 				srvRecord.port = dnsRecord.port();
-				FRecords.append(srvRecord);
+				srvRecord.directTls = ADirectTls;
+				ARecords.append(qMakePair((int)dnsRecord.priority(),srvRecord));
 			}
+		}
+	}
+}
+
+void DefaultConnection::onDnsLookupFinished()
+{
+	if (!FRecords.isEmpty() && FDnsLookup.isFinished() && FDnsTlsLookup.isFinished())
+	{
+		// Lookups keep the weight order inside each priority, Direct TLS goes first on equal priority
+		QList< QPair<int,SrvRecord> > records;
+		appendDnsRecords(FDnsTlsLookup,true,records);
+		appendDnsRecords(FDnsLookup,false,records);
+		std::stable_sort(records.begin(),records.end(),[](const QPair<int,SrvRecord> &ALeft, const QPair<int,SrvRecord> &ARight) {
+			return ALeft.first < ARight.first;
+		});
+
+		LOG_DEBUG(QString("SRV records received, count=%1").arg(records.count()));
+		if (!records.isEmpty())
+		{
+			FRecords.clear();
+			for (int i=0; i<records.count(); i++)
+				FRecords.append(records.at(i).second);
 		}
 		connectToNextHost();
 	}
