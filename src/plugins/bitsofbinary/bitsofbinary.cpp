@@ -1,4 +1,6 @@
 #include "bitsofbinary.h"
+
+#include <utils/xmlutils.h>
 #include <utils/qtcompat.h>
 
 #include <QFile>
@@ -302,7 +304,7 @@ bool BitsOfBinary::loadBinary(const QString &AContentId, QString &AType, QByteAr
 	{
 		QString xmlError;
 		QDomDocument doc;
-		if (doc.setContent(&file,true,&xmlError))
+		if (setDomContent(doc, &file, &xmlError))
 		{
 			if (AContentId == doc.documentElement().attribute("cid"))
 			{

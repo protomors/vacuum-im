@@ -1,5 +1,7 @@
 #include "simplemessagestyle.h"
 
+#include <utils/xmlutils.h>
+
 #include <QDir>
 #include <QFile>
 #include <QDomDocument>
@@ -302,7 +304,7 @@ QMap<QString, QVariant> SimpleMessageStyle::styleInfo(const QString &AStylePath)
 	{
 		QString xmlError;
 		QDomDocument doc;
-		if (doc.setContent(&file,true,&xmlError))
+		if (setDomContent(doc, &file, &xmlError))
 		{
 			QDomElement elem = doc.documentElement().firstChildElement("dict").firstChildElement("key");
 			while (!elem.isNull())

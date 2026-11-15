@@ -780,13 +780,7 @@ bool ImageViewer::messageStyleContentInsert(int AOrder, QWidget *AWidget, const 
 
 	LOG_DEBUG(QString("ImageViewer: processing message html length=%1").arg(AHtml.length()));
 
-	struct AnchorMatch
-	{
-		int start;
-		int end;
-		QString href;
-	};
-	QList<AnchorMatch> matches;
+	QStringList matches;
 	const QRegularExpression anchorRegex(
 		QStringLiteral(R"REGEX(<a\b(?:(?!>).)*?(?<![\w-])href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'`=<>]+))(?:(?!>).)*?>.*?</a\s*>)REGEX"),
 		QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption);
@@ -798,7 +792,7 @@ bool ImageViewer::messageStyleContentInsert(int AOrder, QWidget *AWidget, const 
 		const QString href = decodedHtmlAttribute(rawHref).trimmed();
 		const QUrl url(href);
 		if (isImageable(url))
-			matches.append({match.capturedStart(0), match.capturedEnd(0), href});
+			matches.append(href);
 	}
 
 	if (matches.isEmpty())
@@ -818,12 +812,12 @@ bool ImageViewer::messageStyleContentInsert(int AOrder, QWidget *AWidget, const 
 
 	for (int i = 0; i < matches.size(); ++i)
 	{
-		const AnchorMatch &match = matches[i];
-		QUrl url(match.href);
+		const QString &href = matches[i];
+		QUrl url(href);
 		QString scheme = url.scheme().toLower();
 
 		PendingInsert insert;
-		insert.href = match.href;
+		insert.href = href;
 		insert.slot = i;
 		insert.doc = QPointer<QTextDocument>(doc);
 		insert.gallery = gallery;
@@ -832,11 +826,11 @@ bool ImageViewer::messageStyleContentInsert(int AOrder, QWidget *AWidget, const 
 		{
 			// Inline images are cached and previewed like the downloaded ones,
 			// so that no image data is stored in the message html.
-			scheduleDataUrlEmbed(insert, match.href);
+			scheduleDataUrlEmbed(insert, href);
 		}
 		else if (scheme == "http" || scheme == "https")
 		{
-			startNetworkOrCacheDownload(match.href, url, insert);
+			startNetworkOrCacheDownload(href, url, insert);
 		}
 	}
 

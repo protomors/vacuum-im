@@ -1,5 +1,7 @@
 #include "pluginmanager.h"
 
+#include <utils/xmlutils.h>
+
 #include <QTimer>
 #include <QStack>
 #include <QThread>
@@ -346,7 +348,7 @@ void PluginManager::loadSettings()
 	if (file.open(QFile::ReadOnly))
 	{
 		QString xmlError;
-		if (!FPluginsSetup.setContent(&file,true,&xmlError))
+		if (!setDomContent(FPluginsSetup, &file, &xmlError))
 		{
 			REPORT_ERROR(QString("Failed to load plugins settings from file content: %1").arg(xmlError));
 			file.remove();
@@ -767,7 +769,7 @@ void PluginManager::loadCoreTranslations(const QDir &ADir, const QString &ALocal
 {
 	if (FQtTranslator->load("qt_"+ALocaleName,ADir.absoluteFilePath(ALocaleName)) || FQtTranslator->load("qt_"+ALocaleName,ADir.absoluteFilePath(ALocaleName.left(2))))
 		qApp->installTranslator(FQtTranslator);
-	else if (FQtTranslator->load("qt_"+QLocale().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
+	else if (FQtTranslator->load("qt_"+QLocale().name(), QLibraryInfo::path(QLibraryInfo::TranslationsPath)))
 		qApp->installTranslator(FQtTranslator);
 	else
 		LOG_DEBUG("Translation for 'Qt' not found");

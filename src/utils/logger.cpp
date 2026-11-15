@@ -5,6 +5,7 @@
 #include <QtDebug>
 #include <QDateTime>
 #include <QMutexLocker>
+#include <cstdio>
 #include "datetime.h"
 
 #define MAX_LOG_FILES  10
@@ -73,7 +74,8 @@ void Logger::openLog(const QString &APath)
 		qInstallMessageHandler(qtMessagesHandler);
 #endif
 		q->logFile.setFileName(logDir.absoluteFilePath(DateTime(QDateTime::currentDateTime()).toX85DateTime().replace(":","-") +".log"));
-		q->logFile.open(QFile::WriteOnly|QFile::Truncate);
+		if (!q->logFile.open(QFile::WriteOnly|QFile::Truncate))
+			std::fprintf(stderr, "Cannot open log file: %s\n", qPrintable(q->logFile.errorString()));
 	}
 }
 

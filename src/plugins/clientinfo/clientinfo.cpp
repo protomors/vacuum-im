@@ -4,6 +4,7 @@
 #include <QProcess>
 #include <QFileInfo>
 #include <QTextStream>
+#include <QTimeZone>
 #include <definitions/version.h>
 #include <definitions/namespaces.h>
 #include <definitions/actiongroups.h>
@@ -574,7 +575,11 @@ QDateTime ClientInfo::entityTime(const Jid &AContactJid) const
 	{
 		TimeItem tItem = FTimeItems.value(AContactJid);
 		QDateTime dateTime = QDateTime::currentDateTime().toUTC();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+		dateTime.setTimeZone(QTimeZone::LocalTime);
+#else
 		dateTime.setTimeSpec(Qt::LocalTime);
+#endif
 		return dateTime.addSecs(tItem.zone).addSecs(tItem.delta);
 	}
 	return QDateTime();

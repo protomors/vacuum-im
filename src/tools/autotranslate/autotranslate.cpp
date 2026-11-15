@@ -7,6 +7,7 @@
 #include <QDomDocument>
 #include <QCoreApplication>
 #include <QMessageLogContext>
+#include <utils/xmlutils.h>
 
 void myMessageOutput(QtMsgType AType, const QMessageLogContext &AContext, const QString &AMessage)
 {
@@ -61,7 +62,7 @@ int main(int argc, char *argv[])
 		if (srcFile.open(QFile::ReadOnly))
 		{
 			QDomDocument doc;
-			if (doc.setContent(&srcFile,true))
+			if (setDomContent(doc, &srcFile))
 			{
 				qDebug("Generation auto translation from '%s'.",srcFile.fileName().toLocal8Bit().constData());
 

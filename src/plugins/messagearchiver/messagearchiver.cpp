@@ -1,4 +1,6 @@
 #include "messagearchiver.h"
+
+#include <utils/xmlutils.h>
 #include <functional>
 #include <utils/qtcompat.h>
 
@@ -1021,7 +1023,7 @@ void MessageArchiver::loadPendingMessages(const Jid &AStreamJid)
 	{
 		QString xmlError;
 		QDomDocument doc;
-		if (doc.setContent(&file,true,&xmlError))
+		if (setDomContent(doc, &file, &xmlError))
 		{
 			if (AStreamJid.pBare() == doc.documentElement().attribute("jid"))
 			{

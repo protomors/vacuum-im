@@ -165,7 +165,7 @@ void HunspellChecker::loadHunspell(const QString &ALang)
 		{
 			QString rulesFile = QString("%1/%2.aff").arg(dictsPath).arg(ALang);
 			FHunSpell = new Hunspell(rulesFile.toLocal8Bit().constData(), dictFile.toLocal8Bit().constData());
-			const char *encoding = FHunSpell->get_dic_encoding();
+			const char *encoding = FHunSpell->get_dict_encoding().c_str();
 			QStringEncoder encoder(encoding);
 			FDictEncoding = encoder.isValid() ? QByteArray(encoding) : QByteArray();
 			loadPersonalDict();

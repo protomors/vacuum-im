@@ -1,5 +1,7 @@
 #include "privatestorage.h"
 
+#include <utils/xmlutils.h>
+
 #include <definitions/namespaces.h>
 #include <definitions/stanzahandlerorders.h>
 #include <utils/options.h>
@@ -321,7 +323,7 @@ QDomElement PrivateStorage::loadOptionsElement(const Jid &AStreamJid, const QStr
 	if (AStreamJid.isValid() && !ATagName.isEmpty() && !ANamespace.isEmpty())
 	{
 		QString nodePath = QString("private-storage[%1].%2[%3]").arg(AStreamJid.pBare()).arg(ATagName).arg(ANamespace);
-		doc.setContent(Options::decrypt(Options::fileValue(nodePath).toByteArray()).toByteArray(),true);
+		setDomContent(doc, Options::decrypt(Options::fileValue(nodePath).toByteArray()).toByteArray());
 		QDomElement dataElem = doc.documentElement().firstChildElement();
 		if (dataElem.tagName()!=ATagName || dataElem.namespaceURI()!=ANamespace)
 		{

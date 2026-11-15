@@ -1,4 +1,6 @@
 #include "vcard.h"
+
+#include <utils/xmlutils.h>
 #include "vcardmanager.h"
 
 #include <QFile>
@@ -191,7 +193,7 @@ void VCard::loadVCardFile()
 	if (file.open(QIODevice::ReadOnly))
 	{
 		QString xmlError;
-		if (!FDoc.setContent(&file,true,&xmlError))
+		if (!setDomContent(FDoc, &file, &xmlError))
 		{
 			REPORT_ERROR(QString("Failed to load vCard from file content: %1").arg(xmlError));
 			file.remove();

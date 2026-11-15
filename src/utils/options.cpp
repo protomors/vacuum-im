@@ -647,7 +647,7 @@ void Options::setDefaultValue(const QString &APath, const QVariant &ADefault)
 
 QByteArray Options::encrypt(const QVariant &AValue, const QByteArray &AKey)
 {
-	if (AValue.type()>QVariant::Invalid && AValue.type()<QVariant::UserType && !AKey.isEmpty())
+	if (AValue.typeId()>QMetaType::UnknownType && AValue.typeId()<QMetaType::User && !AKey.isEmpty())
 	{
 		QByteArray cryptData = variantToString(AValue).toUtf8();
 		if (cryptData.size() % 16)

@@ -1,4 +1,6 @@
 #include "recentcontacts.h"
+
+#include <utils/xmlutils.h>
 #include <utils/qtcompat.h>
 
 #include <QDir>
@@ -548,7 +550,7 @@ void RecentContacts::setItemProperty(const IRecentItem &AItem, const QString &AN
 			isItemChanged = true;
 		}
 
-		QVariant nullValue = QVariant(AValue.type());
+		QVariant nullValue = QVariant(AValue.metaType());
 		if (AValue != nullValue)
 		{
 			if (!item.properties.contains(AName))
@@ -1045,7 +1047,7 @@ QList<IRecentItem> RecentContacts::loadItemsFromFile(const QString &AFileName) c
 	{
 		QString xmlError;
 		QDomDocument doc;
-		if (doc.setContent(&file,true,&xmlError))
+		if (setDomContent(doc, &file, &xmlError))
 		{
 			QDomElement itemsElem = doc.firstChildElement(PST_RECENTCONTACTS);
 			items = loadItemsFromXML(itemsElem,false);

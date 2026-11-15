@@ -1,4 +1,6 @@
 #include "filemessagearchive.h"
+
+#include <utils/xmlutils.h>
 #include <utils/qtcompat.h>
 #include <functional>
 
@@ -541,7 +543,7 @@ IArchiveCollection FileMessageArchive::loadFileCollection(const Jid &AStreamJid,
 			{
 				QString xmlError;
 				QDomDocument doc;
-				doc.setContent(&file,true,&xmlError);
+				setDomContent(doc, &file, &xmlError);
 				FArchiver->elementToCollection(AStreamJid,doc.documentElement(),collection);
 				if (collection.header.with.isValid() && collection.header.start.isValid())
 					collection.header.engineId = engineId();

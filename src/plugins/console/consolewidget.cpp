@@ -1,5 +1,7 @@
 #include "consolewidget.h"
 
+#include <utils/xmlutils.h>
+
 #include <QRegularExpression>
 #include <QLineEdit>
 #include <QInputDialog>
@@ -236,7 +238,7 @@ void ConsoleWidget::onRemoveConditionClicked()
 void ConsoleWidget::onSendXMLClicked()
 {
 	QDomDocument doc;
-	if (FXmppStreamManager!=NULL && doc.setContent(ui.tedSendXML->toPlainText(),true))
+	if (FXmppStreamManager!=NULL && setDomContent(doc, ui.tedSendXML->toPlainText()))
 	{
 		Stanza stanza(doc.documentElement());
 		if (!stanza.isNull())

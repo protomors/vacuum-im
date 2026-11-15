@@ -1,4 +1,6 @@
 #include "metacontacts.h"
+
+#include <utils/xmlutils.h>
 #include <utils/qtcompat.h>
 
 #include <QDir>
@@ -630,7 +632,7 @@ bool MetaContacts::setModelData(const AdvancedItemDelegate *ADelegate, QWidget *
 	if (ADelegate->editRole() == RDR_NAME)
 	{
 		QVariant value = AEditor->property(ADVANCED_DELEGATE_EDITOR_VALUE_PROPERTY);
-		QByteArray propertyName = ADelegate->editorFactory()->valuePropertyName(value.type());
+		QByteArray propertyName = ADelegate->editorFactory()->valuePropertyName(value.typeId());
 		QString newName = AEditor->property(propertyName).toString();
 		QString oldName = AIndex.data(RDR_NAME).toString();
 		if (!newName.isEmpty() && newName!=oldName)
@@ -1607,7 +1609,7 @@ QList<IMetaContact> MetaContacts::loadMetaContactsFromFile(const QString &AFileN
 	{
 		QString xmlError;
 		QDomDocument doc;
-		if (doc.setContent(&file,true,&xmlError))
+		if (setDomContent(doc, &file, &xmlError))
 		{
 			QDomElement storageElem = doc.firstChildElement("storage");
 			contacts = loadMetaContactsFromXML(storageElem);

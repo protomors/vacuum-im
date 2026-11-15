@@ -1,5 +1,7 @@
 #include "avatars.h"
 
+#include <utils/xmlutils.h>
+
 #include <QFile>
 #include <QBuffer>
 #include <QDataStream>
@@ -60,7 +62,7 @@ QByteArray LoadAvatarTask::parseFile(QFile *AFile) const
 	{
 		QString xmlError;
 		QDomDocument doc;
-		if (doc.setContent(AFile,true,&xmlError))
+		if (setDomContent(doc, AFile, &xmlError))
 		{
 			QDomElement photoDataElem = doc.documentElement().firstChildElement("vCard").firstChildElement("PHOTO").firstChildElement("BINVAL");
 			if (!photoDataElem.isNull())

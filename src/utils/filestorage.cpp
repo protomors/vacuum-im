@@ -1,4 +1,6 @@
 #include "filestorage.h"
+
+#include <utils/xmlutils.h>
 #include <utils/qtcompat.h>
 
 #include <QDir>
@@ -304,7 +306,7 @@ void FileStorage::loadDefinitions(const QString &ADefFile, int APrefixIndex)
 
 	QDomDocument doc;
 	QFile file(ADefFile);
-	if (file.open(QFile::ReadOnly) && doc.setContent(&file,true))
+	if (file.open(QFile::ReadOnly) && setDomContent(doc, &file))
 	{
 		QDomElement objElem = doc.documentElement().firstChildElement();
 		while (!objElem.isNull())

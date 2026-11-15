@@ -101,7 +101,7 @@ void ReplicateTaskLoadState::run(QSqlDatabase &ADatabase)
 				else
 				{
 					FNextRef = QString();
-					FStartTime = QDateTime(QDate(1970,1,1),QTime(0,0),Qt::UTC);
+					FStartTime = QDateTime::fromSecsSinceEpoch(0).toUTC();
 
 					insertStateQuery.bindValue(":engine_id",FEngineId.toString());
 					insertStateQuery.bindValue(":modif_start",DateTime(FStartTime).toX85UTC());

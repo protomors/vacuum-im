@@ -1,5 +1,7 @@
 #include "receiverswidget.h"
 
+#include <utils/xmlutils.h>
+
 #include <utils/qtcompat.h>
 
 #include <QMessageBox>
@@ -54,8 +56,14 @@ void ReceiversProxyModel::setOfflineContactsVisible(bool AVisible)
 {
 	if (FOfflineVisible != AVisible)
 	{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+		beginFilterChange();
+		FOfflineVisible = AVisible;
+		endFilterChange(QSortFilterProxyModel::Direction::Rows);
+#else
 		FOfflineVisible = AVisible;
 		invalidateFilter();
+#endif
 	}
 }
 
@@ -670,7 +678,7 @@ void ReceiversWidget::selectionLoad(const QString &AFileName)
 		{
 			QString xmlError;
 			QDomDocument doc;
-			if (doc.setContent(&file,true,&xmlError))
+			if (setDomContent(doc, &file, &xmlError))
 			{
 				if (doc.documentElement().namespaceURI() == "vacuum:messagewidgets:receiverswidget:selection")
 				{
