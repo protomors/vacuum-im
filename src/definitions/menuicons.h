@@ -240,4 +240,9 @@
 //VCard
 #define MNI_VCARD                       "VCard"
 
+//VoiceCalls
+#define MNI_VOICECALLS_CALL             "voicecallsCall"
+#define MNI_VOICECALLS_HANGUP           "voicecallsHangup"
+#define MNI_VOICECALLS_MUTE             "voicecallsMute"
+
 #endif // DEF_MENUICONS_H

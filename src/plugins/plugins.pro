@@ -70,6 +70,7 @@ SUBDIRS += rosteritemexchange
 SUBDIRS += spellchecker 
 SUBDIRS += messagecarbons
 SUBDIRS += mamarchive
+SUBDIRS += voicecalls
 SUBDIRS += recentcontacts 
 SUBDIRS += metacontacts 
 SUBDIRS += statistics

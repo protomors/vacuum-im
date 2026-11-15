@@ -82,6 +82,7 @@
 #define AG_RVCM_MULTIUSERCHAT_JOIN                              300
 #define AG_RVCM_BOOKMARS_LIST                                   350
 #define AG_RVCM_BOOKMARS_EDIT                                   350
+#define AG_RVCM_VOICECALLS_CALL                                 250
 #define AG_RVCM_CLIENTINFO_SHOW                                 400
 #define AG_RVCM_MULTIUSERCHAT_INVITE                            400
 #define AG_RVCM_DISCOVERY_FEATURES                              400

@@ -97,6 +97,21 @@
 #define NS_MAM                                  "urn:xmpp:mam:2"
 #define NS_XMPP_DELAY                           "urn:xmpp:delay"
 
+#define NS_JINGLE                               "urn:xmpp:jingle:1"
+#define NS_JINGLE_ERRORS                        "urn:xmpp:jingle:errors:1"
+#define NS_JINGLE_APPS_RTP                      "urn:xmpp:jingle:apps:rtp:1"
+#define NS_JINGLE_APPS_RTP_AUDIO                "urn:xmpp:jingle:apps:rtp:audio"
+#define NS_JINGLE_APPS_RTP_INFO                 "urn:xmpp:jingle:apps:rtp:info:1"
+#define NS_JINGLE_APPS_RTP_RTCP_FB              "urn:xmpp:jingle:apps:rtp:rtcp-fb:0"
+#define NS_JINGLE_APPS_RTP_HDREXT               "urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"
+#define NS_JINGLE_APPS_RTP_SSMA                 "urn:xmpp:jingle:apps:rtp:ssma:0"
+#define NS_JINGLE_APPS_DTLS                     "urn:xmpp:jingle:apps:dtls:0"
+#define NS_JINGLE_APPS_GROUPING                 "urn:xmpp:jingle:apps:grouping:0"
+#define NS_JINGLE_TRANSPORTS_ICE_UDP            "urn:xmpp:jingle:transports:ice-udp:1"
+#define NS_JINGLE_MESSAGE                       "urn:xmpp:jingle-message:0"
+#define NS_EXTERNAL_SERVICES                    "urn:xmpp:extdisco:2"
+#define NS_MESSAGE_HINTS                        "urn:xmpp:hints"
+
 #define NS_VACUUM_PRIVATESTORAGE_UPDATE         "vacuum:privatestorage:update"
 
 #endif // DEF_NAMESPACES_H

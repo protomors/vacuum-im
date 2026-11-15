@@ -117,6 +117,9 @@
 // MessageStyles
 #define OPV_MESSAGES_SHOWDATESEPARATORS                 "messages.show-date-separators"
 #define OPV_MESSAGES_MAXMESSAGESINWINDOW                "messages.max-messages-in-window"
+// VoiceCalls
+#define OPV_VOICECALLS_CONTACTSONLY                     "voicecalls.contacts-only"
+#define OPV_VOICECALLS_STUNSERVER                       "voicecalls.stun-server"
 // ImageViewer
 #define OPV_MESSAGES_IMAGES_AUTOLOAD                    "images.autoload"
 #define OPV_MESSAGES_IMAGES_BLOCKPRIVATEIPS             "images.block-private-ips"

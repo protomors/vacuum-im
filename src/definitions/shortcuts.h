@@ -49,6 +49,7 @@
 
 //MessageWidgets
 #define SCTG_MESSAGEWINDOWS                                        "message-windows"
+#define   SCT_MESSAGEWINDOWS_VOICECALL                             "message-windows.voice-call"
 #define   SCT_MESSAGEWINDOWS_QUOTE                                 "message-windows.quote"
 #define   SCT_MESSAGEWINDOWS_SCROLLUP                              "message-windows.scroll-up"
 #define   SCT_MESSAGEWINDOWS_SCROLLDOWN                            "message-windows.scroll-down"

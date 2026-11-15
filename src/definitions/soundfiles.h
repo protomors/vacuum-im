@@ -32,6 +32,9 @@
 //SessionNegotiation
 #define SDF_SNEGOTIATION_REQUEST          "snegotiationRequest"
 
+//VoiceCalls
+#define SDF_VOICECALLS_INCOMING           "voicecallsIncoming"
+
 //StatusChanger
 #define SDF_SCHANGER_CONNECTION_ERROR     "schangerConnectionError"
 
