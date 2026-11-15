@@ -85,9 +85,14 @@ def check(archive, workspace):
         system_root = Path(env['SystemRoot'])
         env['PATH'] = os.pathsep.join([str(system_root / 'System32'), str(system_root)])
         for name in ['msvcp140.dll', 'vcruntime140.dll', 'Qt6Core.dll',
-                     'qt-plugins/platforms/qwindows.dll']:
+                     'qt-plugins/platforms/qwindows.dll',
+                     'qt-plugins/sqldrivers/qsqlite.dll']:
             if not (executable.parent / name).exists():
                 raise RuntimeError(f'Missing Windows runtime file {name}')
+        sql_drivers = {p.name.lower() for p in
+                       (executable.parent / 'qt-plugins/sqldrivers').glob('*.dll')}
+        if sql_drivers != {'qsqlite.dll'}:
+            raise RuntimeError(f'Unexpected SQL drivers in Windows archive: {sorted(sql_drivers)}')
         env['GST_PLUGIN_SYSTEM_PATH_1_0'] = str(executable.parent / 'gstreamer-1.0')
         env['GST_PLUGIN_SCANNER_1_0'] = str(executable.parent / 'gst-plugin-scanner.exe')
         env['GST_PLUGIN_PATH_1_0'] = ''
