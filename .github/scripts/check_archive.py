@@ -82,7 +82,8 @@ def check(archive, workspace):
                XDG_CACHE_HOME=str(workspace / 'cache'),
                XDG_DATA_HOME=str(workspace / 'data'))
     if windows:
-        system_root = Path(env['SystemRoot'])
+        # Windows os.environ exposes uppercase keys; its dict copy is case-sensitive.
+        system_root = Path(env['SYSTEMROOT'])
         env['PATH'] = os.pathsep.join([str(system_root / 'System32'), str(system_root)])
         for name in ['msvcp140.dll', 'vcruntime140.dll', 'Qt6Core.dll',
                      'qt-plugins/platforms/qwindows.dll',
