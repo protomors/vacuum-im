@@ -19,8 +19,9 @@
  */
 
 #include "idle.h"
+#include <QGuiApplication>
 
-#ifndef HAVE_XSS
+#if !defined(HAVE_XSS) || !QT_CONFIG(xcb)
 
 IdlePlatform::IdlePlatform() {}
 IdlePlatform::~IdlePlatform() {}
@@ -28,8 +29,6 @@ bool IdlePlatform::init() { return false; }
 int IdlePlatform::secondsIdle() { return 0; }
 
 #else
-
-#include <QtGui/private/qtx11extras_p.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -74,13 +73,14 @@ bool IdlePlatform::init()
 	if(d->ss_info)
 		return true;
 
-	if(!QX11Info::isPlatformX11())
+	auto *x11 = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+	if(!x11 || !x11->display())
 		return false;
 
 	old_handler = XSetErrorHandler(xerrhandler);
 
 	int event_base, error_base;
-	if(XScreenSaverQueryExtension(QX11Info::display(), &event_base, &error_base)) {
+	if(XScreenSaverQueryExtension(x11->display(), &event_base, &error_base)) {
 		d->ss_info = XScreenSaverAllocInfo();
 		return true;
 	}
@@ -91,7 +91,11 @@ int IdlePlatform::secondsIdle()
 {
 	if(!d->ss_info)
 		return 0;
-	if(!XScreenSaverQueryInfo(QX11Info::display(), QX11Info::appRootWindow(), d->ss_info))
+	auto *x11 = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
+	if(!x11 || !x11->display())
+		return 0;
+	Display *display = x11->display();
+	if(!XScreenSaverQueryInfo(display, DefaultRootWindow(display), d->ss_info))
 		return 0;
 	return d->ss_info->idle / 1000;
 }

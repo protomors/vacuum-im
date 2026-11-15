@@ -1,4 +1,4 @@
-find_package(Qt6 REQUIRED COMPONENTS
+find_package(Qt6 6.2 REQUIRED COMPONENTS
 	Widgets
 	Network
 	Xml
@@ -8,11 +8,6 @@ find_package(Qt6 REQUIRED COMPONENTS
 	Multimedia
 	Sql)
 find_package(Qt6 QUIET COMPONENTS Svg)
-
-# QX11Info lives in GuiPrivate. Qt 6 has no X11Extras module.
-if(UNIX AND NOT APPLE)
-	find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
-endif()
 
 macro(qt_wrap_cpp out)
 	qt6_wrap_cpp(${out} ${ARGN})

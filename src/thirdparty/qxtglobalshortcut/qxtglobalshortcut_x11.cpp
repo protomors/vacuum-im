@@ -30,7 +30,7 @@
 *****************************************************************************/
 
 #include <QVector>
-#include <QtGui/private/qtx11extras_p.h>
+#include <QGuiApplication>
 #include <xcb/xcb.h>
 #include <X11/Xlib.h>
 
@@ -84,11 +84,13 @@ bool QxtX11ErrorHandler::error = false;
 
 class QxtX11Data {
 public:
-	QxtX11Data()
+	QxtX11Data() : m_display(0)
 	{
-		// QX11Info::display() returns the Wayland (wl_display) pointer on the
-		// Wayland platform, so use it only when really running under X11
-		m_display = QX11Info::isPlatformX11() ? QX11Info::display() : 0;
+#if QT_CONFIG(xcb)
+		// The native interface is unavailable on Wayland and other backends.
+		if (auto *x11 = qGuiApp->nativeInterface<QNativeInterface::QX11Application>())
+			m_display = x11->display();
+#endif
 	}
 
 	bool isValid()

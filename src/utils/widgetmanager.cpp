@@ -11,7 +11,7 @@
 #include <QTextDocument>
 
 #ifdef Q_OS_LINUX
-	#include <QtGui/private/qtx11extras_p.h>
+	#include <QGuiApplication>
 	#include <X11/Xutil.h>
 	#include <X11/Xlib.h>
 	#include <X11/Xatom.h>
@@ -160,11 +160,11 @@ WidgetManager *WidgetManager::instance()
 
 void WidgetManager::raiseWidget(QWidget *AWidget)
 {
-#ifdef Q_OS_LINUX
-	if (QX11Info::isPlatformX11())
+#if defined(Q_OS_LINUX) && QT_CONFIG(xcb)
+	if (auto *x11 = qGuiApp->nativeInterface<QNativeInterface::QX11Application>())
 	{
 		static Atom NET_ACTIVE_WINDOW = 0;
-		Display *dpy = QX11Info::display();
+		Display *dpy = x11->display();
 
 		if (dpy != NULL)
 		{
@@ -182,7 +182,7 @@ void WidgetManager::raiseWidget(QWidget *AWidget)
 				xev.data.l[1]    = 0;//X11Info::appUserTime();
 				xev.data.l[2]    = xev.data.l[3] = xev.data.l[4] = 0;
 
-				XSendEvent(dpy, QX11Info::appRootWindow(), False, SubstructureNotifyMask | SubstructureRedirectMask, (XEvent*)&xev);
+				XSendEvent(dpy, DefaultRootWindow(dpy), False, SubstructureNotifyMask | SubstructureRedirectMask, (XEvent*)&xev);
 			}
 		}
 	}

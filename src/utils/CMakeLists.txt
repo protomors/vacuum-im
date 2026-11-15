@@ -59,9 +59,6 @@ if (APPLE)
 endif (APPLE)
 
 target_link_libraries(${VACUUM_UTILS_NAME} ${ADD_LIBS} Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network)
-if(UNIX AND NOT APPLE)
-	target_link_libraries(${VACUUM_UTILS_NAME} Qt6::GuiPrivate)
-endif()
 
 if (WIN32)
 	set_target_properties(${VACUUM_UTILS_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")

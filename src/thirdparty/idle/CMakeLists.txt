@@ -25,11 +25,7 @@ qt_wrap_cpp(MOC_SOURCES ${HEADERS})
 
 add_library(idle STATIC ${SOURCES} ${MOC_SOURCES})
 
-if (UNIX AND NOT APPLE)
-    target_link_libraries(idle Qt6::Widgets Qt6::GuiPrivate)
-else (UNIX AND NOT APPLE)
-    target_link_libraries(idle Qt6::Widgets)
-endif (UNIX AND NOT APPLE)
+target_link_libraries(idle Qt6::Widgets)
 
 set_target_properties(idle PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/libs"
 	COMPILE_FLAGS "${CMAKE_SHARED_LIBRARY_C_FLAGS}"

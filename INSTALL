@@ -7,9 +7,9 @@ root. GitHub Actions is the supported CI service.
 Requirements
 ------------
   * CMake 3.21 or newer, a C++17 compiler, and Ninja for the supplied presets.
-  * Qt 6: Widgets, Network, Xml, Concurrent, LinguistTools, PrintSupport,
+  * Qt 6.2 or newer: Widgets, Network, Xml, Concurrent, LinguistTools, PrintSupport,
     Multimedia and Sql. Svg is optional.
-  * Linux: Qt GuiPrivate development headers, X11 and XScreenSaver headers.
+  * Linux: X11 and XScreenSaver headers; Qt private headers are not required.
   * System zlib, minizip and libidn are used when found; otherwise bundled
     copies are built. QtLockedFile and QxtGlobalShortcut are always built from
     the bundled sources against the application's Qt version.
@@ -26,7 +26,7 @@ Linux
 Example build dependencies on Ubuntu 24.04:
 
   sudo apt install build-essential cmake ninja-build pkg-config \
-    qt6-base-dev qt6-base-private-dev qt6-svg-dev qt6-multimedia-dev \
+    qt6-base-dev qt6-svg-dev qt6-multimedia-dev \
     qt6-tools-dev qt6-tools-dev-tools libgl-dev libx11-dev libxss-dev \
     zlib1g-dev libminizip-dev libidn-dev libhunspell-dev
 
@@ -46,10 +46,10 @@ copying the installation tree does not bundle those dependencies.
 
 A binary release needs a documented architecture, Linux/glibc baseline and
 Qt build version. Qt's public API generally supports running binaries built
-with an older Qt 6 on a newer Qt 6, not the reverse. The current X11 code uses
-GuiPrivate APIs, so that general compatibility guarantee does not cover it:
-use the matching distribution Qt build until that private dependency is
-removed. Rebuilding from source uses the locally installed Qt version.
+with an older Qt 6 on a newer Qt 6, not the reverse. The X11 code uses
+QNativeInterface::QX11Application, which does not require private headers but
+is excluded from Qt's source/binary compatibility guarantees for native
+interfaces. Rebuilding from source uses the locally installed Qt version.
 
 Windows
 -------
