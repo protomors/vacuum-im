@@ -55,6 +55,8 @@ endforeach()
 
 configure_file(deploy-windows.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/deploy-windows.cmake.in" @ONLY)
 file(READ "${CMAKE_CURRENT_BINARY_DIR}/deploy-windows.cmake.in" _deploy_content)
-qt_generate_deploy_script(TARGET ${VACUUM_LOADER_NAME}
+# Qt 6.8's versionless macro re-evaluates CONTENT. Call the function directly
+# so install-time variables, quotes and semicolons remain intact.
+qt6_generate_deploy_script(TARGET ${VACUUM_LOADER_NAME}
     OUTPUT_SCRIPT _deploy_script CONTENT "${_deploy_content}")
 install(SCRIPT "${_deploy_script}")
