@@ -7,6 +7,12 @@ interaction via interfaces.
 
 Build instructions: see INSTALL (CMake and Qt 6).
 
+Connection security
+-------------------
+TLS connections require TLS 1.2 or newer. Auto negotiates TLS 1.2 or later;
+old protocol selections fall back to Auto. DIGEST-MD5 authentication is no
+longer supported; use SCRAM or PLAIN over TLS. PLAIN requires encryption.
+
 Web Site:
   http://www.vacuum-im.org
 

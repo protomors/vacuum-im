@@ -48,6 +48,12 @@ endif (INSTALL_DOCS)
 
 add_subdirectory(src)
 
+option(BUILD_TESTING "Build regression tests" OFF)
+if (BUILD_TESTING)
+	enable_testing()
+	add_subdirectory(tests)
+endif ()
+
 
 if (INSTALL_SDK)
 	cpack_add_component(sdk

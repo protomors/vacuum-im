@@ -20,28 +20,16 @@
    <translation>Allow only trusted</translation>
   </message>
   <message>
-   <source>SSLv3</source>
-   <translation>SSLv3</translation>
-  </message>
-  <message>
-   <source>SSLv2</source>
-   <translation>SSLv2</translation>
-  </message>
-  <message>
    <source>Auto</source>
    <translation>Auto</translation>
   </message>
   <message>
-   <source>TLSv1.0</source>
-   <translation>TLSv1.0</translation>
-  </message>
-  <message>
-   <source>TLSv1.1</source>
-   <translation>TLSv1.1</translation>
-  </message>
-  <message>
    <source>TLSv1.2</source>
    <translation>TLSv1.2</translation>
+  </message>
+  <message>
+   <source>TLSv1.3</source>
+   <translation>TLSv1.3</translation>
   </message>
  </context>
  <context>

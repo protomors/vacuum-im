@@ -24,14 +24,6 @@
         <translation>Automático</translation>
     </message>
     <message>
-        <source>TLSv1.0</source>
-        <translation>TLSv1.0</translation>
-    </message>
-    <message>
-        <source>TLSv1.1</source>
-        <translation>TLSv1.1</translation>
-    </message>
-    <message>
         <source>TLSv1.2</source>
         <translation>TLSv1.2</translation>
     </message>

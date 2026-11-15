@@ -10,9 +10,7 @@ ConnectionOptionsWidget::ConnectionOptionsWidget(IConnectionManager *AManager, c
 	FOptions = ANode;
 	FProxySettings = NULL;
 
-	ui.cmbSslProtocol->addItem(tr("Auto"),QSsl::SecureProtocols);
-	ui.cmbSslProtocol->addItem(tr("TLSv1.0"),QSsl::TlsV1_0);
-	ui.cmbSslProtocol->addItem(tr("TLSv1.1"),QSsl::TlsV1_1);
+	ui.cmbSslProtocol->addItem(tr("Auto"),QSsl::TlsV1_2OrLater);
 	ui.cmbSslProtocol->addItem(tr("TLSv1.2"),QSsl::TlsV1_2);
 	ui.cmbSslProtocol->addItem(tr("TLSv1.3"),QSsl::TlsV1_3);
 
@@ -73,7 +71,8 @@ void ConnectionOptionsWidget::reset()
 	ui.lneHost->setText(FOptions.value("host").toString());
 	ui.spbPort->setValue(FOptions.value("port").toInt());
 	ui.chbUseLegacySSL->setChecked(FOptions.value("use-legacy-ssl").toBool());
-	ui.cmbSslProtocol->setCurrentIndex(ui.cmbSslProtocol->findData(FOptions.value("ssl-protocol").toInt()));
+	int protocolIndex = ui.cmbSslProtocol->findData(FOptions.value("ssl-protocol").toInt());
+	ui.cmbSslProtocol->setCurrentIndex(protocolIndex >= 0 ? protocolIndex : 0);
 	ui.cmbCertCheckMode->setCurrentIndex(ui.cmbCertCheckMode->findData(FOptions.value("cert-verify-mode").toInt()));
 
 	if (FProxySettings)

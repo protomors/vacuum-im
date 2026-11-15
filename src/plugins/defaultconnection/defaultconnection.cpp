@@ -26,6 +26,7 @@ DefaultConnection::DefaultConnection(IConnectionEngine *AEngine, QObject *AParen
 	FDnsTlsLookup.setType(QDnsLookup::SRV);
 	connect(&FDnsTlsLookup,SIGNAL(finished()),SLOT(onDnsLookupFinished()));
 
+	FSocket.setProtocol(QSsl::TlsV1_2OrLater);
 	FSocket.setSocketOption(QAbstractSocket::KeepAliveOption,1);
 	connect(&FSocket, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)),
 		SLOT(onSocketProxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)));
@@ -202,7 +203,19 @@ QSsl::SslProtocol DefaultConnection::protocol() const
 
 void DefaultConnection::setProtocol(QSsl::SslProtocol AProtocol)
 {
-	FSocket.setProtocol(AProtocol);
+	// Old account settings and plugin callers must not re-enable obsolete TLS versions.
+	switch (AProtocol)
+	{
+	case QSsl::TlsV1_2:
+	case QSsl::TlsV1_2OrLater:
+	case QSsl::TlsV1_3:
+	case QSsl::TlsV1_3OrLater:
+		FSocket.setProtocol(AProtocol);
+		break;
+	default:
+		FSocket.setProtocol(QSsl::TlsV1_2OrLater);
+		break;
+	}
 }
 
 QSslKey DefaultConnection::privateKey() const
