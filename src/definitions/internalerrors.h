@@ -91,5 +91,6 @@
 #define IERR_XMPPSTREAM_CLOSED_UNEXPECTEDLY                  "xmppstream-closed-unexpectedly"
 #define IERR_XMPPSTREAM_FAILED_START_CONNECTION              "xmppstream-failed-to-start-connection"
 #define IERR_XMPPSTREAM_UNSUPPORTED_VERSION                  "xmppstream-unsupported-version"
+#define IERR_XMPPSTREAM_RESUME_FAILED                        "xmppstream-resume-failed"
 
 #endif // DEF_INTERNALERRORS_H

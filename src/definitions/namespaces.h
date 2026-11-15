@@ -34,6 +34,7 @@
 
 #define NS_FEATURE_SASL                         "urn:ietf:params:xml:ns:xmpp-sasl"
 #define NS_FEATURE_BIND                         "urn:ietf:params:xml:ns:xmpp-bind"
+#define NS_STREAM_MANAGEMENT                    "urn:xmpp:sm:3"
 #define NS_FEATURE_SESSION                      "urn:ietf:params:xml:ns:xmpp-session"
 #define NS_FEATURE_STARTTLS                     "urn:ietf:params:xml:ns:xmpp-tls"
 #define NS_FEATURE_REGISTER                     "http://jabber.org/features/iq-register"

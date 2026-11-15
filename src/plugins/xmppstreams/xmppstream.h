@@ -2,11 +2,18 @@
 #define XMPPSTREAM_H
 
 #include <QTimer>
+#include <QDateTime>
 #include <QMultiMap>
 #include <QDomDocument>
 #include <interfaces/ixmppstreammanager.h>
 #include <interfaces/iconnectionmanager.h>
 #include "streamparser.h"
+
+struct SmOutStanza {
+	QByteArray data;
+	bool resendable;
+	QDateTime queued;
+};
 
 enum StreamState {
 	SS_OFFLINE,
@@ -83,6 +90,27 @@ protected:
 	bool processStanzaHandlers(Stanza &AStanza, bool AStanzaOut);
 	qint64 sendData(QByteArray AData);
 	QByteArray receiveData(qint64 ABytes);
+	void openStream();
+	void resetConnectionState();
+	QDomElement findServerFeature(const QString &AFeatureNS) const;
+protected:
+	//Stream Management (XEP-0198)
+	bool isSmCountedStanza(const QDomElement &AElem) const;
+	bool canEnableSm() const;
+	bool canResumeSm() const;
+	void sendSmEnable();
+	void sendSmResume();
+	void sendSmRequest();
+	void sendSmAnswer();
+	void processSmElement(const QDomElement &AElem);
+	void processSmAck(quint32 AHandled);
+	void queueSmStanza(const Stanza &AStanza, const QByteArray &AData);
+	void startSmResume(const XmppError &AReason);
+	void scheduleSmResume();
+	void failSmResume(const XmppError &AError);
+	void finishSmSession(bool AKeepMessages);
+	void flushSmResendMessages();
+	void connectionLost(const XmppError &AError);
 protected slots:
 	//IStreamConnection
 	void onConnectionConnected();
@@ -100,6 +128,9 @@ protected slots:
 	void onFeatureDestroyed();
 	//KeepAlive
 	void onKeepAliveTimeout();
+	//Stream Management
+	void onSmRequestTimeout();
+	void onSmResumeTimeout();
 private:
 	IConnection *FConnection;
 	IXmppStreamManager *FXmppStreamManager;
@@ -127,6 +158,24 @@ private:
 private:
 	QMultiMap<int, IXmppDataHandler *> FDataHandlers;
 	QMultiMap<int, IXmppStanzaHadler *> FStanzaHandlers;
+private:
+	bool FSmEnabled;
+	bool FSmEnabling;
+	bool FSmResumable;
+	bool FSmResuming;
+	bool FSmResumeSent;
+	bool FSmAckRequested;
+	int FSmMaxResume;
+	int FSmResumeAttempt;
+	QString FSmId;
+	quint32 FSmInHandled;
+	quint32 FSmOutAcked;
+	QDateTime FSmAckRequestTime;
+	QDateTime FSmResumeDeadline;
+	QList<SmOutStanza> FSmOutQueue;
+	QList<SmOutStanza> FSmResendMessages;
+	QTimer FSmRequestTimer;
+	QTimer FSmResumeTimer;
 };
 
 #endif // XMPPSTREAM_H

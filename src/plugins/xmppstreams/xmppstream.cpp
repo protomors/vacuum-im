@@ -10,6 +10,10 @@
 #include <utils/options.h>
 #include <utils/logger.h>
 
+#define SM_REQUEST_DELAY          1000
+#define SM_DEFAULT_RESUME_TIME    300
+#define SM_RESEND_MAX_AGE         600
+
 XmppStream::XmppStream(IXmppStreamManager *AXmppStreamManager, const Jid &AStreamJid) : QObject(AXmppStreamManager->instance())
 {
 	FXmppStreamManager = AXmppStreamManager;
@@ -33,6 +37,23 @@ XmppStream::XmppStream(IXmppStreamManager *AXmppStreamManager, const Jid &AStrea
 
 	FKeepAliveTimer.setSingleShot(false);
 	connect(&FKeepAliveTimer,SIGNAL(timeout()),SLOT(onKeepAliveTimeout()));
+
+	FSmEnabled = false;
+	FSmEnabling = false;
+	FSmResumable = false;
+	FSmResuming = false;
+	FSmResumeSent = false;
+	FSmAckRequested = false;
+	FSmMaxResume = 0;
+	FSmResumeAttempt = 0;
+	FSmInHandled = 0;
+	FSmOutAcked = 0;
+
+	FSmRequestTimer.setSingleShot(true);
+	connect(&FSmRequestTimer,SIGNAL(timeout()),SLOT(onSmRequestTimeout()));
+
+	FSmResumeTimer.setSingleShot(true);
+	connect(&FSmResumeTimer,SIGNAL(timeout()),SLOT(onSmResumeTimeout()));
 }
 
 XmppStream::~XmppStream()
@@ -60,8 +81,21 @@ bool XmppStream::xmppStanzaIn(IXmppStream *AXmppStream, Stanza &AStanza, int AOr
 		else if (FStreamState==SS_FEATURES && AStanza.kind()=="features")
 		{
 			FServerFeatures = AStanza.element().cloneNode(true).toElement();
-			FAvailFeatures = FXmppStreamManager->xmppFeatures();
-			processFeatures();
+			if (FSmResuming && !findServerFeature(NS_FEATURE_BIND).isNull())
+			{
+				// Authenticated on a new connection, resume the previous session instead of binding a new one
+				if (isEncryptionRequired() && !connection()->isEncrypted())
+					failSmResume(XmppError(IERR_XMPPSTREAM_NOT_SECURE));
+				else if (findServerFeature(NS_STREAM_MANAGEMENT).isNull())
+					failSmResume(XmppError(IERR_XMPPSTREAM_RESUME_FAILED));
+				else
+					sendSmResume();
+			}
+			else
+			{
+				FAvailFeatures = FXmppStreamManager->xmppFeatures();
+				processFeatures();
+			}
 			return true;
 		}
 		else if (AStanza.kind() == "error")
@@ -69,6 +103,11 @@ bool XmppStream::xmppStanzaIn(IXmppStream *AXmppStream, Stanza &AStanza, int AOr
 			abort(XmppStreamError(AStanza.element()));
 			return true;
 		}
+	}
+	else if (AXmppStream==this && AOrder==XSHO_XMPP_STREAM && AStanza.namespaceURI()==NS_STREAM_MANAGEMENT)
+	{
+		processSmElement(AStanza.element());
+		return true;
 	}
 	return false;
 }
@@ -81,7 +120,7 @@ bool XmppStream::xmppStanzaOut(IXmppStream *AXmppStream, Stanza &AStanza, int AO
 
 bool XmppStream::isOpen() const
 {
-	return FReady && !FClosed;
+	return FReady && (!FClosed || FSmResuming);
 }
 
 bool XmppStream::isConnected() const
@@ -122,6 +161,10 @@ void XmppStream::close()
 	if (FConnection && FStreamState!=SS_OFFLINE && FStreamState!=SS_ERROR && FStreamState!=SS_DISCONNECTING)
 	{
 		LOG_STRM_INFO(streamJid(),"Closing XMPP stream");
+		if (!FSmOutQueue.isEmpty())
+			LOG_STRM_WARNING(streamJid(),QString("Closing XMPP stream with %1 unacknowledged stanza(s)").arg(FSmOutQueue.count()));
+		finishSmSession(false);
+		FSmResendMessages.clear();
 		setStreamState(SS_DISCONNECTING);
 		if (FConnection->isOpen())
 		{
@@ -145,6 +188,11 @@ void XmppStream::abort(const XmppError &AError)
 	if (FStreamState!=SS_OFFLINE && FStreamState!=SS_ERROR)
 	{
 		LOG_STRM_WARNING(streamJid(),QString("Aborting XMPP stream: %1").arg(AError.condition()));
+		if (FSmResuming)
+		{
+			FSmResuming = false;
+			FSmResumeTimer.stop();
+		}
 
 		if (FStreamState != SS_DISCONNECTING)
 		{
@@ -342,9 +390,14 @@ void XmppStream::setKeepAliveTimerActive(bool AActive)
 
 qint64 XmppStream::sendStanza(Stanza &AStanza)
 {
-	if (FStreamState!=SS_OFFLINE && FStreamState!=SS_ERROR)
+	if (FSmResuming || (FStreamState!=SS_OFFLINE && FStreamState!=SS_ERROR))
 	{
-		if (!FClosed && !processStanzaHandlers(AStanza,true))
+		bool counted = FSmEnabled && isSmCountedStanza(AStanza.element());
+		if (FSmResuming && FClosed && !counted)
+		{
+			LOG_STRM_WARNING(streamJid(),"Failed to send XMPP stream element: Stream is resuming");
+		}
+		else if ((!FClosed || FSmResuming) && !processStanzaHandlers(AStanza,true))
 		{
 			if (FNodeChanged || FDomainChanged)
 			{
@@ -362,9 +415,24 @@ qint64 XmppStream::sendStanza(Stanza &AStanza)
 					AStanza.setTo(newToJid.full());
 				}
 			}
-			return sendData(AStanza.toByteArray());
+
+			QByteArray data = AStanza.toByteArray();
+			if (counted)
+			{
+				queueSmStanza(AStanza,data);
+				if (FSmResuming)
+				{
+					// Will be sent when the session is resumed
+					return 0;
+				}
+				qint64 bytes = sendData(data);
+				if (!FSmRequestTimer.isActive())
+					FSmRequestTimer.start(SM_REQUEST_DELAY);
+				return bytes;
+			}
+			return sendData(data);
 		}
-		else if (FClosed)
+		else if (FClosed && !FSmResuming)
 		{
 			LOG_STRM_WARNING(streamJid(),"Failed to send XMPP stream stanza: XML stream is finished");
 		}
@@ -451,18 +519,39 @@ void XmppStream::processFeatures()
 	}
 	if (!started)
 	{
-		if (!isEncryptionRequired() || connection()->isEncrypted())
-		{
-			FReady = true;
-			setStreamState(SS_ONLINE);
-			LOG_STRM_INFO(streamJid(),"XMPP stream opened");
-			emit opened();
-		}
-		else
-		{
+		if (isEncryptionRequired() && !connection()->isEncrypted())
 			abort(XmppError(IERR_XMPPSTREAM_NOT_SECURE));
-		}
+		else if (canEnableSm())
+			sendSmEnable();
+		else
+			openStream();
 	}
+}
+
+void XmppStream::openStream()
+{
+	FReady = true;
+	setStreamState(SS_ONLINE);
+	setKeepAliveTimerActive(true);
+	LOG_STRM_INFO(streamJid(),QString("XMPP stream opened, stream_management=%1, resumable=%2").arg(FSmEnabled).arg(FSmResumable));
+	emit opened();
+	flushSmResendMessages();
+}
+
+void XmppStream::resetConnectionState()
+{
+	FClosed = true;
+	setKeepAliveTimerActive(false);
+	removeXmppStanzaHandler(XSHO_XMPP_STREAM,this);
+	clearActiveFeatures();
+}
+
+QDomElement XmppStream::findServerFeature(const QString &AFeatureNS) const
+{
+	QDomElement featureElem = FServerFeatures.firstChildElement();
+	while (!featureElem.isNull() && featureElem.namespaceURI()!=AFeatureNS)
+		featureElem = featureElem.nextSiblingElement();
+	return featureElem;
 }
 
 void XmppStream::clearActiveFeatures()
@@ -585,7 +674,7 @@ void XmppStream::onConnectionConnected()
 
 void XmppStream::onConnectionReadyRead(qint64 ABytes)
 {
-	if (FStreamState!=SS_OFFLINE && FStreamState!=SS_ERROR)
+	if (FSmResuming || (FStreamState!=SS_OFFLINE && FStreamState!=SS_ERROR))
 	{
 		QByteArray data = receiveData(ABytes);
 		if (!processDataHandlers(data,false))
@@ -596,13 +685,32 @@ void XmppStream::onConnectionReadyRead(qint64 ABytes)
 
 void XmppStream::onConnectionError(const XmppError &AError)
 {
-	abort(AError);
+	if (FSmResuming)
+		LOG_STRM_INFO(streamJid(),QString("Connection error while resuming XMPP stream: %1").arg(AError.condition()));
+	else
+		connectionLost(AError);
 }
 
 void XmppStream::onConnectionDisconnected()
 {
-	if (FStreamState != SS_OFFLINE)
+	if (FSmResuming && FStreamState!=SS_DISCONNECTING)
 	{
+		// Connection attempt finished without resuming the session, try again later
+		if (!FClosed || FStreamState!=SS_CONNECTING || !FSmResumeTimer.isActive())
+		{
+			resetConnectionState();
+			setStreamState(SS_CONNECTING);
+			scheduleSmResume();
+		}
+	}
+	else if (FStreamState==SS_ONLINE && canResumeSm())
+	{
+		startSmResume(XmppError(IERR_XMPPSTREAM_CLOSED_UNEXPECTEDLY));
+	}
+	else if (FStreamState != SS_OFFLINE)
+	{
+		bool userClose = FStreamState==SS_DISCONNECTING;
+
 		FReady = false;
 		FClosed = true;
 
@@ -612,6 +720,7 @@ void XmppStream::onConnectionDisconnected()
 		setStreamState(SS_OFFLINE);
 		setKeepAliveTimerActive(false);
 		removeXmppStanzaHandler(XSHO_XMPP_STREAM,this);
+		finishSmSession(!userClose);
 
 		LOG_STRM_INFO(streamJid(),"XMPP stream closed");
 		emit closed();
@@ -634,8 +743,11 @@ void XmppStream::onParserOpened(const QDomElement &AElem)
 
 void XmppStream::onParserElement(const QDomElement &AElem)
 {
+	bool counted = FSmEnabled && isSmCountedStanza(AElem);
 	Stanza stanza(AElem);
 	processStanzaHandlers(stanza,false);
+	if (counted)
+		FSmInHandled++;
 }
 
 void XmppStream::onParserError(const XmppError &AError)
@@ -654,7 +766,17 @@ void XmppStream::onParserClosed()
 {
 	FClosed = true;
 	LOG_STRM_INFO(streamJid(),"XMPP stream finished");
-	FConnection->disconnectFromHost();
+	if (FSmResuming)
+	{
+		// Server finished the stream during the resume handshake
+		failSmResume(XmppError(IERR_XMPPSTREAM_RESUME_FAILED));
+	}
+	else
+	{
+		// The server ended the session, it can not be resumed
+		FSmResumable = false;
+		FConnection->disconnectFromHost();
+	}
 }
 
 void XmppStream::onFeatureFinished(bool ARestart)
@@ -681,9 +803,306 @@ void XmppStream::onKeepAliveTimeout()
 {
 	static const QByteArray space(1,' ');
 	if (FStreamState == SS_DISCONNECTING)
+	{
 		FConnection->disconnectFromHost();
+	}
+	else if (FSmResuming)
+	{
+		LOG_STRM_INFO(streamJid(),"XMPP stream resume handshake timed out");
+		FConnection->disconnectFromHost();
+	}
 	else if (FStreamState != SS_ONLINE)
+	{
 		abort(XmppStreamError(XmppStreamError::EC_CONNECTION_TIMEOUT));
+	}
+	else if (FSmEnabled)
+	{
+		sendSmRequest();
+	}
 	else
+	{
 		sendData(space);
+	}
+}
+
+bool XmppStream::isSmCountedStanza(const QDomElement &AElem) const
+{
+	static const QStringList counted = QStringList() << "message" << "presence" << "iq";
+	return (AElem.namespaceURI().isEmpty() || AElem.namespaceURI()==NS_JABBER_CLIENT) && counted.contains(AElem.tagName());
+}
+
+bool XmppStream::canEnableSm() const
+{
+	return !FSmEnabled && Options::node(OPV_XMPPSTREAMS_STREAMMANAGEMENT).value().toBool()
+		&& !findServerFeature(NS_STREAM_MANAGEMENT).isNull() && !findServerFeature(NS_FEATURE_BIND).isNull();
+}
+
+bool XmppStream::canResumeSm() const
+{
+	return FSmEnabled && FSmResumable && !FSmId.isEmpty() && !FSmResuming;
+}
+
+void XmppStream::sendSmEnable()
+{
+	FSmEnabling = true;
+	Stanza enable("enable",NS_STREAM_MANAGEMENT);
+	enable.setAttribute("resume","true");
+	LOG_STRM_INFO(streamJid(),"Enabling XMPP stream management");
+	sendStanza(enable);
+}
+
+void XmppStream::sendSmResume()
+{
+	FSmResumeSent = true;
+	Stanza resume("resume",NS_STREAM_MANAGEMENT);
+	resume.setAttribute("h",QString::number(FSmInHandled));
+	resume.setAttribute("previd",FSmId);
+	LOG_STRM_INFO(streamJid(),QString("Resuming XMPP stream, previd=%1, h=%2").arg(FSmId).arg(FSmInHandled));
+	sendStanza(resume);
+}
+
+void XmppStream::sendSmRequest()
+{
+	if (FSmEnabled && !FSmResuming && FStreamState==SS_ONLINE)
+	{
+		int timeout = Options::node(OPV_XMPPSTREAMS_TIMEOUT_KEEPALIVE).value().toInt();
+		if (FSmAckRequested && FSmAckRequestTime.msecsTo(QDateTime::currentDateTime())>=timeout)
+		{
+			LOG_STRM_WARNING(streamJid(),"XMPP stream management acknowledgement timed out");
+			connectionLost(XmppStreamError(XmppStreamError::EC_CONNECTION_TIMEOUT));
+		}
+		else
+		{
+			if (!FSmAckRequested)
+			{
+				FSmAckRequested = true;
+				FSmAckRequestTime = QDateTime::currentDateTime();
+			}
+			Stanza request("r",NS_STREAM_MANAGEMENT);
+			sendStanza(request);
+		}
+	}
+}
+
+void XmppStream::sendSmAnswer()
+{
+	Stanza answer("a",NS_STREAM_MANAGEMENT);
+	answer.setAttribute("h",QString::number(FSmInHandled));
+	sendStanza(answer);
+}
+
+void XmppStream::processSmElement(const QDomElement &AElem)
+{
+	QString tag = AElem.tagName();
+	if (tag == "r")
+	{
+		if (FSmEnabled)
+			sendSmAnswer();
+	}
+	else if (tag == "a")
+	{
+		if (FSmEnabled)
+			processSmAck(AElem.attribute("h").toUInt());
+	}
+	else if (tag=="enabled" && FSmEnabling)
+	{
+		FSmEnabling = false;
+		FSmEnabled = true;
+		FSmId = AElem.attribute("id");
+		FSmResumable = !FSmId.isEmpty() && (AElem.attribute("resume")=="true" || AElem.attribute("resume")=="1");
+		FSmMaxResume = AElem.attribute("max").toInt();
+		FSmInHandled = 0;
+		FSmOutAcked = 0;
+		FSmOutQueue.clear();
+		FSmAckRequested = false;
+		LOG_STRM_INFO(streamJid(),QString("XMPP stream management enabled, id=%1, resumable=%2, max=%3").arg(FSmId).arg(FSmResumable).arg(FSmMaxResume));
+		openStream();
+	}
+	else if (tag=="resumed" && FSmResumeSent)
+	{
+		FSmResumeSent = false;
+		FSmResuming = false;
+		FSmResumeTimer.stop();
+		processSmAck(AElem.attribute("h").toUInt());
+
+		setStreamState(SS_ONLINE);
+		setKeepAliveTimerActive(true);
+		clearActiveFeatures();
+		LOG_STRM_INFO(streamJid(),QString("XMPP stream resumed, id=%1, resending %2 stanza(s)").arg(FSmId).arg(FSmOutQueue.count()));
+
+		foreach(const SmOutStanza &out, FSmOutQueue)
+			sendData(out.data);
+		sendSmRequest();
+	}
+	else if (tag == "failed")
+	{
+		if (AElem.hasAttribute("h"))
+			processSmAck(AElem.attribute("h").toUInt());
+
+		if (FSmEnabling)
+		{
+			LOG_STRM_WARNING(streamJid(),"Failed to enable XMPP stream management");
+			FSmEnabling = false;
+			openStream();
+		}
+		else if (FSmResumeSent)
+		{
+			LOG_STRM_WARNING(streamJid(),QString("Server refused to resume XMPP stream, id=%1").arg(FSmId));
+			failSmResume(XmppError(IERR_XMPPSTREAM_RESUME_FAILED));
+		}
+		else
+		{
+			LOG_STRM_WARNING(streamJid(),"XMPP stream management failure reported by server");
+		}
+	}
+}
+
+void XmppStream::processSmAck(quint32 AHandled)
+{
+	quint32 count = AHandled - FSmOutAcked;
+	if (count > (quint32)FSmOutQueue.count())
+	{
+		LOG_STRM_WARNING(streamJid(),QString("Server acknowledged more stanzas than were sent, h=%1, acked=%2, queued=%3").arg(AHandled).arg(FSmOutAcked).arg(FSmOutQueue.count()));
+		count = FSmOutQueue.count();
+	}
+	FSmOutQueue.erase(FSmOutQueue.begin(),FSmOutQueue.begin()+count);
+	FSmOutAcked = AHandled;
+	FSmAckRequested = false;
+}
+
+void XmppStream::queueSmStanza(const Stanza &AStanza, const QByteArray &AData)
+{
+	SmOutStanza out;
+	out.data = AData;
+	out.resendable = AStanza.kind()=="message" && !AStanza.firstElement("body").isNull();
+	out.queued = QDateTime::currentDateTime();
+	FSmOutQueue.append(out);
+}
+
+void XmppStream::startSmResume(const XmppError &AReason)
+{
+	int seconds = FSmMaxResume>0 ? FSmMaxResume : SM_DEFAULT_RESUME_TIME;
+	LOG_STRM_WARNING(streamJid(),QString("XMPP stream connection lost, trying to resume for %1 seconds: %2").arg(seconds).arg(AReason.condition()));
+
+	FSmResuming = true;
+	FSmResumeSent = false;
+	FSmResumeAttempt = 0;
+	FSmAckRequested = false;
+	FSmResumeDeadline = QDateTime::currentDateTime().addSecs(seconds);
+	FSmRequestTimer.stop();
+
+	setStreamState(SS_CONNECTING);
+	resetConnectionState();
+	if (FConnection->isOpen())
+		FConnection->disconnectFromHost();
+	else
+		scheduleSmResume();
+}
+
+void XmppStream::scheduleSmResume()
+{
+	static const int delays[] = { 500, 2000, 5000, 10000, 20000, 30000 };
+	static const int delaysCount = sizeof(delays)/sizeof(delays[0]);
+
+	int delay = delays[qMin(FSmResumeAttempt,delaysCount-1)];
+	if (QDateTime::currentDateTime().addMSecs(delay) < FSmResumeDeadline)
+	{
+		LOG_STRM_DEBUG(streamJid(),QString("Next XMPP stream resume attempt in %1 ms").arg(delay));
+		FSmResumeTimer.start(delay);
+	}
+	else
+	{
+		failSmResume(XmppError(IERR_XMPPSTREAM_RESUME_FAILED));
+	}
+}
+
+void XmppStream::failSmResume(const XmppError &AError)
+{
+	LOG_STRM_WARNING(streamJid(),QString("Failed to resume XMPP stream: %1").arg(AError.condition()));
+	finishSmSession(true);
+	abort(AError);
+
+	// When failed inside a disconnect notification the connection will not report it again
+	if (FStreamState==SS_ERROR && !FConnection->isOpen())
+		QMetaObject::invokeMethod(this,"onConnectionDisconnected",Qt::QueuedConnection);
+}
+
+void XmppStream::finishSmSession(bool AKeepMessages)
+{
+	if (AKeepMessages)
+	{
+		foreach(const SmOutStanza &out, FSmOutQueue)
+			if (out.resendable)
+				FSmResendMessages.append(out);
+	}
+
+	FSmEnabled = false;
+	FSmEnabling = false;
+	FSmResumable = false;
+	FSmResuming = false;
+	FSmResumeSent = false;
+	FSmAckRequested = false;
+	FSmId.clear();
+	FSmMaxResume = 0;
+	FSmInHandled = 0;
+	FSmOutAcked = 0;
+	FSmOutQueue.clear();
+	FSmRequestTimer.stop();
+	FSmResumeTimer.stop();
+}
+
+void XmppStream::flushSmResendMessages()
+{
+	if (!FSmResendMessages.isEmpty())
+	{
+		QDateTime oldest = QDateTime::currentDateTime().addSecs(-SM_RESEND_MAX_AGE);
+		QList<SmOutStanza> messages = FSmResendMessages;
+		FSmResendMessages.clear();
+
+		int sent = 0;
+		foreach(const SmOutStanza &out, messages)
+		{
+			if (out.queued >= oldest && isOpen())
+			{
+				if (FSmEnabled)
+					FSmOutQueue.append(out);
+				sendData(out.data);
+				sent++;
+			}
+		}
+		if (FSmEnabled && sent>0)
+			FSmRequestTimer.start(SM_REQUEST_DELAY);
+		LOG_STRM_INFO(streamJid(),QString("Resent %1 of %2 unacknowledged message(s) from the previous session").arg(sent).arg(messages.count()));
+	}
+}
+
+void XmppStream::connectionLost(const XmppError &AError)
+{
+	if (FStreamState==SS_ONLINE && canResumeSm())
+		startSmResume(AError);
+	else
+		abort(AError);
+}
+
+void XmppStream::onSmRequestTimeout()
+{
+	sendSmRequest();
+}
+
+void XmppStream::onSmResumeTimeout()
+{
+	if (FSmResuming)
+	{
+		if (QDateTime::currentDateTime() >= FSmResumeDeadline)
+		{
+			failSmResume(XmppError(IERR_XMPPSTREAM_RESUME_FAILED));
+		}
+		else
+		{
+			FSmResumeAttempt++;
+			LOG_STRM_INFO(streamJid(),QString("Reconnecting to resume XMPP stream, attempt=%1").arg(FSmResumeAttempt));
+			if (!FConnection->connectToHost())
+				scheduleSmResume();
+		}
+	}
 }

@@ -36,6 +36,7 @@ bool XmppStreamManager::initObjects()
 	XmppError::registerError(NS_INTERNAL_ERROR,IERR_XMPPSTREAM_CLOSED_UNEXPECTEDLY,tr("Connection closed unexpectedly"));
 	XmppError::registerError(NS_INTERNAL_ERROR,IERR_XMPPSTREAM_FAILED_START_CONNECTION,tr("Failed to start connection"));
 	XmppError::registerError(NS_INTERNAL_ERROR,IERR_XMPPSTREAM_UNSUPPORTED_VERSION,tr("Server does not support XMPP 1.0"));
+	XmppError::registerError(NS_INTERNAL_ERROR,IERR_XMPPSTREAM_RESUME_FAILED,tr("Failed to resume the session after connection loss"));
 	return true;
 }
 
@@ -44,6 +45,7 @@ bool XmppStreamManager::initSettings()
 	Options::setDefaultValue(OPV_XMPPSTREAMS_TIMEOUT_HANDSHAKE,60000);
 	Options::setDefaultValue(OPV_XMPPSTREAMS_TIMEOUT_KEEPALIVE,30000);
 	Options::setDefaultValue(OPV_XMPPSTREAMS_TIMEOUT_DISCONNECT,5000);
+	Options::setDefaultValue(OPV_XMPPSTREAMS_STREAMMANAGEMENT,true);
 	return true;
 }
 
