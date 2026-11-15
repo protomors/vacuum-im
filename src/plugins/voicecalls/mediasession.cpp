@@ -5,6 +5,10 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QMetaObject>
+#ifdef Q_OS_WIN
+#include <QCoreApplication>
+#include <QDir>
+#endif
 #include <utils/logger.h>
 
 #include <gst/gst.h>
@@ -311,7 +315,20 @@ static bool initGStreamer()
 {
 	static bool inited = false;
 	if (!inited)
+	{
+#ifdef Q_OS_WIN
+		const QString appDir = QCoreApplication::applicationDirPath();
+		const QString pluginsDir = appDir + "/gstreamer-1.0";
+		if (QDir(pluginsDir).exists())
+		{
+			g_setenv("GST_PLUGIN_SYSTEM_PATH_1_0", pluginsDir.toUtf8().constData(), TRUE);
+			g_setenv("GST_PLUGIN_SCANNER_1_0", (appDir + "/gst-plugin-scanner.exe").toUtf8().constData(), TRUE);
+			g_setenv("GIO_EXTRA_MODULES", (appDir + "/gio-modules").toUtf8().constData(), TRUE);
+			g_setenv("SSL_CERT_FILE", (appDir + "/certificates/ca-certificates.crt").toUtf8().constData(), FALSE);
+		}
+#endif
 		inited = gst_init_check(NULL,NULL,NULL);
+	}
 	return inited;
 }
 

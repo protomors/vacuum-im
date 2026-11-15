@@ -1,52 +1,60 @@
-include("${CMAKE_SOURCE_DIR}/src/make/config.cmake")
+option(BUNDLE_WINDOWS_DEPENDENCIES "Deploy dependencies for an extract-and-run Windows archive" ON)
+if(NOT BUNDLE_WINDOWS_DEPENDENCIES)
+    return()
+endif()
+if(Qt6Core_VERSION VERSION_LESS 6.5)
+    message(FATAL_ERROR "Windows dependency deployment requires Qt 6.5+. Use BUNDLE_WINDOWS_DEPENDENCIES=OFF for a source-only build with older Qt.")
+endif()
 
-if (WIN32)
-	foreach(LANG ${LOCALIZED_LANGS})
-		string(SUBSTRING ${LANG} 0 2 SHORTLANG)
-		if(EXISTS "${QT6_INSTALL_PREFIX}/translations/qtbase_${SHORTLANG}.qm")
-			install(FILES "${QT6_INSTALL_PREFIX}/translations/qtbase_${SHORTLANG}.qm"
-					DESTINATION "${CMAKE_INSTALL_PREFIX}/${INSTALL_TRANSLATIONS}/${LANG}" RENAME "qt_${SHORTLANG}.qm" COMPONENT Runtime)
-		elseif(EXISTS "${QT6_INSTALL_PREFIX}/translations/qt_${SHORTLANG}.qm")
-			install(FILES "${QT6_INSTALL_PREFIX}/translations/qt_${SHORTLANG}.qm"
-					DESTINATION "${CMAKE_INSTALL_PREFIX}/${INSTALL_TRANSLATIONS}/${LANG}" COMPONENT Runtime)
-		endif()
-	endforeach(LANG)
+# Deploy the compiler DLLs beside the executable, rather than requiring users
+# to run a redistributable installer after extracting the archive.
+set(CMAKE_INSTALL_UCRT_LIBRARIES ON)
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${INSTALL_BINS}")
+include(InstallRequiredSystemLibraries)
 
-	foreach(_candidate Qt6::QWindowsIntegrationPlugin Qt6::QWindowsVistaStylePlugin Qt6::QModernWindowsStylePlugin
-			Qt6::QSvgPlugin Qt6::QSvgIconPlugin Qt6::QSQLiteDriverPlugin
-			Qt6::QWindowsMediaPlugin Qt6::QFFmpegMediaPlugin
-			Qt6::QSchannelBackendPlugin Qt6::QTlsBackendOpenSSLPlugin)
-		if(TARGET ${_candidate})
-			list(APPEND QtBinaries ${_candidate})
-		endif()
-	endforeach()
+get_property(_plugins GLOBAL PROPERTY VACUUM_ENABLED_PLUGIN_TARGETS)
+set(_plugin_paths "")
+foreach(plugin IN LISTS _plugins)
+    string(APPEND _plugin_paths "        \"${INSTALL_PLUGINS}/$<TARGET_FILE_NAME:${plugin}>\"\n")
+endforeach()
 
-	foreach(_qtbinary ${QtBinaries})
-		get_target_property(_qtbinary_fullpath ${_qtbinary} LOCATION)
-		get_filename_component(_qtbinary_dirpath ${_qtbinary_fullpath} PATH)
-		get_filename_component(_qtbinary_dirname ${_qtbinary_dirpath} NAME)
-		get_filename_component(_qtbinary_file ${_qtbinary_fullpath} NAME)
-		if(${_qtbinary_dirname} MATCHES "bin")
-			set(_qtbinary_dirname "")
-		endif()
-		list(APPEND DLL_FILES "${CMAKE_INSTALL_PREFIX}/${INSTALL_APP_DIR}/${_qtbinary_dirname}/${_qtbinary_file}")
-		install(FILES ${_qtbinary_fullpath} DESTINATION "${CMAKE_INSTALL_PREFIX}/${INSTALL_APP_DIR}/${_qtbinary_dirname}" COMPONENT Runtime)
-	endforeach()
+if(TARGET voicecalls)
+    get_property(VACUUM_GSTREAMER_ROOT GLOBAL PROPERTY VACUUM_GSTREAMER_ROOT)
+    if(NOT IS_DIRECTORY "${VACUUM_GSTREAMER_ROOT}")
+        message(FATAL_ERROR "Set VACUUM_GSTREAMER_ROOT to the matching GStreamer runtime/development prefix")
+    endif()
+    # MediaSession selects these application-local plugins before initializing
+    # GStreamer, so no machine-wide installation or PATH edits are needed.
+    set(_gst_plugins coreelements typefindfunctions audioconvert audioresample
+        volume audiotestsrc autodetect wasapi wasapi2 opus rtp rtpmanager
+        webrtc nice dtls srtp sctp webrtcdsp)
+    foreach(plugin IN LISTS _gst_plugins)
+        unset(_gst_plugin)
+        find_file(_gst_plugin NAMES "gst${plugin}.dll" "libgst${plugin}.dll"
+            PATHS "${VACUUM_GSTREAMER_ROOT}/lib/gstreamer-1.0" NO_DEFAULT_PATH NO_CACHE REQUIRED)
+        install(FILES "${_gst_plugin}" DESTINATION "${INSTALL_BINS}/gstreamer-1.0")
+    endforeach()
+    foreach(tool gst-inspect-1.0 gst-launch-1.0)
+        install(PROGRAMS "${VACUUM_GSTREAMER_ROOT}/bin/${tool}.exe" DESTINATION "${INSTALL_BINS}")
+    endforeach()
+    install(PROGRAMS "${VACUUM_GSTREAMER_ROOT}/libexec/gstreamer-1.0/gst-plugin-scanner.exe"
+        DESTINATION "${INSTALL_BINS}")
+    install(FILES "${VACUUM_GSTREAMER_ROOT}/lib/gio/modules/gioopenssl.dll"
+        DESTINATION "${INSTALL_BINS}/gio-modules")
+    install(FILES "${VACUUM_GSTREAMER_ROOT}/etc/ssl/certs/ca-certificates.crt"
+        DESTINATION "${INSTALL_BINS}/certificates")
+    install(DIRECTORY "${VACUUM_GSTREAMER_ROOT}/share/licenses/" DESTINATION "${INSTALL_DOCUMENTS}/licenses/GStreamer")
+endif()
 
-	get_property(_plugins GLOBAL PROPERTY ALL_PLUGINS_FULLPATHS)
-	list(APPEND DLL_FILES "${_plugins}")
+foreach(license_directory LICENSES Licenses)
+    if(IS_DIRECTORY "${QT6_INSTALL_PREFIX}/${license_directory}")
+        install(DIRECTORY "${QT6_INSTALL_PREFIX}/${license_directory}/"
+            DESTINATION "${INSTALL_DOCUMENTS}/licenses/Qt")
+    endif()
+endforeach()
 
-	list(APPEND DLL_DIRS ${QT6_INSTALL_PREFIX}/bin)
-	list(APPEND DLL_DIRS ${CMAKE_INSTALL_PREFIX}/${INSTALL_APP_DIR})
-	list(APPEND DLL_DIRS ${CMAKE_INSTALL_PREFIX}/${INSTALL_PLUGINS})
-
-	set(CMAKE_INSTALL_UCRT_LIBRARIES ON)
-	set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${INSTALL_APP_DIR}")
-	include(InstallRequiredSystemLibraries)
-
-	install(CODE "
-		set(BU_CHMOD_BUNDLE_ITEMS ON)
-		include(BundleUtilities)
-		fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/${INSTALL_APP_DIR}/vacuum.exe\" \"${DLL_FILES}\" \"${DLL_DIRS}\")" COMPONENT Runtime)
-
-endif (WIN32)
+configure_file(deploy-windows.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/deploy-windows.cmake.in" @ONLY)
+file(READ "${CMAKE_CURRENT_BINARY_DIR}/deploy-windows.cmake.in" _deploy_content)
+qt_generate_deploy_script(TARGET ${VACUUM_LOADER_NAME}
+    OUTPUT_SCRIPT _deploy_script CONTENT "${_deploy_content}")
+install(SCRIPT "${_deploy_script}")

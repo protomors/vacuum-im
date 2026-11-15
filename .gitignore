@@ -202,3 +202,4 @@ $RECYCLE.BIN/
 .vscode
 .vs
 CMakeSettings.json
+__pycache__/

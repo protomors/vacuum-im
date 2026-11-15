@@ -1,19 +1,80 @@
-name: Vacuum-IM Build
+name: Release archives
 
-on: [push]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archives-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: ubuntu 24.04
+  linux:
+    name: Linux x86_64 (Arch, system libraries)
     runs-on: ubuntu-24.04
-
+    timeout-minutes: 45
     steps:
-    - uses: actions/checkout@v4
-    - name: packages
-      run: sudo apt update && sudo apt install build-essential cmake ninja-build pkg-config qt6-base-dev qt6-svg-dev qt6-multimedia-dev qt6-tools-dev qt6-tools-dev-tools libgl1-mesa-dev libx11-dev libxss-dev zlib1g-dev libidn-dev libhunspell-dev libssl-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
-    - name: cmake configure
-      run: cmake -S . -B build -G Ninja -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DSPELLCHECKER_BACKEND=HUNSPELL
-    - name: build
-      run: cmake --build build --parallel 4
-    - name: install
-      run: sudo cmake --install build
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Prepare pinned Arch build environment
+        run: docker build -t vacuum-linux -f .github/containers/linux.Dockerfile .
+      - name: Build, package and check extracted archive
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$GITHUB_WORKSPACE:/src" -w /src vacuum-linux bash -euc '
+              cmake --preset release -B build/linux
+              cmake --build build/linux --parallel 4
+              cpack --config build/linux/CPackConfig.cmake -C Release
+              python .github/scripts/check_archive.py "build/linux/packages/*.tar.gz"
+            '
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/linux/packages/*.tar.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    name: Windows x86_64 (Qt and GStreamer bundled)
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - uses: jurplel/install-qt-action@v4.5.0
+        with:
+          version: '6.8.3'
+          arch: win64_msvc2022_64
+          modules: 'qtmultimedia'
+      - name: Install pkg-config
+        run: choco install pkgconfiglite --yes --no-progress
+      - name: Extract pinned GStreamer runtime and development files
+        run: ./.github/scripts/install-gstreamer.ps1
+      - name: Configure
+        run: cmake --preset release -DBUNDLE_WINDOWS_DEPENDENCIES=ON "-DVACUUM_GSTREAMER_ROOT=$env:VACUUM_GSTREAMER_ROOT"
+      - name: Build
+        run: cmake --build --preset release --parallel 4
+      - name: Package
+        run: cpack --config build/release/CPackConfig.cmake -C Release
+      - name: Check extracted archive with SDKs hidden
+        run: |
+          python .github/scripts/check_archive.py "build/release/packages/*.zip" `
+            --hide-sdk "$env:QT_ROOT_DIR" --hide-sdk "$env:VACUUM_GSTREAMER_ROOT"
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/release/packages/*.zip
+          archive: false
+          if-no-files-found: error
+          retention-days: 14

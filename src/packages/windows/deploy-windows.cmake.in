@@ -1,0 +1,53 @@
+# Qt supplies the deployment tool matching the selected Qt kit. Explicitly
+# scan every enabled application plugin, including its Qt Multimedia/SQL use.
+set(QT_DEPLOY_BIN_DIR "@INSTALL_BINS@")
+set(QT_DEPLOY_LIB_DIR "@INSTALL_LIBS@")
+set(QT_DEPLOY_PLUGINS_DIR "@INSTALL_BINS@/qt-plugins")
+set(QT_DEPLOY_TRANSLATIONS_DIR "@INSTALL_TRANSLATIONS@/qt")
+qt_deploy_runtime_dependencies(
+    EXECUTABLE "@INSTALL_BINS@/$<TARGET_FILE_NAME:@VACUUM_LOADER_NAME@>"
+    ADDITIONAL_LIBRARIES "@INSTALL_LIBS@/$<TARGET_FILE_NAME:@VACUUM_UTILS_NAME@>"
+    ADDITIONAL_MODULES
+@_plugin_paths@
+    GENERATE_QT_CONF NO_COMPILER_RUNTIME)
+
+# windeployqt handles Qt, while GStreamer and other non-Qt libraries need an
+# additional dependency closure. API sets and operating-system DLLs stay external.
+if(POLICY CMP0207)
+    cmake_policy(SET CMP0207 NEW)
+endif()
+set(_prefix "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}")
+file(GLOB_RECURSE _modules "${_prefix}/*.dll")
+file(GLOB_RECURSE _executables "${_prefix}/*.exe")
+set(_search_directories "${_prefix}/@INSTALL_BINS@" "@QT6_INSTALL_PREFIX@/bin")
+if(NOT "@VACUUM_GSTREAMER_ROOT@" STREQUAL "")
+    list(APPEND _search_directories "@VACUUM_GSTREAMER_ROOT@/bin")
+endif()
+file(GET_RUNTIME_DEPENDENCIES
+    EXECUTABLES ${_executables}
+    MODULES ${_modules}
+    DIRECTORIES ${_search_directories}
+    PRE_EXCLUDE_REGEXES "[Aa][Pp][Ii]-[Mm][Ss]-.*" "[Ee][Xx][Tt]-[Mm][Ss]-.*"
+    POST_EXCLUDE_REGEXES
+        ".*[/\\\\][Ww][Ii][Nn][Dd][Oo][Ww][Ss][/\\\\][Ss][Yy][Ss][Tt][Ee][Mm]32[/\\\\].*"
+        ".*[/\\\\][Ww][Ii][Nn][Dd][Oo][Ww][Ss][/\\\\][Ss][Yy][Ss][Ww][Oo][Ww]64[/\\\\].*"
+        ".*[/\\\\][Ww][Ii][Nn][Dd][Oo][Ww][Ss][/\\\\][Ww][Ii][Nn][Ss][Xx][Ss][/\\\\].*"
+    RESOLVED_DEPENDENCIES_VAR _resolved
+    UNRESOLVED_DEPENDENCIES_VAR _unresolved
+    CONFLICTING_DEPENDENCIES_PREFIX _conflicts)
+if(_unresolved OR _conflicts_FILENAMES)
+    message(FATAL_ERROR "Deployment dependency errors. Unresolved: ${_unresolved}; conflicting: ${_conflicts_FILENAMES}")
+endif()
+foreach(dependency IN LISTS _resolved)
+    get_filename_component(_name "${dependency}" NAME)
+    set(_destination "${_prefix}/@INSTALL_BINS@/${_name}")
+    if(EXISTS "${_destination}")
+        file(SHA256 "${dependency}" _source_hash)
+        file(SHA256 "${_destination}" _destination_hash)
+        if(NOT _source_hash STREQUAL _destination_hash)
+            message(FATAL_ERROR "Different libraries would be deployed as ${_name}")
+        endif()
+    else()
+        file(INSTALL "${dependency}" DESTINATION "${_prefix}/@INSTALL_BINS@")
+    endif()
+endforeach()

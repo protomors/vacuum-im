@@ -15,9 +15,10 @@ Requirements
     the bundled sources against the application's Qt version.
   * Hunspell is the preset spellchecker backend. A bundled copy is available
     if the system library is absent.
-  * Optional: GStreamer 1.20+ with SDP and WebRTC development files for voice
-    calls. Voice calls also
-    need the webrtc, dtls, srtp, nice, opus and rtp runtime plugins.
+  * GStreamer 1.20+ with SDP and WebRTC development files for voice calls.
+    Release presets require voice calls; custom/development builds may use
+    PLUGIN_voicecalls=AUTO or OFF. Runtime plugins include webrtc, dtls,
+    srtp, nice, opus and rtp.
   * Adium message styles are currently disabled: they require Qt WebKit,
     which is not available in Qt 6.
 
@@ -28,7 +29,10 @@ Example build dependencies on Ubuntu 24.04:
   sudo apt install build-essential cmake ninja-build pkg-config \
     qt6-base-dev qt6-svg-dev qt6-multimedia-dev \
     qt6-tools-dev qt6-tools-dev-tools libgl-dev libx11-dev libxss-dev \
-    zlib1g-dev libminizip-dev libidn-dev libhunspell-dev
+    zlib1g-dev libminizip-dev libidn-dev libhunspell-dev \
+    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+    libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-nice
 
 Configure and build:
 
@@ -65,11 +69,56 @@ Ensure Ninja is on PATH and point CMake at that Qt kit:
 The executable is installed as C:/vacuum-stage/vacuum/vacuum.exe. The same
 configure/build/install commands can be used with a matching MinGW Qt kit.
 
-Release packaging is being migrated to CMake/CPack and GitHub Actions. The
-Windows release archive must include Qt plugins, compiler runtimes and all
-other required dependencies so it runs immediately after extraction. The
-Linux release archive will use system libraries. The source-build commands
-above do not yet validate either release archive's deployment.
+Windows archive builds also require Qt 6.5+ deployment tools and matching
+GStreamer MSVC runtime/development files. Pass their common prefix when
+configuring (the CI job installs Qt 6.8.3 and GStreamer 1.26.9):
+
+  cmake --preset release -DCMAKE_PREFIX_PATH=C:/Qt/6.8.3/msvc2022_64 \
+    -DVACUUM_GSTREAMER_ROOT=C:/gstreamer/1.0/msvc_x86_64
+
+The bundled GStreamer plugins and scanner are selected automatically by the
+voice-call plugin. End users do not need an installed Qt/GStreamer SDK or
+manual PATH changes. A source build with Qt 6.2-6.4 can opt out of deployment
+using BUNDLE_WINDOWS_DEPENDENCIES=OFF.
+
+Release archives
+----------------
+Build and package using the release preset:
+
+  cmake --preset release
+  cmake --build --preset release --parallel
+  cpack --config build/release/CPackConfig.cmake -C Release
+
+Archives appear in build/release/packages/: .tar.gz on Linux, .zip on Windows.
+Names include the application version/suffix, source commit, OS and architecture.
+CPack stages the installation itself; no administrator installation is needed.
+The application SDK and optional maintainer tools are excluded by the preset.
+
+Both formats include build-info.json listing the expected application plugins.
+Linux also includes RUNTIME-REQUIREMENTS.txt with Qt, glibc, GStreamer and
+resolved shared-library versions. Linux archives contain Vacuum's own library,
+plugins and resources, while Qt and GStreamer remain system dependencies.
+
+The Linux CI job uses a pinned Arch Linux image and the 2026/11/14 repository
+snapshot, matching the current development system (Qt 6.12, glibc 2.44).
+This initial archive targets that system-library baseline. Runtime packages on
+Arch include:
+
+  sudo pacman -S qt6-base qt6-svg qt6-multimedia qt6-multimedia-ffmpeg \
+    qt6-wayland hunspell libidn minizip gst-plugins-base gst-plugins-good \
+    gst-plugins-bad libnice
+
+Extract the complete archive and run bin/vacuum on Linux, or vacuum/vacuum.exe
+on Windows. The Windows archive includes Qt platform/media/TLS/SQLite plugins,
+compiler DLLs and the GStreamer dependencies needed for voice calls.
+
+GitHub Actions builds both platforms on pushes, pull requests and manual runs,
+checks the extracted archives, then uploads the archive files directly as
+workflow artifacts. The Windows check temporarily hides the Qt/GStreamer SDKs
+and removes development PATH entries. The check script can also be run locally:
+
+  python .github/scripts/check_archive.py /path/to/archive.tar.gz
+
 
 Development and configuration
 -----------------------------
@@ -91,7 +140,9 @@ Useful configure options (pass as -DNAME=value):
                                 (OFF in the supplied presets).
   INSTALL_DOCS=OFF              Skip installed documentation.
   INSTALL_LIB_DIR=lib64         Override the Unix library directory.
-  PLUGIN_<name>=OFF             Disable a plugin, e.g. PLUGIN_voicecalls=OFF.
+  PLUGIN_<name>=OFF             Disable a plugin.
+  PLUGIN_voicecalls=ON          Require voice-call dependencies (release default).
+  PLUGIN_voicecalls=AUTO        Build voice calls if dependencies are found.
   SPELLCHECKER_BACKEND=HUNSPELL Select hunspell, enchant, aspell or macspell.
   LANGS="uk;de"                 Select translations (default: all languages).
   RUN_FROM_BUILD_DIR=ON         Use source resources and build-tree plugins.

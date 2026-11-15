@@ -14,7 +14,10 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "INSTALL_SDK": "OFF",
-        "SPELLCHECKER_BACKEND": "HUNSPELL"
+        "SPELLCHECKER_BACKEND": "HUNSPELL",
+        "RUN_FROM_BUILD_DIR": "OFF",
+        "PLUGIN_voicecalls": "ON",
+        "INSTALL_DOCS": "ON"
       }
     },
     {
@@ -24,12 +27,19 @@
       "binaryDir": "${sourceDir}/build/dev",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "RUN_FROM_BUILD_DIR": "ON"
+        "RUN_FROM_BUILD_DIR": "ON",
+        "PLUGIN_voicecalls": "AUTO"
       }
     }
   ],
   "buildPresets": [
-    { "name": "release", "configurePreset": "release" },
-    { "name": "dev", "configurePreset": "dev" }
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "dev",
+      "configurePreset": "dev"
+    }
   ]
 }

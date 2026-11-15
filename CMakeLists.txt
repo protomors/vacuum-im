@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(vacuum-im)
+include("src/make/version.cmake")
+project(vacuum-im VERSION "${VACUUM_VERSION}" LANGUAGES C CXX)
+set(VERSION "${PROJECT_VERSION}") # also used by the macOS bundle
+include(CPackComponent)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -23,8 +26,6 @@ if (APPLE)
 else (APPLE)
 	install(DIRECTORY "resources/menuicons" DESTINATION "${INSTALL_RESOURCES}")
 endif (APPLE)
-
-include("src/packages/package.cmake")
 
 set(INSTALL_SDK YES CACHE BOOL "Install files needed to build custom plugins")
 option(BUILD_TRANSLATION_TOOLS "Build the autotranslate and txprepare maintainer utilities" OFF)
@@ -75,3 +76,5 @@ if (INSTALL_SDK)
 		DESCRIPTION "Files needed to build custom plugins"
 		DISABLED)
 endif (INSTALL_SDK)
+
+include("src/packages/package.cmake")
