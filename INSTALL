@@ -1,48 +1,127 @@
-[Requirements]
-  ==Common==
-    Qt 4.8.x
-    OpenSSL 1.0.0
-    GStreamer 1.20 with webrtc, dtls, srtp, nice, opus and rtp plugins (optional, for voice calls)
-  ==Linux==
-    libidn
-    libXScrnSaver
-    zlib with minizip
-    hunspell or enchant or aspell
+Building Vacuum-IM
+==================
 
+CMake is the supported build system. Run the commands below from the source
+root. GitHub Actions is the supported CI service.
 
-[Common]
-  ==qmake parametrs==
-    INSTALL_PREFIX  - installation prefix
-    INSTALL_APP_DIR - directory name for application
-    INSTALL_LIB_DIR - directory name for libraries
-    INSTALL_RES_DIR - directory name for resources
+Requirements
+------------
+  * CMake 3.21 or newer, a C++17 compiler, and Ninja for the supplied presets.
+  * Qt 6: Widgets, Network, Xml, Concurrent, LinguistTools, PrintSupport,
+    Multimedia and Sql. Svg is optional.
+  * Linux: Qt GuiPrivate development headers, X11 and XScreenSaver headers.
+  * System zlib, minizip and libidn are used when found; otherwise bundled
+    copies are built. QtLockedFile and QxtGlobalShortcut are always built from
+    the bundled sources against the application's Qt version.
+  * Hunspell is the preset spellchecker backend. A bundled copy is available
+    if the system library is absent.
+  * Optional: GStreamer 1.20+ with SDP and WebRTC development files for voice
+    calls. Voice calls also
+    need the webrtc, dtls, srtp, nice, opus and rtp runtime plugins.
+  * Adium message styles are currently disabled: they require Qt WebKit,
+    which is not available in Qt 6.
 
+Linux
+-----
+Example build dependencies on Ubuntu 24.04:
 
-[Windows]
-  * Default install directory c:\vacuum
-  ==Visual Studio==
-    qmake CONFIG-=debug_and_release CONFIG-=debug -recursive vacuum.pro
-    nmake
-    nmake install
+  sudo apt install build-essential cmake ninja-build pkg-config \
+    qt6-base-dev qt6-base-private-dev qt6-svg-dev qt6-multimedia-dev \
+    qt6-tools-dev qt6-tools-dev-tools libgl-dev libx11-dev libxss-dev \
+    zlib1g-dev libminizip-dev libidn-dev libhunspell-dev
 
-  ==MinGW==
-    qmake CONFIG-=debug_and_release CONFIG-=debug -recursive vacuum.pro
-    mingw32-make.exe
-    mingw32-make.exe install
+Configure and build:
 
+  cmake --preset release
+  cmake --build --preset release --parallel
 
-[Linux/Unix]
-  * Default install prefix /usr/local
-  * By default libvacuumutils.so is copied to /usr/local/lib. On some distributives
-  * you may receive message that libvacuumutils.so is not found. In this case configure
-  * your system to search libraries in /usr/local/lib.
-  qmake CONFIG-=debug_and_release CONFIG-=debug -recursive vacuum.pro
-  make
-  make install
+Install into a local staging directory:
 
+  cmake --install build/release --prefix "$PWD/stage"
+  ./stage/bin/vacuum
 
-[MacOS X]
-  * Default install directory /Applications/vacuum.app
-  qmake CONFIG-=debug_and_release CONFIG-=debug -recursive vacuum.pro
-  make
-  make install
+The installation contains bin/, lib/ and share/. Preserve this layout when
+moving it. Linux builds use system Qt and other shared system libraries;
+copying the installation tree does not bundle those dependencies.
+
+A binary release needs a documented architecture, Linux/glibc baseline and
+Qt build version. Qt's public API generally supports running binaries built
+with an older Qt 6 on a newer Qt 6, not the reverse. The current X11 code uses
+GuiPrivate APIs, so that general compatibility guarantee does not cover it:
+use the matching distribution Qt build until that private dependency is
+removed. Rebuilding from source uses the locally installed Qt version.
+
+Windows
+-------
+Use a developer terminal for the compiler matching the installed Qt 6 kit
+(for example, the x64 Visual Studio tools terminal for an MSVC x64 Qt kit).
+Ensure Ninja is on PATH and point CMake at that Qt kit:
+
+  cmake --preset release -DCMAKE_PREFIX_PATH=C:/Qt/6.x.y/msvc2022_64 \
+    -DCMAKE_INSTALL_PREFIX=C:/vacuum-stage
+  cmake --build --preset release --parallel
+  cmake --install build/release
+
+The executable is installed as C:/vacuum-stage/vacuum/vacuum.exe. The same
+configure/build/install commands can be used with a matching MinGW Qt kit.
+
+Release packaging is being migrated to CMake/CPack and GitHub Actions. The
+Windows release archive must include Qt plugins, compiler runtimes and all
+other required dependencies so it runs immediately after extraction. The
+Linux release archive will use system libraries. The source-build commands
+above do not yet validate either release archive's deployment.
+
+Development and configuration
+-----------------------------
+To run directly from the build directory:
+
+  cmake --preset dev
+  cmake --build --preset dev --parallel
+  ./build/dev/vacuum
+
+Presets are conveniences; other CMake generators remain supported:
+
+  cmake -S . -B build/custom -DCMAKE_BUILD_TYPE=Release
+  cmake --build build/custom --config Release --parallel
+  cmake --install build/custom --config Release --prefix /path/to/stage
+
+Useful configure options (pass as -DNAME=value):
+
+  INSTALL_SDK=ON                Install plugin development headers/helpers
+                                (OFF in the supplied presets).
+  INSTALL_DOCS=OFF              Skip installed documentation.
+  INSTALL_LIB_DIR=lib64         Override the Unix library directory.
+  PLUGIN_<name>=OFF             Disable a plugin, e.g. PLUGIN_voicecalls=OFF.
+  SPELLCHECKER_BACKEND=HUNSPELL Select hunspell, enchant, aspell or macspell.
+  LANGS="uk;de"                 Select translations (default: all languages).
+  RUN_FROM_BUILD_DIR=ON         Use source resources and build-tree plugins.
+  BUILD_TRANSLATION_TOOLS=ON    Build optional maintainer utilities.
+
+For multi-configuration generators, always pass --config Release (or Debug)
+when building and installing. Keep personal settings in CMakeUserPresets.json.
+
+Translations and plugin maintenance
+-----------------------------------
+Normal builds compile enabled translations into .qm files and installation
+copies them into the application tree. To compile only translations:
+
+  cmake --build build/release --target translations
+
+To update existing .ts files from the source (this modifies source files):
+
+  cmake --build build/release --target updatets
+
+Both targets honor LANGS and LANG_<language>. Per-component targets such as
+updatets_vacuum and translations_vacuum are also available. Translation
+synchronization scripts remain separate from the build.
+
+Optional maintainer tools can be built with:
+
+  cmake --preset release -DBUILD_TRANSLATION_TOOLS=ON
+  cmake --build build/release --target autotranslate txprepare
+
+The executables are in build/release/src/tools/ and are not installed with
+the application. Run either without arguments for its usage.
+
+To add a plugin, follow an existing plugin's CMakeLists.txt and source-list
+.cmake file, then register its directory in src/plugins/plugin_list.cmake.

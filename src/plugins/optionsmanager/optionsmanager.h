@@ -16,11 +16,7 @@
 #include "optionsdialogheader.h"
 #include "optionsdialog.h"
 
-#ifdef USE_SYSTEM_QTLOCKEDFILE
-#	include <QtSolutions/qtlockedfile.h>
-#else
-#	include <thirdparty/qtlockedfile/qtlockedfile.h>
-#endif
+#include <thirdparty/qtlockedfile/qtlockedfile.h>
 
 class OptionsManager :
 	public QObject,

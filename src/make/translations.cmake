@@ -48,10 +48,8 @@ set(LUPDATE_OPTS -no-obsolete -locations none -source-language en)
 set(LRELEASE_OPTS -silent)
 
 macro(add_translations outvar tsname)
-	set(TS_SRCS "")
-	foreach(SRC ${ARGN})
-		set(TS_SRCS ${TS_SRCS} "${SRC}")
-	endforeach(SRC)
+	set(TS_SRCS ${ARGN})
+	set(QMS "")
 	add_custom_target(updatets_${tsname})
 	add_dependencies(updatets updatets_${tsname})
 	foreach(LANG ${USED_LANGS})
@@ -66,14 +64,15 @@ macro(add_translations outvar tsname)
 			endif (APPLE)
 			# Update *.ts
 			add_custom_command(TARGET updatets_${tsname} POST_BUILD
-					COMMAND "${QT_LUPDATE_EXECUTABLE}" ${LUPDATE_OPTS} ${TS_SRCS} -ts "${TS}" 
-					DEPENDS ${TS_SRCS}
+					COMMAND Qt6::lupdate ${LUPDATE_OPTS} ${TS_SRCS} -ts "${TS}"
 					WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+					VERBATIM
 					COMMENT "Updating ${TS}")
 			# Generate *.qm
 			add_custom_command(OUTPUT ${QM}
-					COMMAND "${QT_LRELEASE_EXECUTABLE}" ${LRELEASE_OPTS} "${TS}" -qm "${QM}"
-					DEPENDS ${TS})
+					COMMAND Qt6::lrelease ${LRELEASE_OPTS} "${TS}" -qm "${QM}"
+					DEPENDS "${TS}"
+					VERBATIM)
 			set(QMS ${QMS} "${QM}")
 			# Install *.qm
 			if (NOT APPLE) # on Mac OS X they are writted to the bundle directly
@@ -88,5 +87,7 @@ macro(add_translations outvar tsname)
 				DEPENDS ${PLUGIN_NAME})
 		endif (EXISTS ${TS})
 	endforeach(LANG)
+	add_custom_target(translations_${tsname} DEPENDS ${QMS})
+	add_dependencies(translations translations_${tsname})
 	set(${outvar} "${QMS}")
 endmacro(add_translations)

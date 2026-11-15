@@ -1,0 +1,35 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "release",
+      "displayName": "Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "INSTALL_SDK": "OFF",
+        "SPELLCHECKER_BACKEND": "HUNSPELL"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "Development",
+      "inherits": "release",
+      "binaryDir": "${sourceDir}/build/dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "RUN_FROM_BUILD_DIR": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "release", "configurePreset": "release" },
+    { "name": "dev", "configurePreset": "dev" }
+  ]
+}

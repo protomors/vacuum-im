@@ -5,6 +5,8 @@ The core program is just a plugin loader, all functionality is made available
 via plugins. This enforces modularity and ensures well defined component
 interaction via interfaces.
 
+Build instructions: see INSTALL (CMake and Qt 6).
+
 Web Site:
   http://www.vacuum-im.org
 

@@ -9,26 +9,16 @@
 gitinfo.h
 vacuum
 vacuum.vc.*
-autotranslate
-txprepare
 
 
 #################
 ## Qt
 #################
+Makefile
 *.qm
 *.moc
 ui_*.h
 moc_*.cpp
-
-
-#################
-## QMake
-#################
-Makefile
-Makefile.Debug
-Makefile.Release
-.qmake.stash
 
 
 #################
@@ -40,8 +30,9 @@ Makefile.Release
 #################
 ## Qt Creator
 #################
-*.pro.user
-*.pro.user.*
+CMakeLists.txt.user
+CMakeLists.txt.user.*
+CMakeUserPresets.json
 
 
 #################

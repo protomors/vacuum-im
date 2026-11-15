@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.21)
 
 project(vacuum-im)
 
@@ -12,6 +12,7 @@ endif()
 include("src/make/qt.cmake")
 
 add_custom_target(updatets)
+add_custom_target(translations)
 
 include("src/make/config.cmake")
 include("src/translations/languages.cmake")
@@ -26,7 +27,8 @@ endif (APPLE)
 include("src/packages/package.cmake")
 
 set(INSTALL_SDK YES CACHE BOOL "Install files needed to build custom plugins")
-set(INSTALL_DOCS YES CACHE BOOL "Install documentation (currently it's only AUTHORS, CHANGELOG, README and COPYING)")
+option(BUILD_TRANSLATION_TOOLS "Build the autotranslate and txprepare maintainer utilities" OFF)
+set(INSTALL_DOCS YES CACHE BOOL "Install project documentation")
 set(LANGS "" CACHE STRING "List of languages to build localization for (this variable overrides any of LANG_*)")
 set(USED_LANGS "" CACHE INTERNAL "List of languages actually used for generating targets")
 add_lang_options()
@@ -36,8 +38,6 @@ set(FORCE_BUNDLED_MINIZIP NO CACHE BOOL "Use bundled minizip even if local syste
 find_library(SYSTEM_ZLIB_FOUND z)
 find_library(SYSTEM_IDN_FOUND idn)
 find_library(SYSTEM_MINIZIP_FOUND minizip)
-find_library(SYSTEM_QTLOCKEDFILE_FOUND Qt5Solutions_LockedFile-2.4)
-find_library(SYSTEM_QXTGLOBALSHORTCUT_FOUND qxtglobalshortcut)
 
 if (FORCE_BUNDLED_MINIZIP)
 	set(SYSTEM_MINIZIP_FOUND NO)
@@ -55,14 +55,6 @@ if (SYSTEM_MINIZIP_FOUND)
 	add_definitions(-DUSE_SYSTEM_MINIZIP)
 endif (SYSTEM_MINIZIP_FOUND)
 
-if (SYSTEM_QTLOCKEDFILE_FOUND)
-	add_definitions(-DUSE_SYSTEM_QTLOCKEDFILE)
-endif (SYSTEM_QTLOCKEDFILE_FOUND)
-
-if (SYSTEM_QXTGLOBALSHORTCUT_FOUND)
-	add_definitions(-DUSE_SYSTEM_QXTGLOBALSHORTCUT)
-endif (SYSTEM_QXTGLOBALSHORTCUT_FOUND)
-
 if ("${LANGS}" STREQUAL "")
 	process_lang_options()
 else ("${LANGS}" STREQUAL "")
@@ -70,7 +62,7 @@ else ("${LANGS}" STREQUAL "")
 endif ("${LANGS}" STREQUAL "")
 
 if (INSTALL_DOCS)
-	install(FILES "AUTHORS" "CHANGELOG" "README" "COPYING" "TRANSLATORS"
+	install(FILES "AUTHORS" "CHANGELOG" "README" "INSTALL" "COPYING" "TRANSLATORS"
 		DESTINATION "${INSTALL_DOCUMENTS}")
 endif (INSTALL_DOCS)
 

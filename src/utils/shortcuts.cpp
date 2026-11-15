@@ -6,11 +6,7 @@
 #include <QWidget>
 #include <QApplication>
 
-#ifdef USE_SYSTEM_QXTGLOBALSHORTCUT
-#       include <qxtglobalshortcut/qxtglobalshortcut.h>
-#else
-#       include <thirdparty/qxtglobalshortcut/qxtglobalshortcut.h>
-#endif
+#include <thirdparty/qxtglobalshortcut/qxtglobalshortcut.h>
 
 QKeySequence correctKeySequence(const QKeySequence &AKey)
 {
