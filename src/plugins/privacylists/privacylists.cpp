@@ -1,5 +1,5 @@
 #include "privacylists.h"
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <definitions/namespaces.h>
 #include <definitions/rosterindexkinds.h>

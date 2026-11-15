@@ -10,5 +10,5 @@ set(HEADERS "aboutbox.h"
 			"pluginmanager.h"
 			"setuppluginsdialog.h")
 
-qt_wrap_cpp(MOC_SOURCES ${HEADERS})
-qt_wrap_ui(UI_HEADERS ${UIS})
+qt6_wrap_cpp(MOC_SOURCES ${HEADERS})
+qt6_wrap_ui(UI_HEADERS ${UIS})

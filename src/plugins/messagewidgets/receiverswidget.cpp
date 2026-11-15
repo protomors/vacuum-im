@@ -2,7 +2,7 @@
 
 #include <utils/xmlutils.h>
 
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QMessageBox>
 #include <QFileDialog>
@@ -56,14 +56,9 @@ void ReceiversProxyModel::setOfflineContactsVisible(bool AVisible)
 {
 	if (FOfflineVisible != AVisible)
 	{
-#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
 		beginFilterChange();
 		FOfflineVisible = AVisible;
 		endFilterChange(QSortFilterProxyModel::Direction::Rows);
-#else
-		FOfflineVisible = AVisible;
-		invalidateFilter();
-#endif
 	}
 }
 

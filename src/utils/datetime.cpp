@@ -4,22 +4,11 @@
 #include <QStringList>
 #include <QTimeZone>
 
-namespace {
-void setLocalTime(QDateTime &dateTime)
-{
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-	dateTime.setTimeZone(QTimeZone::LocalTime);
-#else
-	dateTime.setTimeSpec(Qt::LocalTime);
-#endif
-}
-}
-
 DateTimeData::DateTimeData(const QDateTime &ADT, int ATZD)
 {
 	tzd = ATZD;
 	dt = ADT;
-	setLocalTime(dt);
+	dt.setTimeZone(QTimeZone::LocalTime);
 }
 
 DateTimeData::DateTimeData(const DateTimeData &AOther) : QSharedData(AOther)
@@ -39,7 +28,7 @@ DateTime::DateTime(const QDateTime &ADateTime)
 	if (ADateTime.timeSpec() == Qt::LocalTime)
 	{
 		QDateTime utc = ADateTime.toUTC();
-		setLocalTime(utc);
+		utc.setTimeZone(QTimeZone::LocalTime);
 		d = new DateTimeData(ADateTime,utc.secsTo(ADateTime));
 	}
 	else
@@ -81,17 +70,13 @@ QDateTime DateTime::dateTime() const
 void DateTime::setDateTime(const QDateTime &ADateTime)
 {
 	d->dt = ADateTime;
-	setLocalTime(d->dt);
+	d->dt.setTimeZone(QTimeZone::LocalTime);
 }
 
 QDateTime DateTime::toUTC() const
 {
 	QDateTime utc = d->dt;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 	utc.setTimeZone(QTimeZone::UTC);
-#else
-	utc.setTimeSpec(Qt::UTC);
-#endif
 	return utc.addSecs(-(d->tzd));
 }
 

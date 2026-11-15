@@ -1,6 +1,6 @@
 #include "advanceditemdelegate.h"
 
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QStyle>
 #include <QPainter>
@@ -33,8 +33,8 @@ void registerAdvancedDelegateItemStreamOperators()
 	if (!typeStreamOperatorsRegistered)
 	{
 		typeStreamOperatorsRegistered = true;
-		registerStreamOperators<AdvancedDelegateItem>("AdvancedDelegateItem");
-		registerStreamOperators<AdvancedDelegateItems>("AdvancedDelegateItems");
+		qRegisterMetaType<AdvancedDelegateItem>("AdvancedDelegateItem");
+		qRegisterMetaType<AdvancedDelegateItems>("AdvancedDelegateItems");
 	}
 }
 

@@ -1,25 +1,33 @@
 /* stringprep.c --- Core stringprep implementation.
- * Copyright (C) 2002, 2003, 2004  Simon Josefsson
- *
- * This file is part of GNU Libidn.
- *
- * GNU Libidn is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * GNU Libidn is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GNU Libidn; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
- *
- */
+   Copyright (C) 2002-2026 Simon Josefsson
 
-#if HAVE_CONFIG_H
+   This file is part of GNU Libidn.
+
+   GNU Libidn is free software: you can redistribute it and/or
+   modify it under the terms of either:
+
+     * the GNU Lesser General Public License as published by the Free
+       Software Foundation; either version 3 of the License, or (at
+       your option) any later version.
+
+   or
+
+     * the GNU General Public License as published by the Free
+       Software Foundation; either version 2 of the License, or (at
+       your option) any later version.
+
+   or both in parallel, as here.
+
+   GNU Libidn is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received copies of the GNU General Public License and
+   the GNU Lesser General Public License along with this program.  If
+   not, see <https://www.gnu.org/licenses/>. */
+
+#ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
@@ -28,39 +36,68 @@
 
 #include "stringprep.h"
 
+static int
+_compare_table_element (const uint32_t *c, const Stringprep_table_element *e)
+{
+  if (*c < e->start)
+    return -1;
+  if (*c > e->end)
+    return 1;
+  return 0;
+}
+
 static ssize_t
 stringprep_find_character_in_table (uint32_t ucs4,
-				    const Stringprep_table_element * table)
+				    const Stringprep_table_element *table,
+				    size_t table_size)
 {
-  ssize_t i;
-
   /* This is where typical uses of Libidn spends very close to all CPU
      time and causes most cache misses.  One could easily do a binary
      search instead.  Before rewriting this, I want hard evidence this
      slowness is at all relevant in typical applications.  (I don't
      dispute optimization may improve matters significantly, I'm
      mostly interested in having someone give real-world benchmark on
-     the impact of libidn.) */
+     the impact of libidn.)
+     *
+     * Answer (Tim Rühsen rockdaboot@gmx.de):
+     * Testing the fuzz corpora just once via make check takes ~54 billion CPU cycles.
+     * That is almost 20s on my Intel i3 3.1GHz !!!
+     * That even makes fuzzing almost useless, eating up CPU cycles for nothing.
+     *
+     * The bsearch() approach takes ~3 billion CPU cycles.
+     * Almost a factor of 20 faster (but still pretty slow).
+     * There are still ~2 million calls to bsearch() which make ~30% of CPU time used.
+     * Most time is spent in _g_utf8_normalize_wc().
 
-  for (i = 0; table[i].start || table[i].end; i++)
-    if (ucs4 >= table[i].start &&
-	ucs4 <= (table[i].end ? table[i].end : table[i].start))
-      return i;
+     ssize_t i;
 
-  return -1;
+     for (i = 0; table[i].start || table[i].end; i++)
+     if (ucs4 >= table[i].start &&
+     ucs4 <= (table[i].end ? table[i].end : table[i].start))
+     return i;
+   */
+
+  const Stringprep_table_element *p =
+    bsearch (&ucs4, table, table_size, sizeof (Stringprep_table_element),
+	     (int (*)(const void *, const void *)) _compare_table_element);
+
+  return p ? (p - table) : -1;
 }
 
 static ssize_t
-stringprep_find_string_in_table (uint32_t * ucs4,
+stringprep_find_string_in_table (uint32_t *ucs4,
 				 size_t ucs4len,
-				 size_t * tablepos,
-				 const Stringprep_table_element * table)
+				 size_t *tablepos,
+				 const Stringprep_table_element *table,
+				 size_t table_size)
 {
   size_t j;
   ssize_t pos;
 
   for (j = 0; j < ucs4len; j++)
-    if ((pos = stringprep_find_character_in_table (ucs4[j], table)) != -1)
+    if ((pos =
+	 stringprep_find_character_in_table (ucs4[j], table,
+					     table_size)) != -1)
       {
 	if (tablepos)
 	  *tablepos = pos;
@@ -71,16 +108,20 @@ stringprep_find_string_in_table (uint32_t * ucs4,
 }
 
 static int
-stringprep_apply_table_to_string (uint32_t * ucs4,
-				  size_t * ucs4len,
+stringprep_apply_table_to_string (uint32_t *ucs4,
+				  size_t *ucs4len,
 				  size_t maxucs4len,
-				  const Stringprep_table_element * table)
+				  const Stringprep_table_element *table,
+				  size_t table_size)
 {
   ssize_t pos;
   size_t i, maplen;
+  uint32_t *src = ucs4;		/* points to unprocessed data */
+  size_t srclen = *ucs4len;	/* length of unprocessed data */
 
-  while ((pos = stringprep_find_string_in_table (ucs4, *ucs4len,
-						 &i, table)) != -1)
+  while ((pos = stringprep_find_string_in_table (src, srclen,
+						 &i, table,
+						 table_size)) != -1)
     {
       for (maplen = STRINGPREP_MAX_MAP_CHARS;
 	   maplen > 0 && table[i].map[maplen - 1] == 0; maplen--)
@@ -89,10 +130,12 @@ stringprep_apply_table_to_string (uint32_t * ucs4,
       if (*ucs4len - 1 + maplen >= maxucs4len)
 	return STRINGPREP_TOO_SMALL_BUFFER;
 
-      memmove (&ucs4[pos + maplen], &ucs4[pos + 1],
-	       sizeof (uint32_t) * (*ucs4len - pos - 1));
-      memcpy (&ucs4[pos], table[i].map, sizeof (uint32_t) * maplen);
+      memmove (src + pos + maplen, src + pos + 1,
+	       sizeof (uint32_t) * (srclen - pos - 1));
+      memcpy (src + pos, table[i].map, sizeof (uint32_t) * maplen);
       *ucs4len = *ucs4len - 1 + maplen;
+      src += pos + maplen;
+      srclen -= pos + 1;
     }
 
   return STRINGPREP_OK;
@@ -104,7 +147,7 @@ stringprep_apply_table_to_string (uint32_t * ucs4,
    ( INVERTED(profileflags) && (profileflags & flags)))
 
 /**
- * stringprep_4i - prepare internationalized string
+ * stringprep_4i:
  * @ucs4: input/output array with string to prepare.
  * @len: on input, length of input array with Unicode code points,
  *   on exit, length of output array with Unicode code points.
@@ -128,16 +171,16 @@ stringprep_apply_table_to_string (uint32_t * ucs4,
  *
  * The @profile contain the #Stringprep_profile instructions to
  * perform.  Your application can define new profiles, possibly
- * re-using the generic stringprep tables that always will be part of
+ * reusing the generic stringprep tables that always will be part of
  * the library, or use one of the currently supported profiles.
  *
  * Return value: Returns %STRINGPREP_OK iff successful, or an
  *   #Stringprep_rc error code.
  **/
 int
-stringprep_4i (uint32_t * ucs4, size_t * len, size_t maxucs4len,
+stringprep_4i (uint32_t *ucs4, size_t *len, size_t maxucs4len,
 	       Stringprep_profile_flags flags,
-	       const Stringprep_profile * profile)
+	       const Stringprep_profile *profile)
 {
   size_t i, j;
   ssize_t k;
@@ -180,7 +223,8 @@ stringprep_4i (uint32_t * ucs4, size_t * len, size_t maxucs4len,
 
 	case STRINGPREP_PROHIBIT_TABLE:
 	  k = stringprep_find_string_in_table (ucs4, ucs4len,
-					       NULL, profile[i].table);
+					       NULL, profile[i].table,
+					       profile[i].table_size);
 	  if (k != -1)
 	    return STRINGPREP_CONTAINS_PROHIBITED;
 	  break;
@@ -191,7 +235,8 @@ stringprep_4i (uint32_t * ucs4, size_t * len, size_t maxucs4len,
 	  if (flags & STRINGPREP_NO_UNASSIGNED)
 	    {
 	      k = stringprep_find_string_in_table
-		(ucs4, ucs4len, NULL, profile[i].table);
+		(ucs4, ucs4len, NULL, profile[i].table,
+		 profile[i].table_size);
 	      if (k != -1)
 		return STRINGPREP_CONTAINS_UNASSIGNED;
 	    }
@@ -201,7 +246,8 @@ stringprep_4i (uint32_t * ucs4, size_t * len, size_t maxucs4len,
 	  if (UNAPPLICAPLEFLAGS (flags, profile[i].flags))
 	    break;
 	  rc = stringprep_apply_table_to_string
-	    (ucs4, &ucs4len, maxucs4len, profile[i].table);
+	    (ucs4, &ucs4len, maxucs4len, profile[i].table,
+	     profile[i].table_size);
 	  if (rc != STRINGPREP_OK)
 	    return rc;
 	  break;
@@ -216,8 +262,8 @@ stringprep_4i (uint32_t * ucs4, size_t * len, size_t maxucs4len,
 	    int done_prohibited = 0;
 	    int done_ral = 0;
 	    int done_l = 0;
-	    int contains_ral = -1;
-	    int contains_l = -1;
+	    size_t contains_ral = SIZE_MAX;
+	    size_t contains_l = SIZE_MAX;
 
 	    for (j = 0; profile[j].operation; j++)
 	      if (profile[j].operation == STRINGPREP_BIDI_PROHIBIT_TABLE)
@@ -225,7 +271,8 @@ stringprep_4i (uint32_t * ucs4, size_t * len, size_t maxucs4len,
 		  done_prohibited = 1;
 		  k = stringprep_find_string_in_table (ucs4, ucs4len,
 						       NULL,
-						       profile[j].table);
+						       profile[j].table,
+						       profile[j].table_size);
 		  if (k != -1)
 		    return STRINGPREP_BIDI_CONTAINS_PROHIBITED;
 		}
@@ -233,29 +280,37 @@ stringprep_4i (uint32_t * ucs4, size_t * len, size_t maxucs4len,
 		{
 		  done_ral = 1;
 		  if (stringprep_find_string_in_table
-		      (ucs4, ucs4len, NULL, profile[j].table) != -1)
+		      (ucs4, ucs4len, NULL, profile[j].table,
+		       profile[j].table_size) != -1)
 		    contains_ral = j;
 		}
 	      else if (profile[j].operation == STRINGPREP_BIDI_L_TABLE)
 		{
 		  done_l = 1;
 		  if (stringprep_find_string_in_table
-		      (ucs4, ucs4len, NULL, profile[j].table) != -1)
+		      (ucs4, ucs4len, NULL, profile[j].table,
+		       profile[j].table_size) != -1)
 		    contains_l = j;
 		}
 
 	    if (!done_prohibited || !done_ral || !done_l)
 	      return STRINGPREP_PROFILE_ERROR;
 
-	    if (contains_ral != -1 && contains_l != -1)
+	    if (contains_ral != SIZE_MAX && contains_l != SIZE_MAX)
 	      return STRINGPREP_BIDI_BOTH_L_AND_RAL;
 
-	    if (contains_ral != -1)
+	    if (contains_ral != SIZE_MAX)
 	      {
 		if (!(stringprep_find_character_in_table
-		      (ucs4[0], profile[contains_ral].table) != -1 &&
-		      stringprep_find_character_in_table
-		      (ucs4[ucs4len - 1], profile[contains_ral].table) != -1))
+		      (ucs4[0], profile[contains_ral].table,
+		       profile[contains_ral].table_size) != -1
+		      &&
+		      stringprep_find_character_in_table (ucs4[ucs4len - 1],
+							  profile
+							  [contains_ral].table,
+							  profile
+							  [contains_ral].table_size)
+		      != -1))
 		  return STRINGPREP_BIDI_LEADTRAIL_NOT_RAL;
 	      }
 	  }
@@ -273,9 +328,9 @@ stringprep_4i (uint32_t * ucs4, size_t * len, size_t maxucs4len,
 }
 
 static int
-stringprep_4zi_1 (uint32_t * ucs4, size_t ucs4len, size_t maxucs4len,
+stringprep_4zi_1 (uint32_t *ucs4, size_t ucs4len, size_t maxucs4len,
 		  Stringprep_profile_flags flags,
-		  const Stringprep_profile * profile)
+		  const Stringprep_profile *profile)
 {
   int rc;
 
@@ -292,7 +347,7 @@ stringprep_4zi_1 (uint32_t * ucs4, size_t ucs4len, size_t maxucs4len,
 }
 
 /**
- * stringprep_4zi - prepare internationalized string
+ * stringprep_4zi:
  * @ucs4: input/output array with zero terminated string to prepare.
  * @maxucs4len: maximum length of input/output array.
  * @flags: a #Stringprep_profile_flags value, or 0.
@@ -309,16 +364,16 @@ stringprep_4zi_1 (uint32_t * ucs4, size_t ucs4len, size_t maxucs4len,
  *
  * The @profile contain the #Stringprep_profile instructions to
  * perform.  Your application can define new profiles, possibly
- * re-using the generic stringprep tables that always will be part of
+ * reusing the generic stringprep tables that always will be part of
  * the library, or use one of the currently supported profiles.
  *
  * Return value: Returns %STRINGPREP_OK iff successful, or an
  *   #Stringprep_rc error code.
  **/
 int
-stringprep_4zi (uint32_t * ucs4, size_t maxucs4len,
+stringprep_4zi (uint32_t *ucs4, size_t maxucs4len,
 		Stringprep_profile_flags flags,
-		const Stringprep_profile * profile)
+		const Stringprep_profile *profile)
 {
   size_t ucs4len;
 
@@ -329,8 +384,8 @@ stringprep_4zi (uint32_t * ucs4, size_t maxucs4len,
 }
 
 /**
- * stringprep - prepare internationalized string
- * @in: input/ouput array with string to prepare.
+ * stringprep:
+ * @in: input/output array with string to prepare.
  * @maxlen: maximum length of input/output array.
  * @flags: a #Stringprep_profile_flags value, or 0.
  * @profile: pointer to #Stringprep_profile to use.
@@ -350,7 +405,7 @@ stringprep_4zi (uint32_t * ucs4, size_t maxucs4len,
  *
  * The @profile contain the #Stringprep_profile instructions to
  * perform.  Your application can define new profiles, possibly
- * re-using the generic stringprep tables that always will be part of
+ * reusing the generic stringprep tables that always will be part of
  * the library, or use one of the currently supported profiles.
  *
  * Return value: Returns %STRINGPREP_OK iff successful, or an error code.
@@ -358,21 +413,21 @@ stringprep_4zi (uint32_t * ucs4, size_t maxucs4len,
 int
 stringprep (char *in,
 	    size_t maxlen,
-	    Stringprep_profile_flags flags,
-	    const Stringprep_profile * profile)
+	    Stringprep_profile_flags flags, const Stringprep_profile *profile)
 {
   int rc;
   char *utf8 = NULL;
   uint32_t *ucs4 = NULL;
-  size_t ucs4len = 0, maxucs4len, adducs4len = 50;
+  size_t ucs4len, maxucs4len, adducs4len = strlen (in) / 10 + 1;
 
   do
     {
       uint32_t *newp;
 
-      if (ucs4)
-	free (ucs4);
+      free (ucs4);
       ucs4 = stringprep_utf8_to_ucs4 (in, -1, &ucs4len);
+      if (ucs4 == NULL)
+	return STRINGPREP_ICONV_ERROR;
       maxucs4len = ucs4len + adducs4len;
       newp = realloc (ucs4, maxucs4len * sizeof (uint32_t));
       if (!newp)
@@ -383,7 +438,7 @@ stringprep (char *in,
       ucs4 = newp;
 
       rc = stringprep_4i (ucs4, &ucs4len, maxucs4len, flags, profile);
-      adducs4len += 50;
+      adducs4len *= 2;
     }
   while (rc == STRINGPREP_TOO_SMALL_BUFFER);
   if (rc != STRINGPREP_OK)
@@ -395,7 +450,7 @@ stringprep (char *in,
   utf8 = stringprep_ucs4_to_utf8 (ucs4, ucs4len, 0, 0);
   free (ucs4);
   if (!utf8)
-    return STRINGPREP_MALLOC_ERROR;
+    return STRINGPREP_ICONV_ERROR;
 
   if (strlen (utf8) >= maxlen)
     {
@@ -411,7 +466,7 @@ stringprep (char *in,
 }
 
 /**
- * stringprep_profile - prepare internationalized string
+ * stringprep_profile:
  * @in: input array with UTF-8 string to prepare.
  * @out: output variable with pointer to newly allocate string.
  * @profile: name of stringprep profile to use.
@@ -441,7 +496,7 @@ stringprep_profile (const char *in,
 {
   const Stringprep_profiles *p;
   char *str = NULL;
-  size_t len = strlen (in) + 1;
+  size_t len = strlen (in) + 1, addlen = len / 10 + 1;
   int rc;
 
   for (p = &stringprep_profiles[0]; p->name; p++)
@@ -453,8 +508,7 @@ stringprep_profile (const char *in,
 
   do
     {
-      if (str)
-	free (str);
+      free (str);
       str = (char *) malloc (len);
       if (str == NULL)
 	return STRINGPREP_MALLOC_ERROR;
@@ -462,7 +516,8 @@ stringprep_profile (const char *in,
       strcpy (str, in);
 
       rc = stringprep (str, len, flags, p->tables);
-      len += 50;
+      len += addlen;
+      addlen *= 2;
     }
   while (rc == STRINGPREP_TOO_SMALL_BUFFER);
 
@@ -516,7 +571,7 @@ stringprep_profile (const char *in,
  * C++, Emacs Lisp, Python and Java.
  *
  * The project web page:\n
- * http://www.gnu.org/software/libidn/
+ * https://www.gnu.org/software/libidn/
  *
  * The software archive:\n
  * ftp://alpha.gnu.org/pub/gnu/libidn/
@@ -584,6 +639,7 @@ stringprep_profile (const char *in,
  *   This usually indicate a problem in the calling application.
  * @STRINGPREP_UNKNOWN_PROFILE: The supplied profile name was not
  *   known to the library.
+ * @STRINGPREP_ICONV_ERROR: Character encoding conversion error.
  * @STRINGPREP_NFKC_FAILED: The Unicode NFKC operation failed.  This
  *   usually indicate an internal error in the library.
  * @STRINGPREP_MALLOC_ERROR: The malloc() was out of memory.  This is
@@ -611,6 +667,14 @@ stringprep_profile (const char *in,
 
 /**
  * Stringprep_profile_steps:
+ * @STRINGPREP_NFKC: The NFKC step.
+ * @STRINGPREP_BIDI: The BIDI step.
+ * @STRINGPREP_MAP_TABLE: The MAP step.
+ * @STRINGPREP_UNASSIGNED_TABLE: The Unassigned step.
+ * @STRINGPREP_PROHIBIT_TABLE: The Prohibited step.
+ * @STRINGPREP_BIDI_PROHIBIT_TABLE: The BIDI-Prohibited step.
+ * @STRINGPREP_BIDI_RAL_TABLE: The BIDI-RAL step.
+ * @STRINGPREP_BIDI_L_TABLE: The BIDI-L step.
  *
  * Various steps in the stringprep algorithm.  You really want to
  * study the source code to understand this one.  Only useful if you
@@ -619,7 +683,7 @@ stringprep_profile (const char *in,
 
 /**
  * stringprep_nameprep:
- * @in: input/ouput array with string to prepare.
+ * @in: input/output array with string to prepare.
  * @maxlen: maximum length of input/output array.
  *
  * Prepare the input UTF-8 string according to the nameprep profile.
@@ -630,7 +694,7 @@ stringprep_profile (const char *in,
 
 /**
  * stringprep_nameprep_no_unassigned:
- * @in: input/ouput array with string to prepare.
+ * @in: input/output array with string to prepare.
  * @maxlen: maximum length of input/output array.
  *
  * Prepare the input UTF-8 string according to the nameprep profile.
@@ -640,7 +704,7 @@ stringprep_profile (const char *in,
 
 /**
  * stringprep_iscsi:
- * @in: input/ouput array with string to prepare.
+ * @in: input/output array with string to prepare.
  * @maxlen: maximum length of input/output array.
  *
  * Prepare the input UTF-8 string according to the draft iSCSI
@@ -649,7 +713,7 @@ stringprep_profile (const char *in,
 
 /**
  * stringprep_plain:
- * @in: input/ouput array with string to prepare.
+ * @in: input/output array with string to prepare.
  * @maxlen: maximum length of input/output array.
  *
  * Prepare the input UTF-8 string according to the draft SASL
@@ -657,8 +721,18 @@ stringprep_profile (const char *in,
  **/
 
 /**
+ * stringprep_kerberos5:
+ * @in: input/output array with string to prepare.
+ * @maxlen: maximum length of input/output array.
+ *
+ * Prepare the input UTF-8 string according to the draft Kerberos 5
+ * node identifier profile.  Returns 0 iff successful, or an error
+ * code.
+ **/
+
+/**
  * stringprep_xmpp_nodeprep:
- * @in: input/ouput array with string to prepare.
+ * @in: input/output array with string to prepare.
  * @maxlen: maximum length of input/output array.
  *
  * Prepare the input UTF-8 string according to the draft XMPP node
@@ -667,7 +741,7 @@ stringprep_profile (const char *in,
 
 /**
  * stringprep_xmpp_resourceprep:
- * @in: input/ouput array with string to prepare.
+ * @in: input/output array with string to prepare.
  * @maxlen: maximum length of input/output array.
  *
  * Prepare the input UTF-8 string according to the draft XMPP resource

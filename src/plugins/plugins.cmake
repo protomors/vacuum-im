@@ -18,8 +18,8 @@ if (IS_ENABLED)
 		".")
 	add_definitions(-DQT_PLUGIN -DQT_SHARED)
 
-	qt_wrap_cpp(MOC_SOURCES ${HEADERS})
-	qt_wrap_ui(UI_HEADERS ${UIS})
+	qt6_wrap_cpp(MOC_SOURCES ${HEADERS})
+	qt6_wrap_ui(UI_HEADERS ${UIS})
 
 	if (UNIX AND NOT APPLE)
 		set(CMAKE_INSTALL_RPATH "$ORIGIN/../..")

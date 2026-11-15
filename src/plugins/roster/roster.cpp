@@ -1,7 +1,7 @@
 #include "roster.h"
 
 #include <utils/xmlutils.h>
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QSet>
 #include <QFile>

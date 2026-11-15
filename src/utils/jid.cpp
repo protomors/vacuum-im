@@ -1,6 +1,6 @@
 #include "jid.h"
 
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <stringprep.h>
 
@@ -18,7 +18,7 @@ inline void registerJidStreamOperators()
 	if (!JidStreamOperatorsRegistered)
 	{
 		JidStreamOperatorsRegistered = true;
-		registerStreamOperators<Jid>("Jid");
+		qRegisterMetaType<Jid>("Jid");
 	}
 }
 

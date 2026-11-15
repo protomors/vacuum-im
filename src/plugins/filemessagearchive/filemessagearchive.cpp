@@ -1,7 +1,7 @@
 #include "filemessagearchive.h"
 
 #include <utils/xmlutils.h>
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 #include <functional>
 
 #include <QDir>
@@ -634,7 +634,7 @@ QList<IArchiveHeader> FileMessageArchive::loadFileHeaders(const Jid &AStreamJid,
 			}
 		}
 
-		MultiMapIterator<QString,IArchiveHeader> fileIt(filesMap);
+		QMultiMapIterator<QString,IArchiveHeader> fileIt(filesMap);
 		if (ARequest.order == Qt::DescendingOrder)
 			fileIt.toBack();
 		while (ARequest.order==Qt::AscendingOrder ? fileIt.hasNext() : fileIt.hasPrevious())

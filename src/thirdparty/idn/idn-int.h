@@ -1,9 +1,13 @@
-#ifndef _LIBIDN_LIB_IDN_INT_H
-#define _LIBIDN_LIB_IDN_INT_H 1
-#ifndef _GENERATED_STDINT_H
-#define _GENERATED_STDINT_H "libidn 0.5.19"
-/* generated using gnu compiler gcc.exe (GCC) 3.4.2 (mingw-special) */
-#define _STDINT_HAVE_STDINT_H 1
+#ifndef VACUUM_IDN_INT_H
+#define VACUUM_IDN_INT_H
+
 #include <stdint.h>
+#include <stddef.h>
+
+// MSVC supplies fixed-width integers but does not define POSIX ssize_t.
+#if defined(_MSC_VER) && !defined(_SSIZE_T_DEFINED)
+typedef ptrdiff_t ssize_t;
+#define _SSIZE_T_DEFINED
 #endif
+
 #endif

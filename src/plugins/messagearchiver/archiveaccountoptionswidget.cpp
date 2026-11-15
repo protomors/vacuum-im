@@ -1,5 +1,5 @@
 #include "archiveaccountoptionswidget.h"
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QKeyEvent>
 #include <QLineEdit>

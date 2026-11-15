@@ -1,5 +1,5 @@
-#ifndef QTCOMPAT_H
-#define QTCOMPAT_H
+#ifndef QTUTILS_H
+#define QTUTILS_H
 
 #include <QtGlobal>
 #include <QList>
@@ -8,20 +8,10 @@
 #include <QRegularExpression>
 #include <QSet>
 
-template <typename Key, typename T>
-using MultiMapIterator = QMultiMapIterator<Key, T>;
-
 template <typename T>
 inline QSet<T> setFromList(const QList<T> &list)
 {
 	return QSet<T>(list.constBegin(), list.constEnd());
-}
-
-// Registering the metatype is enough: Qt 6 finds the stream operators itself.
-template <typename T>
-inline void registerStreamOperators(const char *name)
-{
-	qRegisterMetaType<T>(name);
 }
 
 // QRegularExpression::wildcardToRegularExpression() is a file-glob conversion.
@@ -49,4 +39,4 @@ inline QRegularExpression regularExpressionFromWildcard(const QString &pattern, 
 	return QRegularExpression(converted, options);
 }
 
-#endif // QTCOMPAT_H
+#endif // QTUTILS_H

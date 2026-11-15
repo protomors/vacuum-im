@@ -2,15 +2,18 @@ option(BUNDLE_WINDOWS_DEPENDENCIES "Deploy dependencies for an extract-and-run W
 if(NOT BUNDLE_WINDOWS_DEPENDENCIES)
     return()
 endif()
-if(Qt6Core_VERSION VERSION_LESS 6.5)
-    message(FATAL_ERROR "Windows dependency deployment requires Qt 6.5+. Use BUNDLE_WINDOWS_DEPENDENCIES=OFF for a source-only build with older Qt.")
-endif()
 
 # Deploy the compiler DLLs beside the executable, rather than requiring users
 # to run a redistributable installer after extracting the archive.
 set(CMAKE_INSTALL_UCRT_LIBRARIES ON)
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${INSTALL_BINS}")
 include(InstallRequiredSystemLibraries)
+
+# Local message archives use SQLite; other SQL clients are not dependencies.
+if(TARGET filemessagearchive OR TARGET messagearchiver)
+    install(FILES "$<TARGET_FILE:Qt6::QSQLiteDriverPlugin>"
+        DESTINATION "${INSTALL_BINS}/qt-plugins/sqldrivers")
+endif()
 
 get_property(_plugins GLOBAL PROPERTY VACUUM_ENABLED_PLUGIN_TARGETS)
 set(_plugin_paths "")
@@ -55,8 +58,6 @@ endforeach()
 
 configure_file(deploy-windows.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/deploy-windows.cmake.in" @ONLY)
 file(READ "${CMAKE_CURRENT_BINARY_DIR}/deploy-windows.cmake.in" _deploy_content)
-# Qt 6.8's versionless macro re-evaluates CONTENT. Call the function directly
-# so install-time variables, quotes and semicolons remain intact.
 qt6_generate_deploy_script(TARGET ${VACUUM_LOADER_NAME}
     OUTPUT_SCRIPT _deploy_script CONTENT "${_deploy_content}")
 install(SCRIPT "${_deploy_script}")

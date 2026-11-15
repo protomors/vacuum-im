@@ -1,7 +1,7 @@
 #include "metacontacts.h"
 
 #include <utils/xmlutils.h>
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QDir>
 #include <QMimeData>

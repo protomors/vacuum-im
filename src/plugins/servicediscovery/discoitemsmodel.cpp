@@ -1,5 +1,5 @@
 #include "discoitemsmodel.h"
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <definitions/discoitemdataroles.h>
 #include <utils/pluginhelper.h>

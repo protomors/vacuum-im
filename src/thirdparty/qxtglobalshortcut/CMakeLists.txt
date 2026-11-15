@@ -20,7 +20,7 @@ endif (APPLE)
 
 add_definitions(-DUNICODE -DQXT_STATIC)
 
-qt_wrap_cpp(MOC_SOURCES ${HEADERS})
+qt6_wrap_cpp(MOC_SOURCES ${HEADERS})
 
 add_library(qxtglobalshortcut STATIC ${SOURCES} ${MOC_SOURCES})
 

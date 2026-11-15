@@ -1,5 +1,5 @@
 #include "filetransfer.h"
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QMimeData>
 #include <QDir>

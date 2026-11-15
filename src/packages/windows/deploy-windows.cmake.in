@@ -9,6 +9,7 @@ qt_deploy_runtime_dependencies(
     ADDITIONAL_LIBRARIES "@INSTALL_LIBS@/$<TARGET_FILE_NAME:@VACUUM_UTILS_NAME@>"
     ADDITIONAL_MODULES
 @_plugin_paths@
+    EXCLUDE_PLUGIN_TYPES sqldrivers
     GENERATE_QT_CONF NO_COMPILER_RUNTIME)
 
 # windeployqt handles Qt, while GStreamer and other non-Qt libraries need an
@@ -17,17 +18,6 @@ if(POLICY CMP0207)
     cmake_policy(SET CMP0207 NEW)
 endif()
 set(_prefix "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}")
-# The archive plugins use QSQLITE only. Qt also deploys database drivers whose
-# external clients (e.g. PostgreSQL and Mimer) are not application dependencies.
-# Prune those before scanning DLLs; this also works with Qt 6.5 deployment tools.
-file(GLOB _sql_drivers "${_prefix}/${QT_DEPLOY_PLUGINS_DIR}/sqldrivers/*.dll")
-foreach(driver IN LISTS _sql_drivers)
-    get_filename_component(_driver_name "${driver}" NAME_WE)
-    string(TOLOWER "${_driver_name}" _driver_name)
-    if(NOT _driver_name MATCHES "^qsqlited?$")
-        file(REMOVE "${driver}")
-    endif()
-endforeach()
 file(GLOB_RECURSE _modules "${_prefix}/*.dll")
 file(GLOB_RECURSE _executables "${_prefix}/*.exe")
 set(_search_directories "${_prefix}/@INSTALL_BINS@" "@QT6_INSTALL_PREFIX@/bin")

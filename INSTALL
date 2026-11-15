@@ -7,11 +7,12 @@ root. GitHub Actions is the supported CI service.
 Requirements
 ------------
   * CMake 3.21 or newer, a C++17 compiler, and Ninja for the supplied presets.
-  * Qt 6.2 or newer: Widgets, Network, Xml, Concurrent, LinguistTools, PrintSupport,
+  * Qt 6.10 or newer: Widgets, Network, Xml, Concurrent, LinguistTools, PrintSupport,
     Multimedia and Sql. Svg is optional.
   * Linux: X11 and XScreenSaver headers; Qt private headers are not required.
   * System zlib, minizip and libidn are used when found; otherwise bundled
-    copies are built. QtLockedFile and QxtGlobalShortcut are always built from
+    copies are built (see src/thirdparty/README.md for versions and provenance).
+    QtLockedFile and QxtGlobalShortcut are always built from
     the bundled sources against the application's Qt version.
   * Hunspell is the preset spellchecker backend. A bundled copy is available
     if the system library is absent. System Hunspell must be version 1.6 or newer.
@@ -24,7 +25,7 @@ Requirements
 
 Linux
 -----
-Example build dependencies on Ubuntu 24.04:
+Example build dependencies on Ubuntu 26.04:
 
   sudo apt install build-essential cmake ninja-build pkg-config \
     qt6-base-dev qt6-svg-dev qt6-multimedia-dev \
@@ -69,17 +70,21 @@ Ensure Ninja is on PATH and point CMake at that Qt kit:
 The executable is installed as C:/vacuum-stage/vacuum/vacuum.exe. The same
 configure/build/install commands can be used with a matching MinGW Qt kit.
 
-Windows archive builds also require Qt 6.5+ deployment tools and matching
+Windows archive builds require matching
 GStreamer MSVC runtime/development files. Pass their common prefix when
-configuring (the CI job installs Qt 6.8.3 and GStreamer 1.26.9):
+configuring (the CI job installs Qt 6.12.0 and GStreamer 1.28.8):
 
-  cmake --preset release -DCMAKE_PREFIX_PATH=C:/Qt/6.8.3/msvc2022_64 \
+  cmake --preset release -DCMAKE_PREFIX_PATH=C:/Qt/6.12.0/msvc2022_64 \
     -DVACUUM_GSTREAMER_ROOT=C:/gstreamer/1.0/msvc_x86_64
+
+The Qt installation action pins an upstream aqtinstall revision because its
+released 3.3.0 version cannot read the repository layout used by Qt 6.11+.
 
 The bundled GStreamer plugins and scanner are selected automatically by the
 voice-call plugin. End users do not need an installed Qt/GStreamer SDK or
-manual PATH changes. A source build with Qt 6.2-6.4 can opt out of deployment
-using BUNDLE_WINDOWS_DEPENDENCIES=OFF.
+manual PATH changes. Set BUNDLE_WINDOWS_DEPENDENCIES=OFF to disable deployment.
+The Windows installer pin is 1.28.8, the latest published MSVC binary; Linux
+uses the newer 1.28.9 system packages.
 
 Release archives
 ----------------
@@ -135,6 +140,9 @@ Presets are conveniences; other CMake generators remain supported:
   cmake --install build/custom --config Release --prefix /path/to/stage
 
 Useful configure options (pass as -DNAME=value):
+
+The former FORCE_BUNDLED_MINIZIP option is replaced by selecting the BUNDLED
+dependency provider.
 
   VACUUM_DEPENDENCY_PROVIDER=AUTO
                                 Prefer system zlib, MiniZip, libidn and Hunspell;

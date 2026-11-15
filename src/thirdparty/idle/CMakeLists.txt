@@ -21,7 +21,7 @@ endif (APPLE)
 
 add_definitions(-DUNICODE)
 
-qt_wrap_cpp(MOC_SOURCES ${HEADERS})
+qt6_wrap_cpp(MOC_SOURCES ${HEADERS})
 
 add_library(idle STATIC ${SOURCES} ${MOC_SOURCES})
 

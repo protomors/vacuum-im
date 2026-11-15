@@ -1,7 +1,7 @@
 #include "multiuserchatwindow.h"
 
 #include <QRegularExpression>
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QPair>
 #include <QTimer>

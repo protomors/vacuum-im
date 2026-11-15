@@ -1,6 +1,8 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
+ * Copyright (C) 2002-2022 Németh László
+ *
  * The contents of this file are subject to the Mozilla Public License Version
  * 1.1 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +13,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is Hunspell, based on MySpell.
- *
- * The Initial Developers of the Original Code are
- * Kevin Hendricks (MySpell) and Németh László (Hunspell).
- * Portions created by the Initial Developers are Copyright (C) 2002-2005
- * the Initial Developers. All Rights Reserved.
+ * Hunspell is based on MySpell which is Copyright (C) 2002 Kevin Hendricks.
  *
  * Contributor(s): David Einstein, Davide Prina, Giuseppe Modugno,
  * Gianluca Turconi, Simon Brouwer, Noll János, Bíró Árpád,
@@ -70,20 +67,30 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef _MYSPELLMGR_HXX_
-#define _MYSPELLMGR_HXX_
+#ifndef MYSPELLMGR_HXX_
+#define MYSPELLMGR_HXX_
 
 #include "hunvisapi.h"
+#include "hunversion.h"
 #include "w_char.hxx"
+#include "atypes.hxx"
 #include <string>
 #include <vector>
 
 #define SPELL_XML "<?xml?>"
 
+#ifndef MAXSUGGESTION
 #define MAXSUGGESTION 15
-#define MAXSHARPS 5
+#endif
 
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
+#define MAXSHARPS 5
+#define MAXBREAKDEPTH 10
+
+#ifndef MAXWORDLEN
+#define MAXWORDLEN 100
+#endif
+
+#if defined __GNUC__ && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 #  define H_DEPRECATED __attribute__((__deprecated__))
 #elif defined(_MSC_VER) && (_MSC_VER >= 1300)
 #  define H_DEPRECATED __declspec(deprecated)
@@ -93,11 +100,17 @@
 
 class HunspellImpl;
 
-class LIBHUNSPELL_DLL_EXPORTED Hunspell {
- private:
-  Hunspell(const Hunspell&);
-  Hunspell& operator=(const Hunspell&);
+/* receives one line of trace output at a time, without a trailing newline.
+ * depth is the nesting level of the record and carries no indentation, so a
+ * caller that wants an indented transcript prints the spaces itself.
+ *
+ * the words and flags in a record are in the encoding of the dictionary they
+ * came from, so a transcript covering several dictionaries can carry several
+ * encodings.
+ */
+typedef void (*HunspellTraceCallback)(void* userdata, int depth, const char* line);
 
+class LIBHUNSPELL_DLL_EXPORTED Hunspell {
  private:
   HunspellImpl* m_Impl;
 
@@ -110,11 +123,13 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
    * long path names (without the long path prefix Hunspell will use fopen()
    * with system-dependent character encoding instead of _wfopen()).
    */
-  Hunspell(const char* affpath, const char* dpath, const char* key = NULL);
+  Hunspell(const char* affpath, const char* dpath, const char* key = nullptr);
+  Hunspell(const Hunspell&) = delete;
+  Hunspell& operator=(const Hunspell&) = delete;
   ~Hunspell();
 
   /* load extra dictionaries (only dic files) */
-  int add_dic(const char* dpath, const char* key = NULL);
+  int add_dic(const char* dpath, const char* key = nullptr);
 
   /* spell(word) - spellcheck word
    * output: false = bad word, true = good word
@@ -125,14 +140,14 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
    *     SPELL_FORBIDDEN = an explicit forbidden word
    *   root: root (stem), when input is a word with affix(es)
    */
-  bool spell(const std::string& word, int* info = NULL, std::string* root = NULL);
-  H_DEPRECATED int spell(const char* word, int* info = NULL, char** root = NULL);
+  bool spell(const std::string& word, int* info = nullptr, std::string* root = nullptr);
+  H_DEPRECATED int spell(const char* word, int* info = nullptr, char** root = nullptr);
 
   /* suggest(suggestions, word) - search suggestions
    * input: pointer to an array of strings pointer and the (bad) word
    *   array of strings pointer (here *slst) may not be initialized
    * output: number of suggestions in string array, and suggestions in
-   *   a newly allocated array of strings (*slts will be NULL when number
+   *   a newly allocated array of strings (*slst will be NULL when number
    *   of suggestion equals 0.)
    */
   std::vector<std::string> suggest(const std::string& word);
@@ -143,7 +158,7 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
    * input: pointer to an array of strings pointer and the  word
    *   array of strings pointer (here *slst) may not be initialized
    * output: number of suggestions in string array, and suggestions in
-   *   a newly allocated array of strings (*slts will be NULL when number
+   *   a newly allocated array of strings (*slst will be NULL when number
    *   of suggestion equals 0.)
    */
   std::vector<std::string> suffix_suggest(const std::string& root_word);
@@ -153,7 +168,7 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
   H_DEPRECATED void free_list(char*** slst, int n);
 
   const std::string& get_dict_encoding() const;
-  H_DEPRECATED const char* get_dic_encoding() const;
+  char* get_dic_encoding();
 
   /* morphological functions */
 
@@ -188,11 +203,16 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
   std::vector<std::string> generate(const std::string& word, const std::vector<std::string>& pl);
   H_DEPRECATED int generate(char*** slst, const char* word, char** desc, int n);
 
-  /* functions for run-time modification of the dictionary */
+  /* functions for run-time modification of the dictionary.
+   * Word arguments (including the affix example) undergo ICONV once,
+   * as in spell(). Flags and morphological descriptions are not converted.
+   */
 
   /* add word to the run-time dictionary */
 
   int add(const std::string& word);
+
+  int add_with_flags(const std::string& word, const std::string& flags, const std::string& desc = "");
 
   /* add word to the run-time dictionary with affix flags of
    * the example (a dictionary word): Hunspell will recognize
@@ -207,16 +227,32 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
 
   /* other */
 
-  /* get extra word characters definied in affix file for tokenization */
-  const std::string& get_wordchars() const;
+  /* get extra word characters defined in affix file for tokenization */
+  const char* get_wordchars() const;
+  const std::string& get_wordchars_cpp() const;
   const std::vector<w_char>& get_wordchars_utf16() const;
 
-  const std::string& get_version() const;
+  struct cs_info* get_csconv();
+
+  /* version of the hunspell library itself, for example "1.7.3" */
+  static const char* get_library_version();
+
+  /* version string from the affix file's VERSION line, not the library
+   * version */
+  const char* get_version() const;
+  const std::string& get_version_cpp() const;
 
   int get_langnum() const;
 
   /* need for putdic */
   bool input_conv(const std::string& word, std::string& dest);
+  H_DEPRECATED int input_conv(const char* word, char* dest, size_t destsize);
+
+  /* report each decision spell() makes to the given callback, for dictionary
+   * debugging. A null callback turns reporting off again. The userdata is
+   * handed back to the callback untouched.
+   */
+  void set_trace_callback(HunspellTraceCallback callback, void* userdata);
 };
 
 #endif

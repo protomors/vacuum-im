@@ -2,7 +2,7 @@
 
 #define VIEW_ITEM_OPTIONS() \
 	([&]() { QStyleOptionViewItem option; initViewItemOption(&option); return option; }())
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QRandomGenerator>
 

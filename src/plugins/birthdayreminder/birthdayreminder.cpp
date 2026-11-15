@@ -1,5 +1,5 @@
 #include "birthdayreminder.h"
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QLocale>
 

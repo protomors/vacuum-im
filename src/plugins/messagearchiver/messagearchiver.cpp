@@ -2,7 +2,7 @@
 
 #include <utils/xmlutils.h>
 #include <functional>
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QDir>
 #include <QFile>

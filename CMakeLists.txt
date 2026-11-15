@@ -8,7 +8,6 @@ include(CPackComponent)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(APPLE)
-	 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13")
 	 set_property(GLOBAL PROPERTY ALL_PLUGINS_FULLPATHS "")
 endif()
 

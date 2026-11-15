@@ -1,6 +1,8 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
+ * Copyright (C) 2002-2022 Németh László
+ *
  * The contents of this file are subject to the Mozilla Public License Version
  * 1.1 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +13,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is Hunspell, based on MySpell.
- *
- * The Initial Developers of the Original Code are
- * Kevin Hendricks (MySpell) and Németh László (Hunspell).
- * Portions created by the Initial Developers are Copyright (C) 2002-2005
- * the Initial Developers. All Rights Reserved.
+ * Hunspell is based on MySpell which is Copyright (C) 2002 Kevin Hendricks.
  *
  * Contributor(s): David Einstein, Davide Prina, Giuseppe Modugno,
  * Gianluca Turconi, Simon Brouwer, Noll János, Bíró Árpád,
@@ -71,12 +68,16 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _AFFIXMGR_HXX_
-#define _AFFIXMGR_HXX_
+#ifndef AFFIXMGR_HXX_
+#define AFFIXMGR_HXX_
 
-#include <stdio.h>
+#include <bitset>
+#include <chrono>
+#include <cstdio>
 
+#include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "atypes.hxx"
@@ -91,18 +92,39 @@
 
 class PfxEntry;
 class SfxEntry;
+class TraceCtx;
+
+// Reusable scratch tmpwords for the affix-matching path, passed though
+// through compound_check[_morph] -> prefix_check[_*] / suffix_check[_*]
+// -> Pfx/SfxEntry::checkword[_*]. Each slot is owned by the entry
+// method named in its comment.
+// Passing them around for reuse is both faster than recreating repeatedly
+// and avoids asan running out of quarantine memory
+struct AffixScratch {
+  std::string pfx_check_word;    // PfxEntry::checkword / check_morph
+  std::string pfx_check_twosfx;  // PfxEntry::check_twosfx[_morph]
+  std::string sfx_check_word;    // SfxEntry::checkword
+  std::string sfx_check_twosfx;  // SfxEntry::check_twosfx[_morph]
+
+  // the results of AffixMgr::second_suffix_check_morph, by its arguments
+  std::unordered_map<std::string, std::string> second_suffix_morph;
+
+  // where the affix path reports its decisions, or null while nothing is
+  // listening
+  TraceCtx* trace = nullptr;
+};
 
 class AffixMgr {
   PfxEntry* pStart[SETSIZE];
   SfxEntry* sStart[SETSIZE];
   PfxEntry* pFlag[SETSIZE];
   SfxEntry* sFlag[SETSIZE];
-  const std::vector<HashMgr*>& alldic;
+  const std::vector<std::unique_ptr<HashMgr>>& alldic;
   const HashMgr* pHMgr;
   std::string keystring;
   std::string trystring;
   std::string encoding;
-  struct cs_info* csconv;
+  const struct cs_info* csconv;
   int utf8;
   int complexprefixes;
   FLAG compoundflag;
@@ -123,8 +145,6 @@ class AffixMgr {
   FLAG nongramsuggest;
   FLAG needaffix;
   int cpdmin;
-  bool parsedrep;
-  std::vector<replentry> reptable;
   RepList* iconvtable;
   RepList* oconvtable;
   bool parsedmaptable;
@@ -161,7 +181,7 @@ class AffixMgr {
   std::string ignorechars; // letters + spec. word characters
   std::vector<w_char> ignorechars_utf16;
   std::string version;   // affix and dictionary file version string
-  std::string lang;	 // language
+  std::string lang; // language
   int langnum;
   FLAG lemma_present;
   FLAG circumfix;
@@ -175,72 +195,108 @@ class AffixMgr {
   int fullstrip;
 
   int havecontclass;           // boolean variable
-  char contclasses[CONTSIZE];  // flags of possible continuing classes (twofold
-                               // affix)
+  std::bitset<CONTSIZE> contclasses;  // flags of possible continuing classes (twofold
+                                      // affix)
 
  public:
-  AffixMgr(const char* affpath, const std::vector<HashMgr*>& ptr, const char* key = NULL);
+  // Turns a condition around, so that a group keeps its meaning once the text
+  // it belongs to has been reversed.
+  static void reverse_condition(std::string&);
+
+  AffixMgr(const char* affpath, const std::vector<std::unique_ptr<HashMgr>>& ptr, const char* key = nullptr);
   ~AffixMgr();
-  struct hentry* affix_check(const char* word,
-                             int len,
+  struct hentry* affix_check(const std::string& word,
+                             size_t start,
+                             size_t len,
+                             AffixScratch& scratch,
                              const unsigned short needflag = (unsigned short)0,
-                             char in_compound = IN_CPD_NOT);
-  struct hentry* prefix_check(const char* word,
-                              int len,
+                             char in_compound = IN_CPD_NOT,
+                             const FLAG avoidflag = FLAG_NULL,
+                             PfxEntry** found_pfx = nullptr,
+                             SfxEntry** found_sfx = nullptr);
+  struct hentry* prefix_check(const std::string& word,
+                              size_t start,
+                              size_t len,
                               char in_compound,
-                              const FLAG needflag = FLAG_NULL);
+                              AffixScratch& scratch,
+                              const FLAG needflag = FLAG_NULL,
+                              const FLAG avoidflag = FLAG_NULL);
   inline int isSubset(const char* s1, const char* s2);
-  struct hentry* prefix_check_twosfx(const char* word,
-                                     int len,
+  struct hentry* prefix_check_twosfx(const std::string& word,
+                                     size_t start,
+                                     size_t len,
                                      char in_compound,
+                                     AffixScratch& scratch,
                                      const FLAG needflag = FLAG_NULL);
-  inline int isRevSubset(const char* s1, const char* end_of_s2, int len);
-  struct hentry* suffix_check(const char* word,
-                              int len,
+  inline int isRevSubset(const char* s1, const char* end_of_s2, size_t len);
+  struct hentry* suffix_check(const std::string& word,
+                              size_t start,
+                              size_t len,
                               int sfxopts,
                               PfxEntry* ppfx,
+                              AffixScratch& scratch,
                               const FLAG cclass = FLAG_NULL,
                               const FLAG needflag = FLAG_NULL,
-                              char in_compound = IN_CPD_NOT);
-  struct hentry* suffix_check_twosfx(const char* word,
-                                     int len,
+                              char in_compound = IN_CPD_NOT,
+                              const FLAG avoidflag = FLAG_NULL);
+  struct hentry* suffix_check_twosfx(const std::string& word,
+                                     size_t start,
+                                     size_t len,
                                      int sfxopts,
                                      PfxEntry* ppfx,
+                                     AffixScratch& scratch,
                                      const FLAG needflag = FLAG_NULL);
 
-  std::string affix_check_morph(const char* word,
-                                int len,
+  std::string affix_check_morph(const std::string& word,
+                                size_t start,
+                                size_t len,
+                                AffixScratch& scratch,
                                 const FLAG needflag = FLAG_NULL,
                                 char in_compound = IN_CPD_NOT);
-  std::string prefix_check_morph(const char* word,
-                                 int len,
+  std::string prefix_check_morph(const std::string& word,
+                                 size_t start,
+                                 size_t len,
                                  char in_compound,
+                                 AffixScratch& scratch,
                                  const FLAG needflag = FLAG_NULL);
-  std::string suffix_check_morph(const char* word,
-                                 int len,
+  std::string suffix_check_morph(const std::string& word,
+                                 size_t start,
+                                 size_t len,
                                  int sfxopts,
                                  PfxEntry* ppfx,
+                                 AffixScratch& scratch,
                                  const FLAG cclass = FLAG_NULL,
                                  const FLAG needflag = FLAG_NULL,
                                  char in_compound = IN_CPD_NOT);
-
-  std::string prefix_check_twosfx_morph(const char* word,
-                                        int len,
-                                        char in_compound,
-                                        const FLAG needflag = FLAG_NULL);
-  std::string suffix_check_twosfx_morph(const char* word,
-                                        int len,
+  std::string second_suffix_check_morph(const std::string& word,
                                         int sfxopts,
                                         PfxEntry* ppfx,
+                                        AffixScratch& scratch,
+                                        const FLAG cclass,
+                                        const FLAG needflag);
+
+  std::string prefix_check_twosfx_morph(const std::string& word,
+                                        size_t start,
+                                        size_t len,
+                                        char in_compound,
+                                        AffixScratch& scratch,
+                                        const FLAG needflag = FLAG_NULL);
+  std::string suffix_check_twosfx_morph(const std::string& word,
+                                        size_t start,
+                                        size_t len,
+                                        int sfxopts,
+                                        PfxEntry* ppfx,
+                                        AffixScratch& scratch,
                                         const FLAG needflag = FLAG_NULL);
 
   std::string morphgen(const char* ts,
-                       int wl,
+                       size_t wl,
                        const unsigned short* ap,
                        unsigned short al,
                        const char* morph,
                        const char* targetmorph,
-                       int level);
+                       int level,
+                       const FLAG avoidflag = FLAG_NULL);
 
   int expand_rootword(struct guessword* wlst,
                       int maxn,
@@ -249,24 +305,39 @@ class AffixMgr {
                       const unsigned short* ap,
                       unsigned short al,
                       const char* bad,
-                      int,
+                      size_t badl,
                       const char*);
 
   short get_syllable(const std::string& word);
-  int cpdrep_check(const char* word, int len);
-  int cpdpat_check(const char* word,
-                   int len,
+  int cpdrep_check(const std::string& word,
+                   size_t len,
+                   AffixScratch& scratch,
+                   bool& timelimit_exceeded,
+                   std::chrono::steady_clock::time_point clock_time_start);
+  int cpdwordpair_check(const std::string& word,
+                        size_t len,
+                        AffixScratch& scratch,
+                        bool& timelimit_exceeded,
+                        std::chrono::steady_clock::time_point clock_time_start);
+  int cpdpat_check(const std::string& word,
+                   size_t len,
                    hentry* r1,
                    hentry* r2,
-                   const char affixed);
+                   const char affixed,
+                   const TraceCtx* t,
+                   PfxEntry* p1,
+                   SfxEntry* s1,
+                   PfxEntry* p2,
+                   SfxEntry* s2);
   int defcpd_check(hentry*** words,
                    short wnum,
+                   short maxwordnum,
                    hentry* rv,
                    hentry** rwords,
                    char all);
-  int cpdcase_check(const char* word, int len);
-  inline int candidate_check(const char* word, int len);
-  void setcminmax(int* cmin, int* cmax, const char* word, int len);
+  int cpdcase_check(const std::string& word, size_t len);
+  inline int candidate_check(const std::string& word, AffixScratch& scratch);
+  void setcminmax(size_t* cmin, size_t* cmax, const char* word, size_t len);
   struct hentry* compound_check(const std::string& word,
                                 short wordnum,
                                 short numsyllable,
@@ -276,10 +347,10 @@ class AffixMgr {
                                 hentry** rwords,
                                 char hu_mov_rule,
                                 char is_sug,
-                                int* info);
+                                int* info,
+                                AffixScratch& scratch);
 
-  int compound_check_morph(const char* word,
-                           int len,
+  int compound_check_morph(const std::string& word,
                            short wordnum,
                            short numsyllable,
                            short maxwordnum,
@@ -288,13 +359,14 @@ class AffixMgr {
                            hentry** rwords,
                            char hu_mov_rule,
                            std::string& result,
-                           const std::string* partresult);
+                           const std::string* partresult,
+                           AffixScratch& scratch);
 
   std::vector<std::string> get_suffix_words(short unsigned* suff,
                        int len,
-                       const char* root_word);
+                       const std::string& root_word);
 
-  struct hentry* lookup(const char* word);
+  struct hentry* lookup(const char* word, size_t len);
   const std::vector<replentry>& get_reptable() const;
   RepList* get_iconvtable() const;
   RepList* get_oconvtable() const;
@@ -303,8 +375,8 @@ class AffixMgr {
   const std::vector<std::string>& get_breaktable() const;
   const std::string& get_encoding();
   int get_langnum() const;
-  char* get_key_string();
-  char* get_try_string() const;
+  const std::string& get_key_string();
+  const std::string& get_try_string() const;
   const std::string& get_wordchars() const;
   const std::vector<w_char>& get_wordchars_utf16() const;
   const char* get_ignore() const;
@@ -314,7 +386,9 @@ class AffixMgr {
   FLAG get_forbiddenword() const;
   FLAG get_nosuggest() const;
   FLAG get_nongramsuggest() const;
+  FLAG get_substandard() const;
   FLAG get_needaffix() const;
+  FLAG get_circumfix() const;
   FLAG get_onlyincompound() const;
   const char* get_derived() const;
   const std::string& get_version() const;
@@ -327,13 +401,13 @@ class AffixMgr {
   int get_maxdiff() const;
   int get_onlymaxdiff() const;
   int get_nosplitsugs() const;
-  int get_sugswithdots(void) const;
-  FLAG get_keepcase(void) const;
-  FLAG get_forceucase(void) const;
-  FLAG get_warn(void) const;
-  int get_forbidwarn(void) const;
-  int get_checksharps(void) const;
-  char* encode_flag(unsigned short aflag) const;
+  int get_sugswithdots() const;
+  FLAG get_keepcase() const;
+  FLAG get_forceucase() const;
+  FLAG get_warn() const;
+  int get_forbidwarn() const;
+  int get_checksharps() const;
+  std::string encode_flag(unsigned short aflag) const;
   int get_fullstrip() const;
 
  private:
@@ -341,7 +415,6 @@ class AffixMgr {
   bool parse_flag(const std::string& line, unsigned short* out, FileMgr* af);
   bool parse_num(const std::string& line, int* out, FileMgr* af);
   bool parse_cpdsyllable(const std::string& line, FileMgr* af);
-  bool parse_reptable(const std::string& line, FileMgr* af);
   bool parse_convtable(const std::string& line,
                       FileMgr* af,
                       RepList** rl,
@@ -353,10 +426,17 @@ class AffixMgr {
   bool parse_defcpdtable(const std::string& line, FileMgr* af);
   bool parse_affix(const std::string& line, const char at, FileMgr* af, char* dupflags);
 
-  void reverse_condition(std::string&);
+  bool circumfix_ok(PfxEntry* pfx, SfxEntry* sfx, const TraceCtx* t) const;
+  void trace_avoidflag(TraceCtx* t, const FLAG avoidflag, const struct hentry* stem) const;
+  bool suffix_applicable(PfxEntry* pfx,
+                         SfxEntry* sfx,
+                         const FLAG cclass,
+                         char in_compound,
+                         const TraceCtx* t) const;
+
   std::string& debugflag(std::string& result, unsigned short flag);
-  int condlen(const char*);
-  int encodeit(AffEntry& entry, const char* cs);
+  int condlen(const std::string& s);
+  int encodeit(AffEntry& entry, const std::string& cs);
   int build_pfxtree(PfxEntry* pfxptr);
   int build_sfxtree(SfxEntry* sfxptr);
   int process_pfx_order();
@@ -365,7 +445,7 @@ class AffixMgr {
   SfxEntry* process_sfx_in_order(SfxEntry* ptr, SfxEntry* nptr);
   int process_pfx_tree_to_list();
   int process_sfx_tree_to_list();
-  int redundant_condition(char, const char* strip, int stripl, const char* cond, int);
+  int redundant_condition(char, const std::string& strip, const std::string& cond, int);
   void finishFileMgr(FileMgr* afflst);
 };
 

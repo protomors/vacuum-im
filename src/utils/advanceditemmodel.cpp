@@ -2,7 +2,7 @@
 
 #include <QTimer>
 #include <QRegularExpression>
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #define FIRST_VALID_ROLE 0
 

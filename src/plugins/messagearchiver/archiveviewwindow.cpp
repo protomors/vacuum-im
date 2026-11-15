@@ -1,6 +1,6 @@
 #include "archiveviewwindow.h"
 #include <QRegularExpression>
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QLocale>
 #include <QCursor>

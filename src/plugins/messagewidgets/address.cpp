@@ -1,5 +1,5 @@
 #include "address.h"
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QSet>
 #include <utils/pluginhelper.h>

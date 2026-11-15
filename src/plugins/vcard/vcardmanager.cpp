@@ -1,5 +1,5 @@
 #include "vcardmanager.h"
-#include <utils/qtcompat.h>
+#include <utils/qtutils.h>
 
 #include <QFile>
 #include <QFileInfo>
