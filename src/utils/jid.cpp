@@ -2,11 +2,7 @@
 
 #include <utils/qtcompat.h>
 
-#ifdef USE_SYSTEM_IDN
-#	include <stringprep.h>
-#else
-#	include <thirdparty/idn/stringprep.h>
-#endif
+#include <stringprep.h>
 
 static const QChar CharDog = '@';
 static const QChar CharSlash = '/';

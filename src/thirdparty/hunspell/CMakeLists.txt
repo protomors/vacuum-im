@@ -4,9 +4,9 @@ project(hunspell CXX)
 
 set(SOURCES affentry.cxx affixmgr.cxx csutil.cxx filemgr.cxx hashmgr.cxx hunspell.cxx hunzip.cxx phonet.cxx replist.cxx suggestmgr.cxx)
 
-add_definitions(-DHUNSPELL_STATIC)
- 
 add_library(hunspell STATIC ${SOURCES})
+target_include_directories(hunspell PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_definitions(hunspell PUBLIC HUNSPELL_STATIC)
 set_target_properties(hunspell PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/libs"
 	COMPILE_FLAGS "${CMAKE_STATIC_LIBRARY_C_FLAGS}"
 	LINK_FLAGS "${CMAKE_STATIC_LIBRARY_C_FLAGS}")

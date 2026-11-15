@@ -14,7 +14,7 @@ Requirements
     copies are built. QtLockedFile and QxtGlobalShortcut are always built from
     the bundled sources against the application's Qt version.
   * Hunspell is the preset spellchecker backend. A bundled copy is available
-    if the system library is absent.
+    if the system library is absent. System Hunspell must be version 1.6 or newer.
   * GStreamer 1.20+ with SDP and WebRTC development files for voice calls.
     Release presets require voice calls; custom/development builds may use
     PLUGIN_voicecalls=AUTO or OFF. Runtime plugins include webrtc, dtls,
@@ -136,6 +136,16 @@ Presets are conveniences; other CMake generators remain supported:
 
 Useful configure options (pass as -DNAME=value):
 
+  VACUUM_DEPENDENCY_PROVIDER=AUTO
+                                Prefer system zlib, MiniZip, libidn and Hunspell;
+                                build bundled copies when development files
+                                are absent (default).
+  VACUUM_DEPENDENCY_PROVIDER=SYSTEM
+                                Require system development packages for those
+                                libraries; used by Linux release CI.
+  VACUUM_DEPENDENCY_PROVIDER=BUNDLED
+                                Build those libraries from the source tree;
+                                used by Windows release CI.
   INSTALL_SDK=ON                Install plugin development headers/helpers
                                 (OFF in the supplied presets).
   INSTALL_DOCS=OFF              Skip installed documentation.

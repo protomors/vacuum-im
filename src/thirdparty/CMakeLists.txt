@@ -1,14 +1,4 @@
-if (NOT SYSTEM_ZLIB_FOUND)
-	add_subdirectory(zlib)
-endif (NOT SYSTEM_ZLIB_FOUND)
-
-if (NOT SYSTEM_MINIZIP_FOUND)
-	add_subdirectory(minizip)
-endif (NOT SYSTEM_MINIZIP_FOUND)
-
-if (NOT SYSTEM_IDN_FOUND)
-	add_subdirectory(idn)
-endif (NOT SYSTEM_IDN_FOUND)
+vacuum_find_core_dependencies()
 
 # Build Qt-based helpers against the application's Qt, rather than picking up
 # unversioned system libraries that may still be linked against Qt 5.

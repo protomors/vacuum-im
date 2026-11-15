@@ -4,9 +4,9 @@ project(minizip C)
 
 file(GLOB SOURCES "*.c")
 
-include_directories("${CMAKE_SOURCE_DIR}/src" "../zlib")
-
 add_library(minizip STATIC ${SOURCES})
+target_include_directories(minizip PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(minizip PUBLIC Vacuum::Zlib)
 set_target_properties(minizip PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/libs"
 	COMPILE_FLAGS "${CMAKE_SHARED_LIBRARY_C_FLAGS}"
 	LINK_FLAGS "${CMAKE_SHARED_LIBRARY_C_FLAGS}")

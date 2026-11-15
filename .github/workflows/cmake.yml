@@ -27,7 +27,7 @@ jobs:
         run: |
           docker run --rm --user "$(id -u):$(id -g)" \
             -v "$GITHUB_WORKSPACE:/src" -w /src vacuum-linux bash -euc '
-              cmake --preset release -B build/linux
+              cmake --preset release -B build/linux -DVACUUM_DEPENDENCY_PROVIDER=SYSTEM
               cmake --build build/linux --parallel 4
               cpack --config build/linux/CPackConfig.cmake -C Release
               python .github/scripts/check_archive.py "build/linux/packages/*.tar.gz"
@@ -63,7 +63,7 @@ jobs:
       - name: Extract pinned GStreamer runtime and development files
         run: ./.github/scripts/install-gstreamer.ps1
       - name: Configure
-        run: cmake --preset release -DBUNDLE_WINDOWS_DEPENDENCIES=ON "-DVACUUM_GSTREAMER_ROOT=$env:VACUUM_GSTREAMER_ROOT"
+        run: cmake --preset release -DVACUUM_DEPENDENCY_PROVIDER=BUNDLED -DBUNDLE_WINDOWS_DEPENDENCIES=ON "-DVACUUM_GSTREAMER_ROOT=$env:VACUUM_GSTREAMER_ROOT"
       - name: Build
         run: cmake --build --preset release --parallel 4
       - name: Package
