@@ -17,22 +17,12 @@
 #include <interfaces/iaccountmanager.h>
 #include <interfaces/irostersview.h>
 #include <interfaces/imultiuserchat.h>
-#include <interfaces/iservicediscovery.h>
 #include <interfaces/idataforms.h>
-#include <interfaces/isessionnegotiation.h>
 #include <interfaces/irostermanager.h>
 #include "chatwindowmenu.h"
 #include "archiveviewwindow.h"
 #include "archivereplicator.h"
 #include "archiveaccountoptionswidget.h"
-
-struct StanzaSession {
-	QString sessionId;
-	bool defaultPrefs;
-	QString saveMode;
-	QString requestId;
-	XmppStanzaError error;
-};
 
 struct RemoveRequest {
 	XmppError lastError;
@@ -65,12 +55,10 @@ class MessageArchiver :
 	public IPlugin,
 	public IMessageArchiver,
 	public IStanzaHandler,
-	public IStanzaRequestOwner,
-	public IOptionsDialogHolder,
-	public ISessionNegotiator
+	public IOptionsDialogHolder
 {
 	Q_OBJECT;
-	Q_INTERFACES(IPlugin IMessageArchiver IStanzaHandler IStanzaRequestOwner IOptionsDialogHolder ISessionNegotiator);
+	Q_INTERFACES(IPlugin IMessageArchiver IStanzaHandler IOptionsDialogHolder);
 	Q_PLUGIN_METADATA(IID "org.vacuum-im.plugins.MessageArchiver");
 public:
 	MessageArchiver();
@@ -85,29 +73,18 @@ public:
 	virtual bool startPlugin()  { return true; }
 	//IStanzaHandler
 	virtual bool stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanza &AStanza, bool &AAccept);
-	//IStanzaRequestOwner
-	virtual void stanzaRequestResult(const Jid &AStreamJid, const Stanza &AStanza);
 	//IOptionsHolder
 	virtual QMultiMap<int, IOptionsDialogWidget *> optionsDialogWidgets(const QString &ANodeId, QWidget *AParent);
-	//SessionNegotiator
-	virtual int sessionInit(const IStanzaSession &ASession, IDataForm &ARequest);
-	virtual int sessionAccept(const IStanzaSession &ASession, const IDataForm &ARequest, IDataForm &ASubmit);
-	virtual int sessionApply(const IStanzaSession &ASession);
-	virtual void sessionLocalize(const IStanzaSession &ASession, IDataForm &AForm);
 	//IMessageArchiver
 	virtual bool isReady(const Jid &AStreamJid) const;
 	virtual QString archiveDirPath(const Jid &AStreamJid = Jid::null) const;
-	virtual bool isSupported(const Jid &AStreamJid, const QString &AFeatureNS) const;
 	virtual QWidget *showArchiveWindow(const QMultiMap<Jid,Jid> &AAddresses);
   //Preferences
-	virtual QString prefsNamespace(const Jid &AStreamJid) const;
 	virtual bool isArchivePrefsEnabled(const Jid &AStreamJid) const;
 	virtual bool isArchiveReplicationEnabled(const Jid &AStreamJid) const;
 	virtual bool isArchivingAllowed(const Jid &AStreamJid, const Jid &AItemJid, const QString &AThreadId) const;
 	virtual IArchiveStreamPrefs archivePrefs(const Jid &AStreamJid) const;
 	virtual IArchiveItemPrefs archiveItemPrefs(const Jid &AStreamJid, const Jid &AItemJid, const QString &AThreadId = QString()) const;
-	virtual bool isArchiveAutoSave(const Jid &AStreamJid) const;
-	virtual QString setArchiveAutoSave(const Jid &AStreamJid, bool AAuto, bool AGlobal=true);
 	virtual QString setArchivePrefs(const Jid &AStreamJid, const IArchiveStreamPrefs &APrefs);
 	virtual QString removeArchiveItemPrefs(const Jid &AStreamJid, const Jid &AItemJid);
 	virtual QString removeArchiveSessionPrefs(const Jid &AStreamJid, const QString &AThreadId);
@@ -152,7 +129,6 @@ signals:
 protected:
 	QString archiveFilePath(const Jid &AStreamJid, const QString &AFileName) const;
 protected:
-	QString loadServerPrefs(const Jid &AStreamJid);
 	QString loadStoragePrefs(const Jid &AStreamJid);
 	void applyArchivePrefs(const Jid &AStreamJid, const QDomElement &AElem);
 protected:
@@ -170,24 +146,10 @@ protected:
 	void processCollectionRequest(const QString &ALocalId, CollectionRequest &ARequest);
 	void processRemoveRequest(const QString &ALocalId, RemoveRequest &ARequest);
 protected:
-	bool hasStanzaSession(const Jid &AStreamJid, const Jid &AContactJid) const;
-	bool isOTRStanzaSession(const IStanzaSession &ASession) const;
-	bool isOTRStanzaSession(const Jid &AStreamJid, const Jid &AContactJid) const;
-	QDomDocument loadStanzaSessionsContexts(const Jid &AStreamJid) const;
-	void saveStanzaSessionContext(const Jid &AStreamJid, const Jid &AContactJid) const;
-	void restoreStanzaSessionContext(const Jid &AStreamJid, const QString &ASessionId = QString());
-	void removeStanzaSessionContext(const Jid &AStreamJid, const QString &ASessionId) const;
-	void startSuspendedStanzaSession(const Jid &AStreamJid, const QString &ARequestId);
-	void cancelSuspendedStanzaSession(const Jid &AStreamJid, const QString &ARequestId, const XmppStanzaError &AError);
-	void renegotiateStanzaSessions(const Jid &AStreamJid) const;
-protected:
-	void registerDiscoFeatures();
 	void openHistoryOptionsNode(const QUuid &AAccountId);
 	void closeHistoryOptionsNode(const QUuid &AAccountId);
-	bool isArchiveDuplicationEnabled(const Jid &AStreamJid) const;
 	bool isSelectionAccepted(const QList<IRosterIndex *> &ASelected) const;
 	Menu *createContextMenu(const QStringList &AStreams, const QStringList &AContacts, QWidget *AParent) const;
-	void notifyInChatWindow(const Jid &AStreamJid, const Jid &AContactJid, const QString &AMessage) const;
 protected slots:
 	void onEngineCapabilitiesChanged(const Jid &AStreamJid);
 	void onEngineRequestFailed(const QString &AId, const XmppError &AError);
@@ -203,6 +165,7 @@ protected slots:
 	void onXmppStreamOpened(IXmppStream *AXmppStream);
 	void onXmppStreamClosed(IXmppStream *AXmppStream);
 	void onXmppStreamAboutToClose(IXmppStream *AXmppStream);
+	void onPrivateStorageOpened(const Jid &AStreamJid);
 	void onPrivateDataLoadedSaved(const QString &AId, const Jid &AStreamJid, const QDomElement &AElement);
 	void onPrivateDataChanged(const Jid &AStreamJid, const QString &ATagName, const QString &ANamespace);
 	void onShortcutActivated(const QString &AId, QWidget *AWidget);
@@ -210,14 +173,10 @@ protected slots:
 	void onRostersViewIndexContextMenu(const QList<IRosterIndex *> &AIndexes, quint32 ALabelId, Menu *AMenu);
 	void onMultiUserContextMenu(IMultiUserChatWindow *AWindow, IMultiUser *AUser, Menu *AMenu);
 	void onSetItemPrefsByAction(bool);
-	void onSetAutoArchivingByAction(bool);
 	void onRemoveItemPrefsByAction(bool);
 	void onShowArchiveWindowByAction(bool);
 	void onShowArchiveWindowByToolBarAction(bool);
 	void onShowHistoryOptionsDialogByAction(bool);
-	void onDiscoveryInfoReceived(const IDiscoInfo &AInfo);
-	void onStanzaSessionActivated(const IStanzaSession &ASession);
-	void onStanzaSessionTerminated(const IStanzaSession &ASession);
 	void onToolBarWidgetCreated(IMessageToolBarWidget *AWidget);
 	void onOptionsChanged(const OptionsNode &ANode);
 private:
@@ -229,22 +188,15 @@ private:
 	IAccountManager *FAccountManager;
 	IRosterManager *FRosterManager;
 	IRostersViewPlugin *FRostersViewPlugin;
-	IServiceDiscovery *FDiscovery;
 	IDataForms *FDataForms;
 	IMessageWidgets *FMessageWidgets;
-	ISessionNegotiation *FSessionNegotiation;
 	IMultiUserChatManager *FMultiChatManager;
 private:
-	QMap<Jid,int> FSHIPrefs;
 	QMap<Jid,int> FSHIMessageIn;
 	QMap<Jid,int> FSHIMessageOut;
-	QMap<Jid,int> FSHIMessageBlocks;
 private:
 	QMap<QString,Jid> FPrefsSaveRequests;
 	QMap<QString,Jid> FPrefsLoadRequests;
-	QMap<QString,bool> FPrefsAutoRequests;
-	QMap<QString,Jid> FPrefsRemoveItemRequests;
-	QMap<QString,QString> FPrefsRemoveSessionRequests;
 private:
 	QHash<QString,QString> FRequestId2LocalId;
 	QMap<QString,RemoveRequest> FRemoveRequests;
@@ -253,14 +205,8 @@ private:
 	QMap<QString,MessagesRequest> FMesssagesRequests;
 private:
 	mutable QString FArchiveDirPath;
-	QList<Jid> FInStoragePrefs;
-	QMap<Jid,QString> FNamespaces;
-	QMap<Jid,QList<QString> > FFeatures;
 	QMap<Jid,IArchiveStreamPrefs> FArchivePrefs;
 	QMap<Jid,QList< QPair<Message,bool> > > FPendingMessages;
-private:
-	QMap<QString,QString> FRestoreRequests;
-	QMap<Jid,QMap<Jid,StanzaSession> > FSessions;
 private:
 	QMap<Jid, ArchiveReplicator *> FReplicators;
 	QMap<QUuid,IArchiveEngine *> FArchiveEngines;

@@ -17,24 +17,10 @@
 #include <QUuid>
 #define MESSAGEARCHIVER_UUID QUuid::fromString(QLatin1String("{66FEAE08-BE4D-4fd4-BCEA-494F3A70997A}"))
 
-#define ARCHIVE_SCOPE_GLOBAL    "global"    //the setting will remain for next streams
-#define ARCHIVE_SCOPE_STREAM    "stream"    //the setting is true only until the end of the stream. For next stream, server default value will be used
-
-#define ARCHIVE_OTR_APPROVE     "approve"   //the user MUST explicitly approve off-the-record communication.
-#define ARCHIVE_OTR_CONCEDE     "concede"   //communications MAY be off the record if requested by another user.
-#define ARCHIVE_OTR_FORBID      "forbid"    //communications MUST NOT be off the record.
-#define ARCHIVE_OTR_OPPOSE      "oppose"    //communications SHOULD NOT be off the record even if requested.
-#define ARCHIVE_OTR_PREFER      "prefer"    //communications SHOULD be off the record if possible.
-#define ARCHIVE_OTR_REQUIRE     "require"   //communications MUST be off the record.
-
 #define ARCHIVE_SAVE_FALSE      "false"     //the saving entity MUST save nothing.
 #define ARCHIVE_SAVE_BODY       "body"      //the saving entity SHOULD save only <body/> elements.
 #define ARCHIVE_SAVE_MESSAGE    "message"   //the saving entity SHOULD save the full XML content of each <message/> element.
 #define ARCHIVE_SAVE_STREAM     "stream"    //the saving entity SHOULD save every byte that passes over the stream in either direction.
-
-#define ARCHIVE_METHOD_CONCEDE  "concede"   //this method MAY be used if no other methods are available.
-#define ARCHIVE_METHOD_FORBID   "forbid"    //this method MUST NOT be used.
-#define ARCHIVE_METHOD_PREFER   "prefer"    //this method SHOULD be used if available.
 
 struct IArchiveItemPrefs
 {
@@ -42,12 +28,11 @@ struct IArchiveItemPrefs
 		expire = 0;
 		exactmatch = false;
 	}
-	QString otr;
 	QString save;
 	quint32 expire;
 	bool exactmatch;
 	bool operator==(const IArchiveItemPrefs &AOther) const {
-		return save==AOther.save && otr==AOther.otr && expire==AOther.expire && exactmatch==AOther.exactmatch;
+		return save==AOther.save && expire==AOther.expire && exactmatch==AOther.exactmatch;
 	}
 	bool operator!=(const IArchiveItemPrefs &AOther) const {
 		return !operator==(AOther);
@@ -60,10 +45,9 @@ struct IArchiveSessionPrefs
 		timeout = -1;
 	}
 	int timeout;
-	QString otr;
 	QString save;
 	bool operator==(const IArchiveSessionPrefs &AOther) const {
-		return save==AOther.save && otr==AOther.otr && timeout==AOther.timeout;
+		return save==AOther.save && timeout==AOther.timeout;
 	}
 	bool operator!=(const IArchiveSessionPrefs &AOther) const {
 		return !operator==(AOther);
@@ -72,11 +56,6 @@ struct IArchiveSessionPrefs
 
 struct IArchiveStreamPrefs
 {
-	bool autoSave;
-	QString autoScope;
-	QString methodAuto;
-	QString methodLocal;
-	QString methodManual;
 	IArchiveItemPrefs defaultPrefs;
 	QMap<Jid,IArchiveItemPrefs> itemPrefs;
 	QMap<QString,IArchiveSessionPrefs> sessionPrefs;
@@ -226,17 +205,13 @@ public:
 	virtual QObject *instance() =0;
 	virtual bool isReady(const Jid &AStreamJid) const =0;
 	virtual QString archiveDirPath(const Jid &AStreamJid = Jid::null) const =0;
-	virtual bool isSupported(const Jid &AStreamJid, const QString &AFeatureNS) const =0;
 	virtual QWidget *showArchiveWindow(const QMultiMap<Jid,Jid> &AAddresses) =0;
 	//Archive Preferences
-	virtual QString prefsNamespace(const Jid &AStreamJid) const =0;
 	virtual bool isArchivePrefsEnabled(const Jid &AStreamJid) const =0;
 	virtual bool isArchiveReplicationEnabled(const Jid &AStreamJid) const =0;
 	virtual bool isArchivingAllowed(const Jid &AStreamJid, const Jid &AItemJid, const QString &AThreadId) const =0;
 	virtual IArchiveStreamPrefs archivePrefs(const Jid &AStreamJid) const =0;
 	virtual IArchiveItemPrefs archiveItemPrefs(const Jid &AStreamJid, const Jid &AItemJid, const QString &AThreadId = QString()) const =0;
-	virtual bool isArchiveAutoSave(const Jid &AStreamJid) const =0;
-	virtual QString setArchiveAutoSave(const Jid &AStreamJid, bool AAuto, bool AGlobal=true) =0;
 	virtual QString setArchivePrefs(const Jid &AStreamJid, const IArchiveStreamPrefs &APrefs) =0;
 	virtual QString removeArchiveItemPrefs(const Jid &AStreamJid, const Jid &AItemJid) =0;
 	virtual QString removeArchiveSessionPrefs(const Jid &AStreamJid, const QString &AThreadId) =0;
@@ -282,6 +257,6 @@ protected:
 
 Q_DECLARE_INTERFACE(IArchiveHandler,"Vacuum.Plugin.IArchiveHandler/1.1")
 Q_DECLARE_INTERFACE(IArchiveEngine,"Vacuum.Plugin.IArchiveEngine/1.3")
-Q_DECLARE_INTERFACE(IMessageArchiver,"Vacuum.Plugin.IMessageArchiver/1.4")
+Q_DECLARE_INTERFACE(IMessageArchiver,"Vacuum.Plugin.IMessageArchiver/1.5")
 
 #endif // IMESSAGEARCHIVER_H

@@ -39,12 +39,11 @@ class Avatars :
 	public IPlugin,
 	public IAvatars,
 	public IStanzaHandler,
-	public IStanzaRequestOwner,
 	public IRosterDataHolder,
 	public IRostersLabelHolder
 {
 	Q_OBJECT;
-	Q_INTERFACES(IPlugin IAvatars IStanzaHandler IRosterDataHolder IRostersLabelHolder IStanzaRequestOwner);
+	Q_INTERFACES(IPlugin IAvatars IStanzaHandler IRosterDataHolder IRostersLabelHolder);
 	Q_PLUGIN_METADATA(IID "org.vacuum-im.plugins.Avatars");
 public:
 	Avatars();
@@ -59,8 +58,6 @@ public:
 	virtual bool startPlugin() { return true; }
 	//IStanzaHandler
 	virtual bool stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanza &AStanza, bool &AAccept);
-	//IStanzaRequestOwner
-	virtual void stanzaRequestResult(const Jid &AStreamJid, const Stanza &AStanza);
 	//IRosterDataHolder
 	virtual QList<int> rosterDataRoles(int AOrder) const;
 	virtual QVariant rosterData(int AOrder, const IRosterIndex *AIndex, int ARole) const;
@@ -99,7 +96,6 @@ protected:
 	void updatePresence(const Jid &AStreamJid);
 	void updateDataHolder(const Jid &AContactJid);
 	bool updateVCardAvatar(const Jid &AContactJid, const QString &AHash, bool AFromVCard);
-	bool updateIqAvatar(const Jid &AContactJid, const QString &AHash);
 	bool isSelectionAccepted(const QList<IRosterIndex *> &ASelected) const;
 protected slots:
 	void onVCardReceived(const Jid &AContactJid);
@@ -141,9 +137,6 @@ private:
 	QHash<Jid, QString> FVCardAvatars;
 	QMultiMap<Jid, Jid> FBlockingResources;
 private:
-	QMap<Jid, int> FSHIIqAvatarIn;
-	QHash<Jid, QString> FIqAvatars;
-	QMap<QString, Jid> FIqAvatarRequests;
 private:
 	QMap<Jid, QString> FCustomPictures;
 private:

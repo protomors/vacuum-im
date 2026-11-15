@@ -6,13 +6,11 @@
 #define NS_XMPP_DELAY                           "urn:xmpp:delay"
 #define NS_XMPP_TIME                            "urn:xmpp:time"
 #define NS_XMPP_PING                            "urn:xmpp:ping"
-#define NS_STANZA_SESSION                       "urn:xmpp:ssn"
 #define NS_CAPTCHA_FORMS                        "urn:xmpp:captcha"
 #define NS_BITS_OF_BINARY                       "urn:xmpp:bob"
 
 #define NS_JABBER_CLIENT                        "jabber:client"
 #define NS_JABBER_STREAMS                       "http://etherx.jabber.org/streams"
-#define NS_JABBER_IQ_AUTH                       "jabber:iq:auth"
 #define NS_JABBER_ROSTER                        "jabber:iq:roster"
 #define NS_JABBER_PRIVATE                       "jabber:iq:private"
 #define NS_JABBER_VERSION                       "jabber:iq:version"
@@ -25,8 +23,6 @@
 #define NS_JABBER_SEARCH                        "jabber:iq:search"
 #define NS_JABBER_GATEWAY                       "jabber:iq:gateway"
 #define NS_JABBER_PRIVACY                       "jabber:iq:privacy"
-#define NS_JABBER_X_AVATAR                      "jabber:x:avatar"
-#define NS_JABBER_IQ_AVATAR                     "jabber:iq:avatar"
 #define NS_JABBER_X_CONFERENCE                  "jabber:x:conference"
 
 #define NS_VCARD_TEMP                           "vcard-temp"
@@ -36,12 +32,9 @@
 #define NS_STORAGE_BOOKMARKS                    "storage:bookmarks"
 #define NS_STORAGE_METACONTACTS                 "vacuum:metacontacts"
 
-#define NS_FEATURE_IQAUTH                       "http://jabber.org/features/iq-auth"
 #define NS_FEATURE_SASL                         "urn:ietf:params:xml:ns:xmpp-sasl"
 #define NS_FEATURE_BIND                         "urn:ietf:params:xml:ns:xmpp-bind"
 #define NS_FEATURE_SESSION                      "urn:ietf:params:xml:ns:xmpp-session"
-#define NS_FEATURE_COMPRESS                     "http://jabber.org/features/compress"
-#define NS_PROTOCOL_COMPRESS                    "http://jabber.org/protocol/compress"
 #define NS_FEATURE_STARTTLS                     "urn:ietf:params:xml:ns:xmpp-tls"
 #define NS_FEATURE_REGISTER                     "http://jabber.org/features/iq-register"
 #define NS_FEATURE_ROSTER_VER                   "urn:xmpp:features:rosterver"
@@ -65,10 +58,6 @@
 #define NS_COMMANDS                             "http://jabber.org/protocol/commands"
 
 #define NS_ARCHIVE                              "urn:xmpp:archive"
-#define NS_ARCHIVE_AUTO                         "urn:xmpp:archive:auto"
-#define NS_ARCHIVE_MANAGE                       "urn:xmpp:archive:manage"
-#define NS_ARCHIVE_MANUAL                       "urn:xmpp:archive:manual"
-#define NS_ARCHIVE_PREF                         "urn:xmpp:archive:pref"
 
 #define NS_RESULTSET                            "http://jabber.org/protocol/rsm"
 
@@ -77,7 +66,6 @@
 #define NS_CHATSTATES                           "http://jabber.org/protocol/chatstates"
 
 #define NS_STREAM_INITIATION                    "http://jabber.org/protocol/si"
-#define NS_STREAM_PUBLICATION                   "http://jabber.org/protocol/sipub"
 #define NS_SI_FILETRANSFER                      "http://jabber.org/protocol/si/profile/file-transfer"
 
 #define NS_INBAND_BYTESTREAMS                   "http://jabber.org/protocol/ibb"

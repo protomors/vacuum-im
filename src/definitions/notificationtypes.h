@@ -10,7 +10,6 @@
 #define NNT_MUC_MESSAGE_PRIVATE       "MucMessagePrivate"
 #define NNT_MUC_MESSAGE_MENTION       "MucMessageMention"
 #define NNT_SUBSCRIPTION_REQUEST      "SubscriptionRequest"
-#define NNT_SESSION_NEGOTIATION       "SessionNegotiation"
 #define NNT_CONNECTION_ERROR          "ConnectionError"
 #define NNT_BIRTHDAY                  "Birthday"
 #define NNT_CHATSTATE_TYPING          "ChatStateTyping"

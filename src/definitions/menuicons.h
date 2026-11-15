@@ -224,9 +224,6 @@
 #define MNI_SDISCOVERY_RELOAD           "sdiscoveryReload"
 
 //SessionNegotiation
-#define MNI_SNEGOTIATION                "snegotiation"
-#define MNI_SNEGOTIATION_INIT           "snegotiationInit"
-#define MNI_SNEGOTIATION_TERMINATE      "snegotiationTerminate"
 
 //ShortcutsManager
 #define MNI_SHORTCUTS                   "shortcuts"

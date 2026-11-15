@@ -9,9 +9,6 @@
 #define XERR_COMMANDS_BAD_SESSIONID                           "bad-sessionid"
 #define XERR_COMMANDS_SESSION_EXPIRED                         "session-expired"
 
-// Compression - NS_FEATURE_COMPRESS
-#define XERR_COMPRESS_UNSUPPORTED_METHOD                      "unsupported-method"
-#define XERR_COMPRESS_SETUP_FAILED                            "setup-failed"
 
 // DataStreamsManager - NS_STREAM_INITIATION
 #define XERR_SI_BAD_PROFILE                                   "bad-profile"

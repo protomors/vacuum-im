@@ -13,8 +13,6 @@ class ArchiveDelegate :
 public:
 	static QString expireName(int AExpire);
 	static QString exactMatchName(bool AExact);
-	static QString methodName(const QString &AMethod);
-	static QString otrModeName(const QString &AOTRMode);
 	static QString saveModeName(const QString &ASaveMode);
 	static void updateComboBox(int AColumn, QComboBox *AComboBox);
 public:

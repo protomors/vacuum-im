@@ -52,9 +52,8 @@ bool XmppStream::xmppStanzaIn(IXmppStream *AXmppStream, Stanza &AStanza, int AOr
 			setStreamState(SS_FEATURES);
 			if (VersionParser(AStanza.attribute("version","0.0")) < VersionParser(1,0))
 			{
-				Stanza stanza("features",NS_JABBER_STREAMS);
-				stanza.addElement("auth",NS_FEATURE_IQAUTH);
-				xmppStanzaIn(AXmppStream, stanza, AOrder);
+				LOG_STRM_WARNING(streamJid(),QString("Unsupported pre-XMPP 1.0 stream, version=%1").arg(AStanza.attribute("version")));
+				abort(XmppError(IERR_XMPPSTREAM_UNSUPPORTED_VERSION));
 			}
 			return true;
 		}

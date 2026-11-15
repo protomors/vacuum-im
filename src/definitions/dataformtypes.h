@@ -20,7 +20,6 @@
 #define DFT_JABBERSEARCH                "jabber:iq:search"
 
 //SessionNegotiation
-#define DFT_SESSIONNEGOTIATION          "urn:xmpp:ssn"
 
 //RemoteControl
 #define DFT_REMOTECONTROL               "http://jabber.org/protocol/rc"

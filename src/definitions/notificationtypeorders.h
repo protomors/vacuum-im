@@ -14,7 +14,6 @@
 #define NTO_VOICE_CALL                         540
 #define NTO_FILETRANSFER_NOTIFY                550
 #define NTO_CAPTCHA_REQUEST                    600
-#define NTO_SESSION_NEGOTIATION                650
 #define NTO_CONNECTION_ERROR                   700
 
 #endif //  DEF_NOTIFICATIONTYPEORDERS_H

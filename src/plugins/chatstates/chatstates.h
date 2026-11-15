@@ -11,9 +11,7 @@
 #include <interfaces/ioptionsmanager.h>
 #include <interfaces/iservicediscovery.h>
 #include <interfaces/imessagearchiver.h>
-#include <interfaces/idataforms.h>
 #include <interfaces/inotifications.h>
-#include <interfaces/isessionnegotiation.h>
 #include <interfaces/imultiuserchat.h>
 #include <interfaces/irostersview.h>
 #include <utils/message.h>
@@ -65,11 +63,10 @@ class ChatStates :
 	public IChatStates,
 	public IStanzaHandler,
 	public IArchiveHandler,
-	public IOptionsDialogHolder,
-	public ISessionNegotiator
+	public IOptionsDialogHolder
 {
 	Q_OBJECT;
-	Q_INTERFACES(IPlugin IChatStates IStanzaHandler IArchiveHandler IOptionsDialogHolder ISessionNegotiator);
+	Q_INTERFACES(IPlugin IChatStates IStanzaHandler IArchiveHandler IOptionsDialogHolder);
 	Q_PLUGIN_METADATA(IID "org.vacuum-im.plugins.ChatStates");
 public:
 	ChatStates();
@@ -86,11 +83,6 @@ public:
 	virtual bool archiveMessageEdit(int AOrder, const Jid &AStreamJid, Message &AMessage, bool ADirectionIn);
 	//IOptionsHolder
 	virtual QMultiMap<int, IOptionsDialogWidget *> optionsDialogWidgets(const QString &ANodeId, QWidget *AParent);
-	//ISessionNegotiator
-	virtual int sessionInit(const IStanzaSession &ASession, IDataForm &ARequest);
-	virtual int sessionAccept(const IStanzaSession &ASession, const IDataForm &ARequest, IDataForm &ASubmit);
-	virtual int sessionApply(const IStanzaSession &ASession);
-	virtual void sessionLocalize(const IStanzaSession &ASession, IDataForm &AForm);
 	//IStanzaHandler
 	virtual bool stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanza &AStanza, bool &AAccept);
 	//IChatStates
@@ -148,9 +140,7 @@ protected slots:
 	void onOptionsOpened();
 	void onOptionsClosed();
 	void onOptionsChanged(const OptionsNode &ANode);
-	void onStanzaSessionTerminated(const IStanzaSession &ASession);
 private:
-	IDataForms *FDataForms;
 	IServiceDiscovery *FDiscovery;
 	INotifications *FNotifications;
 	IMessageWidgets *FMessageWidgets;
@@ -158,7 +148,6 @@ private:
 	IPresenceManager *FPresenceManager;
 	IStanzaProcessor *FStanzaProcessor;
 	IMessageArchiver *FMessageArchiver;
-	ISessionNegotiation *FSessionNegotiation;
 	IMultiUserChatManager *FMultiChatManager;
 private:
 	QMap<Jid, int> FSHIMessagesIn;
@@ -169,7 +158,6 @@ private:
 private:
 	QMap<Jid, QList<Jid> > FNotSupported;
 	QMap<Jid, QMap<Jid, ChatParams> > FChatParams;
-	QMap<Jid, QMap<Jid, QString> > FStanzaSessions;
 	QMap<QTextEdit *, IMessageChatWindow *> FChatByEditor;
 private:
 	QMap<Jid, QMap<Jid, RoomParams> > FRoomParams;

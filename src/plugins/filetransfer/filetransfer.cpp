@@ -25,11 +25,6 @@
 #include <definitions/optionnodeorders.h>
 #include <definitions/optionwidgetorders.h>
 #include <definitions/internalerrors.h>
-#include <definitions/publicdatastreamparameters.h>
-#include <definitions/publicdatastreamhandlerorders.h>
-#include <definitions/messageviewurlhandlerorders.h>
-#include <definitions/messagewriterorders.h>
-#include <definitions/xmppurihandlerorders.h>
 #include <utils/widgetmanager.h>
 #include <utils/iconstorage.h>
 #include <utils/shortcuts.h>
@@ -43,8 +38,6 @@
 #define ADR_CONTACT_JID               Action::DR_Parametr1
 #define ADR_FILE_NAME                 Action::DR_Parametr2
 
-#define XMPP_URI_RECV                 "recvfile"
-
 FileTransfer::FileTransfer()
 {
 	FRosterManager = NULL;
@@ -52,12 +45,9 @@ FileTransfer::FileTransfer()
 	FNotifications = NULL;
 	FFileManager = NULL;
 	FDataManager = NULL;
-	FDataPublisher = NULL;
 	FMessageWidgets = NULL;
 	FOptionsManager = NULL;
 	FRostersViewPlugin = NULL;
-	FMessageProcessor = NULL;
-	FXmppUriQueries = NULL;
 	FMultiChatManager = NULL;
 }
 
@@ -91,24 +81,6 @@ bool FileTransfer::initConnections(IPluginManager *APluginManager, int &AInitOrd
 	if (plugin)
 	{
 		FDataManager = qobject_cast<IDataStreamsManager *>(plugin->instance());
-		if (FDataManager)
-		{
-			connect(FDataManager->instance(),SIGNAL(streamInitStarted(const IDataStream &)),SLOT(onDataStreamInitStarted(const IDataStream &)));
-			connect(FDataManager->instance(),SIGNAL(streamInitFinished(const IDataStream &, const XmppError &)),SLOT(onDataStreamInitFinished(const IDataStream &, const XmppError &)));
-		}
-	}
-
-	plugin = APluginManager->pluginInterface("IDataStreamsPublisher").value(0,NULL);
-	if (plugin)
-	{
-		FDataPublisher = qobject_cast<IDataStreamsPublisher *>(plugin->instance());
-		if (FDataPublisher)
-		{
-			connect(FDataPublisher->instance(),SIGNAL(streamStartAccepted(const QString &, const QString &)),
-				SLOT(onPublicStreamStartAccepted(const QString &, const QString &)));
-			connect(FDataPublisher->instance(),SIGNAL(streamStartRejected(const QString &, const XmppError &)),
-				SLOT(onPublicStreamStartRejected(const QString &, const XmppError &)));
-		}
 	}
 
 	plugin = APluginManager->pluginInterface("IRosterManager").value(0,NULL);
@@ -161,18 +133,6 @@ bool FileTransfer::initConnections(IPluginManager *APluginManager, int &AInitOrd
 		FRostersViewPlugin = qobject_cast<IRostersViewPlugin *>(plugin->instance());
 	}
 
-	plugin = APluginManager->pluginInterface("IMessageProcessor").value(0,NULL);
-	if (plugin)
-	{
-		FMessageProcessor = qobject_cast<IMessageProcessor *>(plugin->instance());
-	}
-
-	plugin = APluginManager->pluginInterface("IXmppUriQueries").value(0,NULL);
-	if (plugin)
-	{
-		FXmppUriQueries = qobject_cast<IXmppUriQueries *>(plugin->instance());
-	}
-
 	plugin = APluginManager->pluginInterface("IMultiUserChatManager").value(0,NULL);
 	if (plugin)
 	{
@@ -215,10 +175,6 @@ bool FileTransfer::initObjects()
 	{
 		FFileManager->insertStreamsHandler(FSHO_FILETRANSFER,this);
 	}
-	if (FDataPublisher)
-	{
-		FDataPublisher->insertStreamHandler(PDSHO_DEFAULT, this);
-	}
 	if (FOptionsManager)
 	{
 		FOptionsManager->insertOptionsDialogHolder(this);
@@ -230,15 +186,6 @@ bool FileTransfer::initObjects()
 	if (FMessageWidgets)
 	{
 		FMessageWidgets->insertViewDropHandler(this);
-		FMessageWidgets->insertViewUrlHandler(MVUHO_FILETRANSFER,this);
-	}
-	if (FMessageProcessor)
-	{
-		FMessageProcessor->insertMessageWriter(MWO_FILETRANSFER,this);
-	}
-	if (FXmppUriQueries)
-	{
-		FXmppUriQueries->insertUriHandler(XUHO_DEFAULT,this);
 	}
 	return true;
 }
@@ -303,9 +250,8 @@ bool FileTransfer::rosterDragEnter(const QDragEnterEvent *AEvent)
 
 bool FileTransfer::rosterDragMove(const QDragMoveEvent *AEvent, IRosterIndex *AHover)
 {
-	if (AHover->data(RDR_KIND).toInt()==RIK_MUC_ITEM && FDataPublisher!=NULL && FMessageProcessor!=NULL)
-		return AHover->data(RDR_SHOW).toInt()!=IPresence::Offline && AHover->data(RDR_SHOW).toInt()!=IPresence::Error;
-	else if (AHover->data(RDR_KIND).toInt()!=RIK_STREAM_ROOT && AEvent->mimeData()->urls().count()==1)
+	int kind = AHover->data(RDR_KIND).toInt();
+	if (kind!=RIK_STREAM_ROOT && kind!=RIK_MUC_ITEM && AEvent->mimeData()->urls().count()==1)
 		return isSupported(AHover->data(RDR_STREAM_JID).toString(),AHover->data(RDR_FULL_JID).toString());
 	return false;
 }
@@ -323,23 +269,8 @@ bool FileTransfer::rosterDropAction(const QDropEvent *AEvent, IRosterIndex *AInd
 		foreach(const QUrl &url, AEvent->mimeData()->urls())
 			filesList.append(url.toLocalFile());
 
-		if (AIndex->data(RDR_KIND).toInt() == RIK_MUC_ITEM)
-		{
-			Jid contactJid = AIndex->data(RDR_FULL_JID).toString();
-			contactJid.setResource(AIndex->data(RDR_MUC_NICK).toString());
-
-			Action *publishAction = new Action(AMenu);
-			publishAction->setText(tr("Send File"));
-			publishAction->setIcon(RSR_STORAGE_MENUICONS,MNI_FILETRANSFER_SEND);
-			publishAction->setData(ADR_STREAM_JID,AIndex->data(RDR_STREAM_JID).toString());
-			publishAction->setData(ADR_CONTACT_JID,contactJid.full());
-			publishAction->setData(ADR_FILE_NAME,filesList);
-			connect(publishAction,SIGNAL(triggered(bool)),SLOT(onPublishFilesByAction(bool)));
-			AMenu->addAction(publishAction,AG_DEFAULT,true);
-			AMenu->setDefaultAction(publishAction);
-			return true;
-		}
-		else if (AIndex->data(RDR_KIND).toInt() != RIK_STREAM_ROOT)
+		int kind = AIndex->data(RDR_KIND).toInt();
+		if (kind!=RIK_STREAM_ROOT && kind!=RIK_MUC_ITEM)
 		{
 			Action *sendAction = new Action(AMenu);
 			sendAction->setText(tr("Send File"));
@@ -365,9 +296,7 @@ bool FileTransfer::messageViewDragEnter(IMessageViewWidget *AWidget, const QDrag
 				return false;
 
 		IMultiUserChatWindow *mucWindow = qobject_cast<IMultiUserChatWindow *>(AWidget->messageWindow()->instance());
-		if (mucWindow != NULL)
-			return mucWindow->multiUserChat()->isOpen();
-		else if (AEvent->mimeData()->urls().count() == 1)
+		if (mucWindow==NULL && AEvent->mimeData()->urls().count()==1)
 			return isSupported(AWidget->messageWindow()->streamJid(),AWidget->messageWindow()->contactJid());
 	}
 	return false;
@@ -393,23 +322,7 @@ bool FileTransfer::messageViewDropAction(IMessageViewWidget *AWidget, const QDro
 			filesList.append(url.toLocalFile());
 
 		IMultiUserChatWindow *mucWindow = qobject_cast<IMultiUserChatWindow *>(AWidget->messageWindow()->instance());
-		if (mucWindow != NULL)
-		{
-			Jid contactJid = mucWindow->contactJid();
-			contactJid.setResource(mucWindow->multiUserChat()->nickname());
-
-			Action *publishAction = new Action(AMenu);
-			publishAction->setText(tr("Send File"));
-			publishAction->setIcon(RSR_STORAGE_MENUICONS,MNI_FILETRANSFER_SEND);
-			publishAction->setData(ADR_STREAM_JID,mucWindow->streamJid().full());
-			publishAction->setData(ADR_CONTACT_JID,contactJid.full());
-			publishAction->setData(ADR_FILE_NAME,filesList);
-			connect(publishAction,SIGNAL(triggered(bool)),SLOT(onPublishFilesByAction(bool)));
-			AMenu->addAction(publishAction,AG_DEFAULT,true);
-			AMenu->setDefaultAction(publishAction);
-			return true;
-		}
-		else
+		if (mucWindow == NULL)
 		{
 			Action *sendAction = new Action(AMenu);
 			sendAction->setText(tr("Send File"));
@@ -422,190 +335,6 @@ bool FileTransfer::messageViewDropAction(IMessageViewWidget *AWidget, const QDro
 			AMenu->setDefaultAction(sendAction);
 			return true;
 		}
-	}
-	return false;
-}
-
-bool FileTransfer::messageViewUrlOpen(int AOrder, IMessageViewWidget *AWidget, const QUrl &AUrl)
-{
-	if (AOrder==MVUHO_FILETRANSFER && AUrl.scheme()==XMPP_URI_SCHEME && FXmppUriQueries!=NULL)
-	{
-		Jid contactJid;
-		QString action;
-		QMultiMap<QString,QString> params;
-		if (FXmppUriQueries->parseXmppUri(AUrl,contactJid,action,params))
-		{
-			if (action==XMPP_URI_RECV && !params.value("sid").isEmpty())
-			{
-				QString reqId = receivePublicFile(AWidget->messageWindow()->streamJid(),contactJid,params.value("sid"));
-				if (!reqId.isEmpty())
-				{
-					FPublicRequestView.insert(reqId,AWidget);
-					connect(AWidget->instance(),SIGNAL(destroyed(QObject *)),SLOT(onMessageViewWidgetDestroyed(QObject *)),Qt::UniqueConnection);
-				}
-				else
-				{
-					showStatusEvent(AWidget,tr("Failed to send request for file '%1'").arg(params.value("name").toHtmlEscaped()));
-				}
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-bool FileTransfer::writeMessageHasText(int AOrder, Message &AMessage, const QString &ALang)
-{
-	Q_UNUSED(ALang);
-	if (AOrder==MWO_FILETRANSFER && FDataPublisher!=NULL && FXmppUriQueries!=NULL)
-		return !readPublicFiles(AMessage.stanza().element()).isEmpty();
-	return false;
-}
-
-bool FileTransfer::writeMessageToText(int AOrder, Message &AMessage, QTextDocument *ADocument, const QString &ALang)
-{
-	Q_UNUSED(ALang);
-	bool changed = false;
-	if (AOrder==MWO_FILETRANSFER && FDataPublisher!=NULL && FXmppUriQueries!=NULL)
-	{
-		QStringList publishedNames;
-		QList<IPublicFile> publicFiles;
-		QList<IPublicFile> publishedFiles;
-		foreach(const IPublicFile &file, readPublicFiles(AMessage.stanza().element()))
-		{
-			if (FDataPublisher->streams().contains(file.id))
-			{
-				publishedFiles.append(file);
-				publishedNames.append(file.name);
-			}
-			else
-			{
-				publicFiles.append(file);
-			}
-		}
-
-		QTextCursor cursor(ADocument);
-		cursor.movePosition(QTextCursor::End);
-
-		if (!publishedFiles.isEmpty())
-		{
-			if (!cursor.atStart())
-				cursor.insertHtml("<br>");
-			cursor.insertText(tr("/me share %n file(s): %1",0,publishedFiles.count()).arg(publishedNames.join(", ")));
-			changed = true;
-		}
-
-		if (!publicFiles.isEmpty())
-		{
-			QStringList urlList;
-			foreach(const IPublicFile &file, publicFiles)
-			{
-				QMultiMap<QString, QString> params;
-				params.insert("sid",file.id);
-				params.insert("name",file.name);
-				params.insert("size",QString::number(file.size));
-				if (!file.mimeType.isEmpty())
-					params.insert("mime-type",file.mimeType);
-				urlList.append(QString("<a href='%1'>%2</a>").arg(FXmppUriQueries->makeXmppUri(file.ownerJid,XMPP_URI_RECV,params), file.name.toHtmlEscaped()));
-			}
-
-			if (!cursor.atStart())
-				cursor.insertHtml("<br>");
-			cursor.insertHtml(tr("/me share %n file(s): %1",0,publicFiles.count()).arg(urlList.join(", ")));
-			changed = true;
-		}
-	}
-	return changed;
-}
-
-bool FileTransfer::writeTextToMessage(int AOrder, QTextDocument *ADocument, Message &AMessage, const QString &ALang)
-{
-	Q_UNUSED(AOrder); Q_UNUSED(ADocument); Q_UNUSED(AMessage); Q_UNUSED(ALang);
-	return false;
-}
-
-bool FileTransfer::publicDataStreamCanStart(const IPublicDataStream &AStream) const
-{
-	return AStream.profile==NS_SI_FILETRANSFER && QFile::exists(AStream.params.value(PDSP_FILETRANSFER_NAME).toString());
-}
-
-bool FileTransfer::publicDataStreamStart(const Jid &AStreamJid, const Jid AContactJid, const QString &ASessionId, const IPublicDataStream &AStream)
-{
-	if (publicDataStreamCanStart(AStream))
-	{
-		IFileStream *stream = createStream(AStreamJid,AContactJid,IFileStream::SendFile,ASessionId);
-		if (stream)
-		{
-			FPublicStreams.append(stream);
-			stream->setFileName(AStream.params.value(PDSP_FILETRANSFER_NAME).toString());
-			stream->setFileDescription(AStream.params.value(PDSP_FILETRANSFER_DESC).toString());
-			stream->setAcceptableMethods(Options::node(OPV_FILESTREAMS_ACCEPTABLEMETHODS).value().toStringList());
-			if (stream->initStream(stream->acceptableMethods()))
-			{
-				LOG_STRM_INFO(AStreamJid,QString("Public file stream started, to=%1, sid=%2, id=%3").arg(AContactJid.full(),ASessionId,AStream.id));
-				emit publicFileSendStarted(AStream.id, stream);
-				return true;
-			}
-			else
-			{
-				LOG_STRM_WARNING(AStreamJid,QString("Failed to start public file stream, to=%1, id=%2: Stream not initialized").arg(AContactJid.full(),AStream.id));
-				stream->instance()->deleteLater();
-			}
-		}
-		else
-		{
-			LOG_STRM_WARNING(AStreamJid,QString("Failed to start public file stream, to=%1, id=%2: Stream not created").arg(AContactJid.full(),AStream.id));
-		}
-	}
-	else
-	{
-		LOG_STRM_WARNING(AStreamJid,QString("Failed to start public file stream, to=%1, id=%2: File not found").arg(AContactJid.full(),AStream.id));
-	}
-	return false;
-}
-
-bool FileTransfer::publicDataStreamRead(IPublicDataStream &AStream, const QDomElement &ASiPub) const
-{
-	QDomElement fileElem = Stanza::findElement(ASiPub,"file",NS_SI_FILETRANSFER);
-	if (!fileElem.isNull() && fileElem.hasAttribute("name") && fileElem.hasAttribute("size"))
-	{
-		AStream.params.insert(PDSP_FILETRANSFER_NAME,fileElem.attribute("name"));
-		AStream.params.insert(PDSP_FILETRANSFER_SIZE,fileElem.attribute("size").toLongLong());
-		if (!fileElem.firstChildElement("desc").isNull())
-			AStream.params.insert(PDSP_FILETRANSFER_DESC,fileElem.firstChildElement("desc").text());
-		if (fileElem.hasAttribute("hash"))
-			AStream.params.insert(PDSP_FILETRANSFER_HASH,fileElem.attribute("hash"));
-		if (fileElem.hasAttribute("date"))
-			AStream.params.insert(PDSP_FILETRANSFER_DATE,DateTime(fileElem.attribute("date")).toLocal());
-		return true;
-	}
-	return false;
-}
-
-bool FileTransfer::publicDataStreamWrite(const IPublicDataStream &AStream, QDomElement &ASiPub) const
-{
-	if (AStream.profile==NS_SI_FILETRANSFER && AStream.params.contains(PDSP_FILETRANSFER_NAME) && AStream.params.contains(PDSP_FILETRANSFER_SIZE))
-	{
-		QDomElement fileElem = ASiPub.ownerDocument().createElementNS(NS_SI_FILETRANSFER,"file");
-		ASiPub.appendChild(fileElem);
-
-		fileElem.setAttribute("name", AStream.params.value(PDSP_FILETRANSFER_NAME).toString().split("/").last());
-		fileElem.setAttribute("size",AStream.params.value(PDSP_FILETRANSFER_SIZE).toLongLong());
-
-		if (AStream.params.contains(PDSP_FILETRANSFER_DESC))
-		{
-			QDomElement descElem = ASiPub.ownerDocument().createElement("desc");
-			descElem.appendChild(ASiPub.ownerDocument().createTextNode((AStream.params.value(PDSP_FILETRANSFER_DESC).toString())));
-			fileElem.appendChild(descElem);
-		}
-
-		if (AStream.params.contains(PDSP_FILETRANSFER_HASH))
-			fileElem.setAttribute("hash", AStream.params.value(PDSP_FILETRANSFER_HASH).toString());
-
-		if (AStream.params.contains(PDSP_FILETRANSFER_DATE))
-			fileElem.setAttribute("date", DateTime(AStream.params.value(PDSP_FILETRANSFER_DATE).toDateTime()).toX85Date());
-
-		return true;
 	}
 	return false;
 }
@@ -625,15 +354,7 @@ bool FileTransfer::fileStreamProcessRequest(int AOrder, const QString &AStreamId
 			IFileStream *stream = createStream(ARequest.to(),ARequest.from(),IFileStream::ReceiveFile,AStreamId);
 			if (stream)
 			{
-				if (FPublicReceiveSessions.contains(AStreamId))
-				{
-					FPublicStreams.append(stream);
-					LOG_STRM_INFO(ARequest.to(),QString("Receive public file stream created, from=%1, sid=%2").arg(ARequest.from(),AStreamId));
-				}
-				else
-				{
-					LOG_STRM_INFO(ARequest.to(),QString("Receive file stream created, from=%1, sid=%2").arg(ARequest.from(),AStreamId));
-				}
+				LOG_STRM_INFO(ARequest.to(),QString("Receive file stream created, from=%1, sid=%2").arg(ARequest.from(),AStreamId));
 
 				QList<QString> methods = setFromList(AMethods).intersect(setFromList(Options::node(OPV_FILESTREAMS_ACCEPTABLEMETHODS).value().toStringList())).values();
 
@@ -731,24 +452,6 @@ bool FileTransfer::fileStreamShowDialog(const QString &AStreamId)
 	return false;
 }
 
-bool FileTransfer::xmppUriOpen(const Jid &AStreamJid, const Jid &AContactJid, const QString &AAction, const QMultiMap<QString, QString> &AParams)
-{
-	if (AAction == XMPP_URI_RECV)
-	{
-		QString streamId = AParams.value("sid");
-		if (!streamId.isEmpty())
-		{
-			receivePublicFile(AStreamJid,AContactJid,streamId);
-			return true;
-		}
-		else
-		{
-			LOG_STRM_WARNING(AStreamJid,QString("Failed to start public file receive by XMPP URI, from=%1: Public stream ID is empty").arg(AContactJid.full()));
-		}
-	}
-	return false;
-}
-
 bool FileTransfer::isSupported(const Jid &AStreamJid, const Jid &AContactJid) const
 {
 	if (!FFileManager || !FDataManager)
@@ -789,131 +492,6 @@ IFileStream *FileTransfer::sendFile(const Jid &AStreamJid, const Jid &AContactJi
 	return NULL;
 }
 
-IPublicFile FileTransfer::findPublicFile(const QString &AFileId) const
-{
-	return FDataPublisher!=NULL ? publicFileFromStream(FDataPublisher->findStream(AFileId)) : IPublicFile();
-}
-
-QList<IPublicFile> FileTransfer::findPublicFiles(const Jid &AOwnerJid, const QString &AFileName) const
-{
-	QList<IPublicFile> files;
-	if (FDataPublisher)
-	{
-		foreach(const QString &streamId, FDataPublisher->streams())
-		{
-			IPublicFile file = publicFileFromStream(FDataPublisher->findStream(streamId));
-			if (file.isValid())
-			{
-				if (AOwnerJid.isEmpty() || AOwnerJid.pBare()==file.ownerJid.pBare())
-				{
-					if (AFileName.isEmpty() || AFileName==file.name)
-						files.append(file);
-				}
-			}
-		}
-	}
-	return files;
-}
-
-QString FileTransfer::registerPublicFile(const Jid &AOwnerJid, const QString &AFileName, const QString &AFileDesc)
-{
-	if (FDataPublisher)
-	{
-		QFileInfo file(AFileName);
-		if (file.exists() && file.isFile())
-		{
-			QList<IPublicFile> files = findPublicFiles(AOwnerJid,AFileName);
-			if (files.isEmpty())
-			{
-				IPublicDataStream stream;
-				stream.id = QUuid::createUuid().toString();
-				stream.ownerJid = AOwnerJid;
-				stream.profile = NS_SI_FILETRANSFER;
-				stream.params.insert(PDSP_FILETRANSFER_NAME, file.absoluteFilePath());
-				if (!AFileDesc.isEmpty())
-					stream.params.insert(PDSP_FILETRANSFER_DESC, AFileDesc);
-				stream.params.insert(PDSP_FILETRANSFER_SIZE, file.size());
-				stream.params.insert(PDSP_FILETRANSFER_DATE, file.lastModified());
-
-				if (FDataPublisher->publishStream(stream))
-				{
-					LOG_INFO(QString("Registered public file=%1, owner=%2, id=%3").arg(AFileName,AOwnerJid.full(),stream.id));
-					return stream.id;
-				}
-				else
-				{
-					LOG_WARNING(QString("Failed to register public file=%1, owner=%2: Stream not registered").arg(AFileName,AOwnerJid.full()));
-				}
-			}
-			else
-			{
-				return files.value(0).id;
-			}
-		}
-		else
-		{
-			LOG_WARNING(QString("Failed to register public file=%1, owner=%2: File not found").arg(AFileName,AOwnerJid.full()));
-		}
-	}
-	return QString();
-}
-
-void FileTransfer::removePublicFile(const QString &AFileId)
-{
-	if (FDataPublisher && FDataPublisher->streams().contains(AFileId))
-	{
-		FDataPublisher->removeStream(AFileId);
-		LOG_INFO(QString("Removed public file, id=%1").arg(AFileId));
-	}
-	else
-	{
-		LOG_WARNING(QString("Failed to remove public file, id=%1: File not found").arg(AFileId));
-	}
-}
-
-QList<IPublicFile> FileTransfer::readPublicFiles(const QDomElement &AParent) const
-{
-	QList<IPublicFile> files;
-	if (FDataPublisher)
-	{
-		foreach(const IPublicDataStream &stream, FDataPublisher->readStreams(AParent))
-		{
-			IPublicFile file = publicFileFromStream(stream);
-			if (file.isValid())
-				files.append(file);
-		}
-	}
-	return files;
-}
-
-bool FileTransfer::writePublicFile(const QString &AFileId, QDomElement &AParent) const
-{
-	return FDataPublisher!=NULL ? FDataPublisher->writeStream(AFileId,AParent) : false;
-}
-
-QString FileTransfer::receivePublicFile(const Jid &AStreamJid, const Jid &AContactJid, const QString &AFileId)
-{
-	if (FDataPublisher && FDataPublisher->isSupported(AStreamJid,AContactJid))
-	{
-		QString reqId = FDataPublisher->startStream(AStreamJid,AContactJid,AFileId);
-		if (!reqId.isEmpty())
-		{
-			LOG_STRM_INFO(AStreamJid,QString("Start public file receive request sent to=%1, file=%2, id=%3").arg(AContactJid.full(),AFileId,reqId));
-			FPublicReceiveRequests.append(reqId);
-			return reqId;
-		}
-		else
-		{
-			LOG_STRM_WARNING(AStreamJid,QString("Failed send start receive public file request to=%1, file=%2: Stream not started").arg(AContactJid.full(),AFileId));
-		}
-	}
-	else if (FDataPublisher)
-	{
-		LOG_STRM_WARNING(AStreamJid,QString("Failed send start receive public file request to=%1, id=%2: Not supported").arg(AContactJid.full(),AFileId));
-	}
-	return QString();
-}
-
 void FileTransfer::notifyStream(IFileStream *AStream)
 {
 	QString streamFile = !AStream->fileName().isEmpty() ? AStream->fileName().split("/").last() : QString();
@@ -933,7 +511,7 @@ void FileTransfer::notifyStream(IFileStream *AStream)
 			contactName = FNotifications->contactName(AStream->streamJid(),AStream->contactJid());
 	}
 
-	if (FNotifications && (!FPublicStreams.contains(AStream) || AStream->streamKind()==IFileStream::ReceiveFile))
+	if (FNotifications)
 	{
 		StreamDialog *dialog = getStreamDialog(AStream);
 		if (dialog==NULL || !dialog->isActiveWindow())
@@ -1017,9 +595,7 @@ void FileTransfer::notifyStream(IFileStream *AStream)
 
 	if (!note.isEmpty())
 	{
-		if (mucWindow && FPublicStreams.contains(AStream))
-			showStatusEvent(mucWindow->viewWidget(),note.toHtmlEscaped());
-		else if (chatWindow)
+		if (chatWindow)
 			showStatusEvent(chatWindow->viewWidget(),note.toHtmlEscaped());
 	}
 }
@@ -1051,7 +627,6 @@ void FileTransfer::updateToolBarAction(IMessageToolBarWidget *AWidget)
 {
 	Action *fileAction = FToolBarActions.value(AWidget);
 	IMessageChatWindow *chatWindow = qobject_cast<IMessageChatWindow *>(AWidget->messageWindow()->instance());
-	IMultiUserChatWindow *mucWindow = qobject_cast<IMultiUserChatWindow *>(AWidget->messageWindow()->instance());
 	if (chatWindow != NULL)
 	{
 		if (fileAction == NULL)
@@ -1065,20 +640,6 @@ void FileTransfer::updateToolBarAction(IMessageToolBarWidget *AWidget)
 			FToolBarActions.insert(AWidget,fileAction);
 		}
 		fileAction->setEnabled(isSupported(chatWindow->streamJid(),chatWindow->contactJid()));
-	}
-	else if (FDataPublisher!=NULL && FMessageProcessor!=NULL && mucWindow!=NULL)
-	{
-		if (fileAction == NULL)
-		{
-			fileAction = new Action(AWidget->toolBarChanger()->toolBar());
-			fileAction->setIcon(RSR_STORAGE_MENUICONS, MNI_FILETRANSFER_SEND);
-			fileAction->setText(tr("Send File"));
-			fileAction->setShortcutId(SCT_MESSAGEWINDOWS_SENDFILE);
-			connect(fileAction,SIGNAL(triggered(bool)),SLOT(onPublishFilesByAction(bool)));
-			AWidget->toolBarChanger()->insertAction(fileAction,TBG_MWTBW_FILETRANSFER);
-			FToolBarActions.insert(AWidget,fileAction);
-		}
-		fileAction->setEnabled(FDataPublisher!=NULL && mucWindow->multiUserChat()->isOpen());
 	}
 }
 
@@ -1148,24 +709,6 @@ QString FileTransfer::dirNameByUserName(const QString &AUserName) const
 	return fileName.trimmed();
 }
 
-IPublicFile FileTransfer::publicFileFromStream(const IPublicDataStream &AStream) const
-{
-	IPublicFile file;
-	if (AStream.isValid() && AStream.profile == NS_SI_FILETRANSFER)
-	{
-		file.id = AStream.id;
-		file.ownerJid = AStream.ownerJid;
-		file.mimeType = AStream.mimeType;
-		file.name = AStream.params.value(PDSP_FILETRANSFER_NAME).toString();
-		file.size = AStream.params.value(PDSP_FILETRANSFER_SIZE).toLongLong();
-		file.hash = AStream.params.value(PDSP_FILETRANSFER_HASH).toString();
-		file.date = AStream.params.value(PDSP_FILETRANSFER_DATE).toDateTime();
-		file.description = AStream.params.value(PDSP_FILETRANSFER_DESC).toString();
-		return file;
-	}
-	return file;
-}
-
 void FileTransfer::showStatusEvent(IMessageViewWidget *AView, const QString &AHtml) const
 {
 	if (AView!=NULL && !AHtml.isEmpty())
@@ -1202,16 +745,8 @@ void FileTransfer::onStreamStateChanged()
 			if (Options::node(OPV_FILETRANSFER_HIDEONSTART).value().toBool() && FStreamDialog.contains(stream->streamId()))
 				FStreamDialog.value(stream->streamId())->close();
 		}
-		else if (stream->streamState() == IFileStream::Finished)
+		else if (stream->streamState()==IFileStream::Finished || stream->streamState()==IFileStream::Aborted)
 		{
-			if (FPublicStreams.contains(stream) && stream->streamKind()==IFileStream::SendFile)
-				stream->instance()->deleteLater();
-			notifyStream(stream);
-		}
-		else if (stream->streamState() == IFileStream::Aborted)
-		{
-			if (FPublicStreams.contains(stream) && stream->streamKind()==IFileStream::SendFile)
-				stream->instance()->deleteLater();
 			notifyStream(stream);
 		}
 	}
@@ -1225,7 +760,6 @@ void FileTransfer::onStreamDestroyed()
 		LOG_STRM_INFO(stream->streamJid(),QString("File transfer stream destroyed, sid=%1").arg(stream->streamId()));
 		if (FNotifications && FStreamNotify.contains(stream->streamId()))
 			FNotifications->removeNotification(FStreamNotify.value(stream->streamId()));
-		FPublicStreams.removeAll(stream);
 	}
 }
 
@@ -1263,138 +797,6 @@ void FileTransfer::onSendFileByAction(bool)
 	}
 }
 
-void FileTransfer::onPublishFilesByAction(bool)
-{
-	Action *action = qobject_cast<Action *>(sender());
-	if (action!=NULL && FDataPublisher!=NULL && FMessageProcessor!=NULL)
-	{
-		IMessageToolBarWidget *widget = FToolBarActions.key(action);
-
-		Jid streamJid = action->data(ADR_STREAM_JID).toString();
-		Jid contactJid = action->data(ADR_CONTACT_JID).toString();
-		QStringList files = action->data(ADR_FILE_NAME).toStringList();
-
-		if (files.isEmpty())
-		{
-			QWidget *parent = widget!=NULL ? widget->messageWindow()->instance() : NULL;
-			files = QFileDialog::getOpenFileNames(parent,tr("Select Files"));
-		}
-
-		IMessageChatWindow *chatWindow = NULL;
-		IMultiUserChatWindow *mucWindow = NULL;
-		if (widget != NULL)
-		{
-			chatWindow = qobject_cast<IMessageChatWindow *>(widget->messageWindow()->instance());
-			mucWindow = qobject_cast<IMultiUserChatWindow *>(widget->messageWindow()->instance());
-		}
-		else if (streamJid.isValid() && contactJid.isValid())
-		{
-			chatWindow = FMessageWidgets!=NULL ? FMessageWidgets->findChatWindow(streamJid,contactJid) : NULL;
-			mucWindow = FMultiChatManager!=NULL ? FMultiChatManager->findMultiChatWindow(streamJid,contactJid) : NULL;
-		}
-
-		Jid ownerJid;
-		Message message;
-		if (chatWindow != NULL)
-		{
-			message.setType(Message::Chat);
-			message.setFrom(chatWindow->streamJid().full()).setTo(chatWindow->contactJid().full());
-			ownerJid = chatWindow->streamJid();
-		}
-		else if (mucWindow!=NULL && mucWindow->multiUserChat()->isOpen())
-		{
-			message.setType(Message::GroupChat);
-			message.setFrom(mucWindow->streamJid().full()).setTo(mucWindow->contactJid().full());
-			ownerJid = mucWindow->multiUserChat()->mainUser()->userJid();
-		}
-
-		if (ownerJid.isValid())
-		{
-			int registered = 0;
-			foreach(const QString &file, files)
-			{
-				QString fileId = registerPublicFile(ownerJid,file);
-				if (!fileId.isEmpty())
-				{
-					QDomElement messageElem = message.stanza().element();
-					if (FDataPublisher->writeStream(fileId,messageElem))
-						registered++;
-					else
-						LOG_ERROR(QString("Failed to write public file stream to message, file=%1").arg(fileId));
-				}
-			}
-
-			if (registered > 0)
-			{
-				if (FMessageProcessor->sendMessage(message.from(),message,IMessageProcessor::DirectionOut))
-					LOG_STRM_INFO(message.from(), QString("Sent %1 public file(s) to %2").arg(files.count()).arg(message.to()));
-				else
-					LOG_STRM_WARNING(message.from(), QString("Failed to send %1 public file(s) to %2").arg(files.count()).arg(message.to()));
-			}
-		}
-	}
-}
-
-void FileTransfer::onPublicStreamStartAccepted(const QString &ARequestId, const QString &ASessionId)
-{
-	if (FPublicReceiveRequests.contains(ARequestId))
-	{
-		LOG_INFO(QString("Start public file receive request accepted, id=%1, sid=%2").arg(ARequestId,ASessionId));
-		FPublicRequestView.remove(ARequestId);
-		FPublicReceiveRequests.removeAll(ARequestId);
-		FPublicReceiveSessions.insert(ASessionId,ARequestId);
-	}
-}
-
-void FileTransfer::onPublicStreamStartRejected(const QString &ARequestId, const XmppError &AError)
-{
-	if (FPublicReceiveRequests.contains(ARequestId))
-	{
-		LOG_INFO(QString("Start public file receive request rejected, id=%1: %2").arg(ARequestId,AError.condition()));
-		if (FPublicRequestView.contains(ARequestId))
-			showStatusEvent(FPublicRequestView.take(ARequestId),tr("File request rejected: %1").arg(AError.errorMessage().toHtmlEscaped()));
-		FPublicReceiveRequests.removeAll(ARequestId);
-		emit publicFileReceiveRejected(ARequestId,AError);
-	}
-}
-
-void FileTransfer::onDataStreamInitStarted(const IDataStream &AStream)
-{
-	if (FPublicReceiveSessions.contains(AStream.streamId))
-	{
-		QString reqId = FPublicReceiveSessions.take(AStream.streamId);
-		IFileStream *stream = FFileManager!=NULL ? FFileManager->findStream(AStream.streamId) : NULL;
-		if (stream)
-		{
-			getStreamDialog(stream)->show();
-			LOG_STRM_INFO(AStream.streamJid,QString("Public file receive started, id=%1, sid=%2").arg(reqId,stream->streamId()));
-			emit publicFileReceiveStarted(reqId,stream);
-		}
-		else
-		{
-			LOG_STRM_ERROR(AStream.streamJid,QString("Failed to start public file receive, id=%1: Stream not found").arg(reqId));
-			emit publicFileReceiveRejected(reqId,XmppStanzaError(XmppStanzaError::EC_ITEM_NOT_FOUND));
-		}
-	}
-}
-
-void FileTransfer::onDataStreamInitFinished(const IDataStream &AStream, const XmppError &AError)
-{
-	if (FPublicReceiveSessions.contains(AStream.streamId))
-	{
-		QString reqId = FPublicReceiveSessions.take(AStream.streamId);
-		if (!AError.isNull())
-		{
-			LOG_STRM_ERROR(AStream.streamJid,QString("Failed to start public file receive, id=%1: %2").arg(reqId,AError.condition()));
-			emit publicFileReceiveRejected(reqId,AError);
-		}
-		else
-		{
-			REPORT_ERROR("Receive public file stream initiation not handled on start");
-		}
-	}
-}
-
 void FileTransfer::onNotificationActivated(int ANotifyId)
 {
 	if (fileStreamShowDialog(FStreamNotify.key(ANotifyId)))
@@ -1404,17 +806,6 @@ void FileTransfer::onNotificationActivated(int ANotifyId)
 void FileTransfer::onNotificationRemoved(int ANotifyId)
 {
 	FStreamNotify.remove(FStreamNotify.key(ANotifyId));
-}
-
-void FileTransfer::onMultiUserChatStateChanged(int AState)
-{
-	Q_UNUSED(AState);
-	IMultiUserChat *multiChat = qobject_cast<IMultiUserChat *>(sender());
-	if (multiChat)
-	{
-		foreach(IMessageToolBarWidget *widget, findToolBarWidgets(multiChat->roomJid()))
-			updateToolBarAction(widget);
-	}
 }
 
 void FileTransfer::onDiscoInfoReceived(const IDiscoInfo &AInfo)
@@ -1432,10 +823,6 @@ void FileTransfer::onDiscoInfoRemoved(const IDiscoInfo &AInfo)
 void FileTransfer::onToolBarWidgetCreated(IMessageToolBarWidget *AWidget)
 {
 	IMessageChatWindow *chatWindow = qobject_cast<IMessageChatWindow *>(AWidget->messageWindow()->instance());
-	IMultiUserChatWindow *mucWindow = qobject_cast<IMultiUserChatWindow *>(AWidget->messageWindow()->instance());
-
-	if (mucWindow)
-		connect(mucWindow->multiUserChat()->instance(),SIGNAL(stateChanged(int)),SLOT(onMultiUserChatStateChanged(int)));
 	if (chatWindow)
 		connect(AWidget->messageWindow()->address()->instance(),SIGNAL(addressChanged(const Jid &,const Jid &)),SLOT(onToolBarWidgetAddressChanged(const Jid &,const Jid &)));
 	connect(AWidget->instance(),SIGNAL(destroyed(QObject *)),SLOT(onToolBarWidgetDestroyed(QObject *)));
@@ -1461,15 +848,3 @@ void FileTransfer::onToolBarWidgetDestroyed(QObject *AObject)
 		if (qobject_cast<QObject *>(widget->instance()) == AObject)
 			FToolBarActions.remove(widget);
 }
-
-void FileTransfer::onMessageViewWidgetDestroyed(QObject *AObject)
-{
-	for (QMap<QString, IMessageViewWidget *>::iterator it=FPublicRequestView.begin(); it!=FPublicRequestView.end(); )
-	{
-		if (qobject_cast<QObject *>(it.value()->instance()) == AObject)
-			it = FPublicRequestView.erase(it);
-		else
-			++it;
-	}
-}
-

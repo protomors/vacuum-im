@@ -8,7 +8,6 @@
 #include <QInputDialog>
 #include <QIntValidator>
 #include <QTextDocument>
-#include <definitions/namespaces.h>
 #include <definitions/optionvalues.h>
 
 #define ONE_DAY           (24*60*60)
@@ -18,7 +17,6 @@
 enum Columns {
 	COL_JID,
 	COL_SAVE,
-	COL_OTR,
 	COL_EXPIRE,
 	COL_EXACT
 };
@@ -67,36 +65,6 @@ QString ArchiveDelegate::exactMatchName(bool AExact)
 	return AExact ? tr("Yes") : tr("No");
 }
 
-QString ArchiveDelegate::methodName(const QString &AMethod)
-{
-	if (AMethod == ARCHIVE_METHOD_PREFER)
-		return tr("Prefer");
-	else if (AMethod == ARCHIVE_METHOD_CONCEDE)
-		return tr("Allow");
-	else if (AMethod == ARCHIVE_METHOD_FORBID)
-		return tr("Forbid");
-	else
-		return tr("Unknown");
-}
-
-QString ArchiveDelegate::otrModeName(const QString &AOTRMode)
-{
-	if (AOTRMode == ARCHIVE_OTR_APPROVE)
-		return tr("Approve");
-	else if (AOTRMode == ARCHIVE_OTR_CONCEDE)
-		return tr("Allow");
-	else if (AOTRMode == ARCHIVE_OTR_FORBID)
-		return tr("Forbid");
-	else if (AOTRMode == ARCHIVE_OTR_OPPOSE)
-		return tr("Oppose");
-	else if (AOTRMode == ARCHIVE_OTR_PREFER)
-		return tr("Prefer");
-	else if (AOTRMode == ARCHIVE_OTR_REQUIRE)
-		return tr("Require");
-	else
-		return tr("Unknown");
-}
-
 QString ArchiveDelegate::saveModeName(const QString &ASaveMode)
 {
 	if (ASaveMode == ARCHIVE_SAVE_FALSE)
@@ -119,12 +87,6 @@ void ArchiveDelegate::updateComboBox(int AColumn, QComboBox *AComboBox)
 		AComboBox->addItem(saveModeName(ARCHIVE_SAVE_MESSAGE),ARCHIVE_SAVE_MESSAGE);
 		AComboBox->addItem(saveModeName(ARCHIVE_SAVE_BODY),ARCHIVE_SAVE_BODY);
 		AComboBox->addItem(saveModeName(ARCHIVE_SAVE_FALSE),ARCHIVE_SAVE_FALSE);
-		break;
-	case COL_OTR:
-		AComboBox->addItem(otrModeName(ARCHIVE_OTR_CONCEDE),ARCHIVE_OTR_CONCEDE);
-		AComboBox->addItem(otrModeName(ARCHIVE_OTR_FORBID),ARCHIVE_OTR_FORBID);
-		AComboBox->addItem(otrModeName(ARCHIVE_OTR_APPROVE),ARCHIVE_OTR_APPROVE);
-		AComboBox->addItem(otrModeName(ARCHIVE_OTR_REQUIRE),ARCHIVE_OTR_REQUIRE);
 		break;
 	case COL_EXPIRE:
 		AComboBox->setEditable(true);
@@ -154,7 +116,6 @@ QWidget *ArchiveDelegate::createEditor(QWidget *AParent, const QStyleOptionViewI
 	switch (AIndex.column())
 	{
 	case COL_SAVE:
-	case COL_OTR:
 	case COL_EXACT:
 		{
 			QComboBox *comboBox = new QComboBox(AParent);
@@ -177,7 +138,6 @@ void ArchiveDelegate::setEditorData(QWidget *AEditor, const QModelIndex &AIndex)
 	switch (AIndex.column())
 	{
 	case COL_SAVE:
-	case COL_OTR:
 	case COL_EXACT:
 		{
 			QComboBox *comboBox = qobject_cast<QComboBox *>(AEditor);
@@ -202,7 +162,6 @@ void ArchiveDelegate::setModelData(QWidget *AEditor, QAbstractItemModel *AModel,
 	switch (AIndex.column())
 	{
 	case COL_SAVE:
-	case COL_OTR:
 	case COL_EXACT:
 		{
 			QComboBox *comboBox = qobject_cast<QComboBox *>(AEditor);
@@ -255,38 +214,17 @@ ArchiveAccountOptionsWidget::ArchiveAccountOptionsWidget(IMessageArchiver *AArch
 	ui.tbwItemPrefs->setItemDelegate(delegat);
 	ui.tbwItemPrefs->horizontalHeader()->setSectionResizeMode(COL_JID,QHeaderView::Stretch);
 	ui.tbwItemPrefs->horizontalHeader()->setSectionResizeMode(COL_SAVE,QHeaderView::ResizeToContents);
-	ui.tbwItemPrefs->horizontalHeader()->setSectionResizeMode(COL_OTR,QHeaderView::ResizeToContents);
 	ui.tbwItemPrefs->horizontalHeader()->setSectionResizeMode(COL_EXPIRE,QHeaderView::ResizeToContents);
 	ui.tbwItemPrefs->horizontalHeader()->setSectionResizeMode(COL_EXACT,QHeaderView::ResizeToContents);
-
-	ui.cmbMethodAuto->addItem(tr("Yes, if supported by server"),ARCHIVE_METHOD_PREFER);
-	ui.cmbMethodAuto->addItem(tr("Yes, if other archive is not available"),ARCHIVE_METHOD_CONCEDE);
-	ui.cmbMethodAuto->addItem(tr("No, do not save history on server"),ARCHIVE_METHOD_FORBID);
-
-	ui.cmbMethodLocal->addItem(tr("Yes, if local archive is available"),ARCHIVE_METHOD_PREFER);
-	ui.cmbMethodLocal->addItem(tr("Yes, if other archive is not available"),ARCHIVE_METHOD_CONCEDE);
-	ui.cmbMethodLocal->addItem(tr("No, do not save history in local archive"),ARCHIVE_METHOD_FORBID);
-
-	ui.cmbMethodManual->addItem(tr("Yes, if available"),ARCHIVE_METHOD_PREFER);
-	ui.cmbMethodManual->addItem(tr("Yes, if other replication method is not used"),ARCHIVE_METHOD_CONCEDE);
-	ui.cmbMethodManual->addItem(tr("No, do not copy local archive to the server"),ARCHIVE_METHOD_FORBID);
 
 	ui.cmbModeSave->addItem(tr("Save messages with formatting"),ARCHIVE_SAVE_MESSAGE);
 	ui.cmbModeSave->addItem(tr("Save only messages text"),ARCHIVE_SAVE_BODY);
 	ui.cmbModeSave->addItem(tr("Do not save messages"),ARCHIVE_SAVE_FALSE);
 
-	ui.cmbModeOTR->addItem(tr("Allow Off-The-Record sessions"),ARCHIVE_OTR_CONCEDE);
-	ui.cmbModeOTR->addItem(tr("Forbid Off-The-Record sessions"),ARCHIVE_OTR_FORBID);
-	ui.cmbModeOTR->addItem(tr("Manually approve Off-The-Record sessions"),ARCHIVE_OTR_APPROVE);
-
 	ArchiveDelegate::updateComboBox(COL_EXPIRE,ui.cmbExpireTime);
 	ui.cmbExpireTime->installEventFilter(this);
 	connect(ui.cmbExpireTime,SIGNAL(currentIndexChanged(int)),SLOT(onExpireIndexChanged(int)));
 
-	ui.wdtMethod->setVisible(false/*FArchiver->isSupported(FStreamJid,NS_ARCHIVE_PREF)*/);
-
-	ui.lblAuto->setText(QString("<h3>%1</h3>").arg(ui.lblAuto->text()));
-	ui.lblMethod->setText(QString("<h3>%1</h3>").arg(ui.lblMethod->text()));
 	ui.lblDefault->setText(QString("<h3>%1</h3>").arg(ui.lblDefault->text()));
 	ui.lblEntity->setText(QString("<h3>%1</h3>").arg(ui.lblEntity->text()));
 
@@ -298,14 +236,9 @@ ArchiveAccountOptionsWidget::ArchiveAccountOptionsWidget(IMessageArchiver *AArch
 	connect(FArchiver->instance(),SIGNAL(requestCompleted(const QString &)),SLOT(onArchiveRequestCompleted(const QString &)));
 	connect(FArchiver->instance(),SIGNAL(requestFailed(const QString &, const XmppError &)),SLOT(onArchiveRequestFailed(const QString &, const XmppError &)));
 
-	connect(ui.cmbMethodLocal,SIGNAL(currentIndexChanged(int)),SIGNAL(modified()));
-	connect(ui.cmbMethodManual,SIGNAL(currentIndexChanged(int)),SIGNAL(modified()));
-	connect(ui.cmbMethodAuto,SIGNAL(currentIndexChanged(int)),SIGNAL(modified()));
-	connect(ui.cmbModeOTR,SIGNAL(currentIndexChanged(int)),SIGNAL(modified()));
 	connect(ui.cmbModeSave,SIGNAL(currentIndexChanged(int)),SIGNAL(modified()));
 	connect(ui.cmbExpireTime,SIGNAL(currentIndexChanged(int)),SIGNAL(modified()));
 	connect(ui.cmbExpireTime->lineEdit(),SIGNAL(textChanged(const QString &)),SIGNAL(modified()));
-	connect(ui.chbAutoSave,SIGNAL(stateChanged(int)),SIGNAL(modified()));
 	connect(delegat,SIGNAL(commitData(QWidget *)),SIGNAL(modified()));
 
 	reset();
@@ -321,10 +254,6 @@ void ArchiveAccountOptionsWidget::apply()
 	if (FSaveRequests.isEmpty())
 	{
 		IArchiveStreamPrefs prefs = FArchiver->archivePrefs(FStreamJid);
-		prefs.methodLocal = ui.cmbMethodLocal->itemData(ui.cmbMethodLocal->currentIndex()).toString();
-		prefs.methodAuto = ui.cmbMethodAuto->itemData(ui.cmbMethodAuto->currentIndex()).toString();
-		prefs.methodManual = ui.cmbMethodManual->itemData(ui.cmbMethodManual->currentIndex()).toString();
-		prefs.defaultPrefs.otr = ui.cmbModeOTR->itemData(ui.cmbModeOTR->currentIndex()).toString();
 		prefs.defaultPrefs.save = ui.cmbModeSave->itemData(ui.cmbModeSave->currentIndex()).toString();
 		prefs.defaultPrefs.expire = ui.cmbExpireTime->itemData(ui.cmbExpireTime->currentIndex()).toInt();
 
@@ -332,7 +261,6 @@ void ArchiveAccountOptionsWidget::apply()
 		{
 			QTableWidgetItem *jidItem = FTableItems.value(itemJid);
 			prefs.itemPrefs[itemJid].save = ui.tbwItemPrefs->item(jidItem->row(),COL_SAVE)->data(Qt::UserRole).toString();
-			prefs.itemPrefs[itemJid].otr = ui.tbwItemPrefs->item(jidItem->row(),COL_OTR)->data(Qt::UserRole).toString();
 			prefs.itemPrefs[itemJid].expire = ui.tbwItemPrefs->item(jidItem->row(),COL_EXPIRE)->data(Qt::UserRole).toInt();
 			prefs.itemPrefs[itemJid].exactmatch = ui.tbwItemPrefs->item(jidItem->row(),COL_EXACT)->data(Qt::UserRole).toBool();
 		}
@@ -340,32 +268,12 @@ void ArchiveAccountOptionsWidget::apply()
 		foreach(const Jid &itemJid, prefs.itemPrefs.keys())
 		{
 			if (!FTableItems.contains(itemJid))
-			{
-				if (FArchiver->isSupported(FStreamJid,NS_ARCHIVE_PREF))
-				{
-					QString requestId = FArchiver->removeArchiveItemPrefs(FStreamJid,itemJid);
-					if (!requestId.isEmpty())
-						FSaveRequests.append(requestId);
-					prefs.itemPrefs.remove(itemJid);
-				}
-				else
-				{
-					prefs.itemPrefs[itemJid].otr = QString();
-					prefs.itemPrefs[itemJid].save = QString();
-				}
-			}
+				prefs.itemPrefs[itemJid].save = QString();
 		}
 
 		QString requestId = FArchiver->setArchivePrefs(FStreamJid,prefs);
 		if (!requestId.isEmpty())
 			FSaveRequests.append(requestId);
-
-		if (prefs.autoSave != ui.chbAutoSave->isChecked())
-		{
-			requestId = FArchiver->setArchiveAutoSave(FStreamJid,ui.chbAutoSave->isChecked());
-			if (!requestId.isEmpty())
-				FSaveRequests.append(requestId);
-		}
 
 		FLastError = XmppError::null;
 		updateWidget();
@@ -393,8 +301,6 @@ void ArchiveAccountOptionsWidget::updateWidget()
 {
 	bool requesting = !FSaveRequests.isEmpty();
 
-	ui.wdtMethod->setEnabled(!requesting);
-	ui.wdtAuto->setEnabled(!requesting);
 	ui.wdtDefault->setEnabled(!requesting && FArchiver->isArchivePrefsEnabled(FStreamJid));
 	ui.wdtEntity->setEnabled(!requesting && FArchiver->isArchivePrefsEnabled(FStreamJid));
 
@@ -420,14 +326,12 @@ void ArchiveAccountOptionsWidget::updateItemPrefs(const Jid &AItemJid, const IAr
 	if (!FTableItems.contains(AItemJid))
 	{
 		QTableWidgetItem *jidItem = new QTableWidgetItem(AItemJid.uFull());
-		QTableWidgetItem *otrItem = new QTableWidgetItem();
 		QTableWidgetItem *saveItem = new QTableWidgetItem();
 		QTableWidgetItem *expireItem = new QTableWidgetItem();
 		QTableWidgetItem *exactItem = new QTableWidgetItem();
 		ui.tbwItemPrefs->setRowCount(ui.tbwItemPrefs->rowCount()+1);
 		ui.tbwItemPrefs->setItem(ui.tbwItemPrefs->rowCount()-1,COL_JID,jidItem);
 		ui.tbwItemPrefs->setItem(jidItem->row(),COL_SAVE,saveItem);
-		ui.tbwItemPrefs->setItem(jidItem->row(),COL_OTR,otrItem);
 		ui.tbwItemPrefs->setItem(jidItem->row(),COL_EXPIRE,expireItem);
 		ui.tbwItemPrefs->setItem(jidItem->row(),COL_EXACT,exactItem);
 		ui.tbwItemPrefs->verticalHeader()->setSectionResizeMode(jidItem->row(),QHeaderView::ResizeToContents);
@@ -437,8 +341,6 @@ void ArchiveAccountOptionsWidget::updateItemPrefs(const Jid &AItemJid, const IAr
 	QTableWidgetItem *jidItem = FTableItems.value(AItemJid);
 	ui.tbwItemPrefs->item(jidItem->row(),COL_SAVE)->setText(ArchiveDelegate::saveModeName(APrefs.save));
 	ui.tbwItemPrefs->item(jidItem->row(),COL_SAVE)->setData(Qt::UserRole,APrefs.save);
-	ui.tbwItemPrefs->item(jidItem->row(),COL_OTR)->setText(ArchiveDelegate::otrModeName(APrefs.otr));
-	ui.tbwItemPrefs->item(jidItem->row(),COL_OTR)->setData(Qt::UserRole,APrefs.otr);
 	ui.tbwItemPrefs->item(jidItem->row(),COL_EXPIRE)->setText(ArchiveDelegate::expireName(APrefs.expire));
 	ui.tbwItemPrefs->item(jidItem->row(),COL_EXPIRE)->setData(Qt::UserRole,APrefs.expire);
 	ui.tbwItemPrefs->item(jidItem->row(),COL_EXACT)->setText(ArchiveDelegate::exactMatchName(APrefs.exactmatch));
@@ -548,15 +450,7 @@ void ArchiveAccountOptionsWidget::onArchivePrefsChanged(const Jid &AStreamJid)
 	{
 		IArchiveStreamPrefs prefs = FArchiver->archivePrefs(AStreamJid);
 
-		ui.chbAutoSave->setChecked(FArchiver->isArchiveAutoSave(AStreamJid));
-		ui.wdtAuto->setVisible(FArchiver->isSupported(FStreamJid,NS_ARCHIVE_AUTO));
-
-		ui.cmbMethodLocal->setCurrentIndex(ui.cmbMethodLocal->findData(prefs.methodLocal));
-		ui.cmbMethodAuto->setCurrentIndex(ui.cmbMethodAuto->findData(prefs.methodAuto));
-		ui.cmbMethodManual->setCurrentIndex(ui.cmbMethodManual->findData(prefs.methodManual));
-
 		ui.cmbModeSave->setCurrentIndex(ui.cmbModeSave->findData(prefs.defaultPrefs.save));
-		ui.cmbModeOTR->setCurrentIndex(ui.cmbModeOTR->findData(prefs.defaultPrefs.otr));
 
 		int expireIndex = ui.cmbExpireTime->findData(prefs.defaultPrefs.expire);
 		if (expireIndex<0)

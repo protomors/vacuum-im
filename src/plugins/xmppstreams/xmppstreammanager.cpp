@@ -35,6 +35,7 @@ bool XmppStreamManager::initObjects()
 	XmppError::registerError(NS_INTERNAL_ERROR,IERR_XMPPSTREAM_NOT_SECURE,tr("Secure connection is not established"));
 	XmppError::registerError(NS_INTERNAL_ERROR,IERR_XMPPSTREAM_CLOSED_UNEXPECTEDLY,tr("Connection closed unexpectedly"));
 	XmppError::registerError(NS_INTERNAL_ERROR,IERR_XMPPSTREAM_FAILED_START_CONNECTION,tr("Failed to start connection"));
+	XmppError::registerError(NS_INTERNAL_ERROR,IERR_XMPPSTREAM_UNSUPPORTED_VERSION,tr("Server does not support XMPP 1.0"));
 	return true;
 }
 

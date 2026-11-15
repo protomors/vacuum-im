@@ -30,10 +30,8 @@
 // BookMarks
 #define OPV_ACCOUNT_IGNOREAUTOJOIN                      "accounts.account.ignore-autojoin"
 // Compress
-#define OPV_ACCOUNT_STREAMCOMPRESS                      "accounts.account.stream-compress"
 // MessageArchiver
 #define OPV_ACCOUNT_HISTORYREPLICATE                    "accounts.account.history-replicate"
-#define OPV_ACCOUNT_HISTORYDUPLICATE                    "accounts.account.history-duplicate"
 #define OPV_ACCOUNT_MAM_DOWNLOAD                        "accounts.account.mam-download"
 #define OPV_ACCOUNT_MAM_CONFERENCES                     "accounts.account.mam-conferences"
 #define OPV_ACCOUNT_MAM_START                           "accounts.account.mam-start"
@@ -160,7 +158,6 @@
 #define OPV_FILEARCHIVE_COLLECTION_MAXSIZE              "history.file-archive.collection.max-size"
 #define OPV_FILEARCHIVE_COLLECTION_CRITICALSIZE         "history.file-archive.collection.critical-size"
 // ServerMessageArchive
-#define OPV_SERVERARCHIVE_MAXUPLOADSIZE                 "history.server-archive.max-upload-size"
 
 // MessageStyleManager
 #define OPV_MESSAGESTYLE_ROOT                           "message-styles"
@@ -186,8 +183,6 @@
 #define OPV_COMMON_AUTOSTART                            "common.autostart"
 // ClintInfo
 #define OPV_COMMON_SHAREOSVERSION                       "common.share-os-version"
-// Statistics
-#define OPV_COMMON_STATISTICTS_ENABLED                  "common.statistics-enabled"
 // VCardPlugin
 #define OPV_COMMON_RESTRICT_VCARD_IMAGES_SIZE           "common.restrict-vcard-images-size"
 
@@ -271,9 +266,6 @@
 #define OPV_STATUSICONS_RULE_ITEM                       "statusicons.rules.rule"
 #define OPV_STATUSICONS_RULE_PATTERN                    "statusicons.rules.rule.pattern"
 #define OPV_STATUSICONS_RULE_ICONSET                    "statusicons.rules.rule.iconset"
-
-// Statistics
-#define OPV_STATISTICS_PROFILEID                        "statistics.profile-id"
 
 // XmppStreams
 #define OPV_XMPPSTREAMS_TIMEOUT_HANDSHAKE               "xmppstreams.timeout.handshake"

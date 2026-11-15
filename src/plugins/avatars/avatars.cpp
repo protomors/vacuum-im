@@ -27,12 +27,10 @@
 #define DIR_AVATARS               "avatars"
 
 #define SHC_PRESENCE              "/presence"
-#define SHC_IQ_AVATAR             "/iq[@type='get']/query[@xmlns='" NS_JABBER_IQ_AVATAR "']"
 
 #define ADR_STREAM_JID            Action::DR_StreamJid
 #define ADR_CONTACT_JID           Action::DR_Parametr1
 
-#define AVATAR_IQ_TIMEOUT         30000
 
 #define EMPTY_AVATAR_HASH         QString("")
 #define UNKNOWN_AVATAR_HASH       QString()
@@ -252,6 +250,7 @@ bool Avatars::initSettings()
 
 bool Avatars::stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanza &AStanza, bool &AAccept)
 {
+	Q_UNUSED(AAccept);
 	if (FSHIPresenceOut.value(AStreamJid) == AHandlerId)
 	{
 		QString hash = FStreamAvatars.value(AStreamJid);
@@ -263,14 +262,6 @@ bool Avatars::stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanza &ASt
 			QDomElement photoElem = vcardUpdate.appendChild(AStanza.createElement("photo")).toElement();
 			photoElem.appendChild(AStanza.createTextNode(hash));
 		}
-
-		// IQ-based avatars
-		if (!hash.isEmpty())
-		{
-			QDomElement iqUpdate = AStanza.addElement("x",NS_JABBER_X_AVATAR);
-			QDomElement hashElem = iqUpdate.appendChild(AStanza.createElement("hash")).toElement();
-			hashElem.appendChild(AStanza.createTextNode(hash));
-		}
 	}
 	else if (FSHIPresenceIn.value(AStreamJid) == AHandlerId)
 	{
@@ -280,7 +271,6 @@ bool Avatars::stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanza &ASt
 		if (!FStreamAvatars.contains(contactJid) && acceptStanzaTypes.contains(AStanza.type()))
 		{
 			QDomElement vcardUpdate = AStanza.firstElement("x",NS_VCARD_UPDATE);
-			QDomElement iqUpdate = AStanza.firstElement("x",NS_JABBER_X_AVATAR);
 
 			bool isMucPresence = !AStanza.firstElement("x",NS_MUC_USER).isNull();
 			Jid vcardJid = isMucPresence ? contactJid : contactJid.bare();
@@ -318,84 +308,14 @@ bool Avatars::stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanza &ASt
 						FVCardManager->requestVCard(AStreamJid,AStreamJid.bare());
 				}
 			}
-			else if (!iqUpdate.isNull())
-			{
-				QString hash = iqUpdate.firstChildElement("hash").text().toLower();
-				if (!updateIqAvatar(contactJid,hash))
-				{
-					Stanza query(STANZA_KIND_IQ);
-					query.setType(STANZA_TYPE_GET).setTo(contactJid.full()).setUniqueId();
-					query.addElement("query",NS_JABBER_IQ_AVATAR);
-					if (FStanzaProcessor->sendStanzaRequest(this,AStreamJid,query,AVATAR_IQ_TIMEOUT))
-					{
-						LOG_STRM_INFO(AStreamJid,QString("Load iq avatar request sent, jid=%1").arg(contactJid.full()));
-						FIqAvatarRequests.insert(query.id(),contactJid);
-					}
-					else
-					{
-						LOG_STRM_WARNING(AStreamJid,QString("Failed to send load iq avatar request, jid=%1").arg(contactJid.full()));
-					}
-				}
-			}
 			else
 			{
 				if (!FVCardAvatars.contains(vcardJid))
 					startLoadVCardAvatar(vcardJid);
-				updateIqAvatar(contactJid,UNKNOWN_AVATAR_HASH);
 			}
-		}
-	}
-	else if (FSHIIqAvatarIn.value(AStreamJid) == AHandlerId)
-	{
-		AAccept = true;
-		QString fileName = avatarFileName(FStreamAvatars.value(AStreamJid));
-		if (!fileName.isEmpty())
-		{
-			QFile file(fileName);
-			if (file.open(QFile::ReadOnly))
-			{
-				LOG_STRM_INFO(AStreamJid,QString("Sending self avatar to contact, jid=%1").arg(AStanza.from()));
-				Stanza result = FStanzaProcessor->makeReplyResult(AStanza);
-				QDomElement dataElem = result.addElement("query",NS_JABBER_IQ_AVATAR).appendChild(result.createElement("data")).toElement();
-				dataElem.appendChild(result.createTextNode(file.readAll().toBase64()));
-				FStanzaProcessor->sendStanzaOut(AStreamJid,result);
-			}
-			else
-			{
-				REPORT_ERROR(QString("Failed to load self avatar from file: %1").arg(file.errorString()));
-				Stanza error = FStanzaProcessor->makeReplyError(AStanza,XmppStanzaError::EC_INTERNAL_SERVER_ERROR);
-				FStanzaProcessor->sendStanzaOut(AStreamJid,error);
-			}
-		}
-		else
-		{
-			LOG_STRM_WARNING(AStreamJid,QString("Rejected iq avatar request from contact, jid=%1: Avatar is empty").arg(AStanza.from()));
-			Stanza error = FStanzaProcessor->makeReplyError(AStanza,XmppStanzaError::EC_ITEM_NOT_FOUND);
-			FStanzaProcessor->sendStanzaOut(AStreamJid,error);
 		}
 	}
 	return false;
-}
-
-void Avatars::stanzaRequestResult(const Jid &AStreamJid, const Stanza &AStanza)
-{
-	Q_UNUSED(AStreamJid);
-	if (FIqAvatarRequests.contains(AStanza.id()))
-	{
-		Jid contactJid = FIqAvatarRequests.take(AStanza.id());
-		if (AStanza.isResult())
-		{
-			LOG_STRM_INFO(AStreamJid,QString("Received iq avatar from contact, jid=%1").arg(AStanza.from()));
-			QDomElement dataElem = AStanza.firstElement("query",NS_JABBER_IQ_AVATAR).firstChildElement("data");
-			QByteArray avatarData = QByteArray::fromBase64(dataElem.text().toLatin1());
-			updateIqAvatar(contactJid,saveAvatarData(avatarData));
-		}
-		else
-		{
-			LOG_STRM_WARNING(AStreamJid,QString("Failed to receive iq avatar from contact, jid=%1: %2").arg(AStanza.from(),XmppStanzaError(AStanza).condition()));
-			updateIqAvatar(contactJid,UNKNOWN_AVATAR_HASH);
-		}
-	}
 }
 
 QList<int> Avatars::rosterDataRoles(int AOrder) const
@@ -473,8 +393,6 @@ QString Avatars::avatarHash(const Jid &AContactJid, bool AExact) const
 	QString hash = FCustomPictures.value(AContactJid);
 	if (hash == UNKNOWN_AVATAR_HASH)
 		hash = FVCardAvatars.value(AContactJid);
-	if (hash == UNKNOWN_AVATAR_HASH)
-		hash = FIqAvatars.value(AContactJid);
 	if (hash==UNKNOWN_AVATAR_HASH && !AExact && AContactJid.hasResource())
 		return avatarHash(AContactJid.bare(),true);
 	return hash;
@@ -771,28 +689,6 @@ bool Avatars::updateVCardAvatar(const Jid &AContactJid, const QString &AHash, bo
 	return true;
 }
 
-bool Avatars::updateIqAvatar(const Jid &AContactJid, const QString &AHash)
-{
-	QString &curHash = FIqAvatars[AContactJid];
-	if (curHash != AHash)
-	{
-		if (AHash.isEmpty() || hasAvatar(AHash))
-		{
-			LOG_DEBUG(QString("Contact iq avatar changed, jid=%1").arg(AContactJid.full()));
-
-			curHash = AHash;
-			updateDataHolder(AContactJid);
-			emit avatarChanged(AContactJid);
-		}
-		else if (!AHash.isEmpty())
-		{
-			// Request IQ avatar
-			return false;
-		}
-	}
-	return true;
-}
-
 bool Avatars::isSelectionAccepted(const QList<IRosterIndex *> &ASelected) const
 {
 	int singleKind = -1;
@@ -859,12 +755,6 @@ void Avatars::onXmppStreamOpened(IXmppStream *AXmppStream)
 		shandle.order = SHO_DEFAULT;
 		shandle.direction = IStanzaHandle::DirectionOut;
 		FSHIPresenceOut.insert(shandle.streamJid,FStanzaProcessor->insertStanzaHandle(shandle));
-
-		shandle.order = SHO_DEFAULT;
-		shandle.direction = IStanzaHandle::DirectionIn;
-		shandle.conditions.clear();
-		shandle.conditions.append(SHC_IQ_AVATAR);
-		FSHIIqAvatarIn.insert(shandle.streamJid,FStanzaProcessor->insertStanzaHandle(shandle));
 	}
 	FStreamAvatars.insert(AXmppStream->streamJid(),UNKNOWN_AVATAR_HASH);
 
@@ -883,7 +773,6 @@ void Avatars::onXmppStreamClosed(IXmppStream *AXmppStream)
 	{
 		FStanzaProcessor->removeStanzaHandle(FSHIPresenceIn.take(AXmppStream->streamJid()));
 		FStanzaProcessor->removeStanzaHandle(FSHIPresenceOut.take(AXmppStream->streamJid()));
-		FStanzaProcessor->removeStanzaHandle(FSHIIqAvatarIn.take(AXmppStream->streamJid()));
 	}
 	FStreamAvatars.remove(AXmppStream->streamJid());
 	FBlockingResources.remove(AXmppStream->streamJid());
@@ -1046,7 +935,6 @@ void Avatars::onOptionsClosed()
 	stream << FCustomPictures;
 	Options::setFileValue(data,"roster.avatars.custom-pictures");
 
-	FIqAvatars.clear();
 	FVCardAvatars.clear();
 	FCustomPictures.clear();
 	FAvatarImages.clear();

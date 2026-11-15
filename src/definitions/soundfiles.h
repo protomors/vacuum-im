@@ -30,7 +30,6 @@
 #define SDF_ROSTEREXCHANGE_REQUEST        "rosterexchangeRequest"
 
 //SessionNegotiation
-#define SDF_SNEGOTIATION_REQUEST          "snegotiationRequest"
 
 //VoiceCalls
 #define SDF_VOICECALLS_INCOMING           "voicecallsIncoming"

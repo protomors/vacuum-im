@@ -6,13 +6,6 @@
 #define IERR_BOB_DATA_SAVE_ERROR                             "bob-data-save-error"
 #define IERR_BOB_INVALID_RESPONCE                            "bob-invalid-responce"
 
-// Compression
-#define IERR_COMPRESS_UNKNOWN_ERROR                          "compress-unknown-error"
-#define IERR_COMPRESS_OUT_OF_MEMORY                          "compress-out-of-memory"
-#define IERR_COMPRESS_VERSION_MISMATCH                       "compress-version-mismatch"
-#define IERR_COMPRESS_INVALID_DEFLATE_DATA                   "compress-invalid-deflate-data"
-#define IERR_COMPRESS_INVALID_COMPRESSION_LEVEL              "compress-invalid-compression-level"
-
 // ConnectionManager
 #define IERR_CONNECTIONMANAGER_CONNECT_ERROR                 "connectionmanager-connect-error"
 
@@ -97,5 +90,6 @@
 #define IERR_XMPPSTREAM_NOT_SECURE                           "xmppstream-not-secure"
 #define IERR_XMPPSTREAM_CLOSED_UNEXPECTEDLY                  "xmppstream-closed-unexpectedly"
 #define IERR_XMPPSTREAM_FAILED_START_CONNECTION              "xmppstream-failed-to-start-connection"
+#define IERR_XMPPSTREAM_UNSUPPORTED_VERSION                  "xmppstream-unsupported-version"
 
 #endif // DEF_INTERNALERRORS_H
