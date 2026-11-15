@@ -4,7 +4,9 @@
  */
 
 #include "gzguts.h"
-#include <unistd.h>
+#ifndef _WIN32
+#  include <unistd.h>
+#endif
 
 #if defined(__DJGPP__)
 #  define LSEEK llseek

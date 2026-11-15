@@ -4,7 +4,9 @@
  */
 
 #include "gzguts.h"
-#include <unistd.h>
+#ifndef _WIN32
+#  include <unistd.h>
+#endif
 
 /* Use read() to load a buffer -- return -1 on error, otherwise 0.  Read from
    state->fd, and update state->eof, state->err, and state->msg as appropriate.
