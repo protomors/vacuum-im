@@ -50,6 +50,9 @@ foreach(plugin IN LISTS _enabled_plugins)
     list(APPEND _installed_plugin_paths "${INSTALL_PLUGINS}/$<TARGET_FILE_NAME:${plugin}>")
 endforeach()
 
+option(INSTALL_ARCHIVE_INFO
+    "Install build-info.json and RUNTIME-REQUIREMENTS.txt (portable archives only)" ON)
+
 # Keep machine-readable release contents next to the installed documentation.
 set(_build_info "${CMAKE_BINARY_DIR}/build-info-$<CONFIG>.json")
 file(GENERATE OUTPUT "${_build_info}" CONTENT "{
@@ -67,9 +70,11 @@ file(GENERATE OUTPUT "${_build_info}" CONTENT "{
   \"plugins\": [\n${_plugin_json}\n  ]
 }
 ")
-install(FILES "${_build_info}" DESTINATION "${INSTALL_DOCUMENTS}" RENAME build-info.json)
+if(INSTALL_ARCHIVE_INFO)
+    install(FILES "${_build_info}" DESTINATION "${INSTALL_DOCUMENTS}" RENAME build-info.json)
+endif()
 
-if(UNIX AND NOT APPLE)
+if(INSTALL_ARCHIVE_INFO AND UNIX AND NOT APPLE)
     execute_process(COMMAND getconf GNU_LIBC_VERSION
         OUTPUT_VARIABLE _libc_version OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(EXISTS /etc/os-release)

@@ -1,0 +1,217 @@
+# Distribution packages for all supported systems.
+#   Tag v*          -> build everything and create a draft GitHub release.
+#   Manual run      -> build everything; packages are kept as workflow artifacts.
+# Arch must succeed for a release. Debian and Windows failures are listed in the
+# draft's notes instead of blocking it.
+name: Packages
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Tags get plain versions; manual runs get snapshot versions (+git<date>.<hash>).
+  VACUUM_RELEASE: ${{ github.ref_type == 'tag' && '1' || '0' }}
+
+jobs:
+  arch:
+    name: Arch Linux package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v4
+      - name: Prepare pinned Arch build environment
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: .github/containers/linux.Dockerfile
+          tags: vacuum-linux:latest
+          load: true
+          cache-from: type=gha,scope=linux-toolchain
+          cache-to: type=gha,scope=linux-toolchain,mode=max,ignore-error=true
+      - name: Build package
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e VACUUM_RELEASE \
+            -e VACUUM_JOBS=4 -v "$GITHUB_WORKSPACE:/src" -w /src vacuum-linux \
+            .github/scripts/build-arch-package.sh
+      - name: Install package and launch it
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src vacuum-linux bash -euc '
+            pacman -U --noconfirm build/arch/*.pkg.tar.zst
+            .github/scripts/smoke-test.sh
+          '
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/arch/*.pkg.tar.zst
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+
+  debian:
+    name: Debian 13 package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v4
+      - name: Prepare Debian build environment
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: .github/containers/debian.Dockerfile
+          tags: vacuum-debian:latest
+          load: true
+          cache-from: type=gha,scope=debian-toolchain
+          cache-to: type=gha,scope=debian-toolchain,mode=max,ignore-error=true
+      - name: Build package
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e VACUUM_RELEASE \
+            -e VACUUM_JOBS=4 -v "$GITHUB_WORKSPACE:/src" -w /src vacuum-debian \
+            .github/scripts/build-deb.sh
+      - name: Install package on a clean system and launch it
+        # A plain image, so the package's declared dependencies are what gets tested.
+        run: |
+          image=$(sed -n 's/^FROM //p' .github/containers/debian.Dockerfile)
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src "$image" bash -euc '
+            apt-get update -q
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -q ./build/deb/*.deb
+            .github/scripts/smoke-test.sh
+          '
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/deb/*.deb
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    name: Windows x86_64 (Qt and GStreamer bundled)
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      SCCACHE_GHA_ENABLED: 'true'
+      SCCACHE_GHA_VERSION: vacuum-windows-x64-v1
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - uses: jurplel/install-qt-action@v4.5.0
+        with:
+          version: '6.12.0'
+          # The released aqt 3.3.0 uses the repository layout from Qt <=6.10.
+          aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@5a49f2b391ae8ee1d3c0dd87f8b33c1d49a4deb7'
+          arch: win64_msvc2022_64
+          modules: 'qtmultimedia'
+          cache: true
+          cache-key-prefix: qt-windows-x64-v1
+      - name: Restore GStreamer SDK
+        id: gstreamer-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ runner.temp }}/gstreamer-sdk
+          key: gstreamer-windows-2022-x64-v1-${{ hashFiles('.github/scripts/install-gstreamer.ps1') }}
+      - name: Prepare pinned GStreamer runtime and development files
+        run: ./.github/scripts/install-gstreamer.ps1 -UseCachedSdk:('${{ steps.gstreamer-cache.outputs.cache-hit }}' -eq 'true')
+      - name: Save GStreamer SDK
+        if: steps.gstreamer-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ runner.temp }}/gstreamer-sdk
+          key: ${{ steps.gstreamer-cache.outputs.cache-primary-key }}
+      - name: Prepare Windows compiler cache
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          version: v0.19.0
+      - name: Configure
+        run: >-
+          cmake --preset release -DVACUUM_DEPENDENCY_PROVIDER=BUNDLED
+          -DBUNDLE_WINDOWS_DEPENDENCIES=ON "-DVACUUM_GSTREAMER_ROOT=$env:VACUUM_GSTREAMER_ROOT"
+          "-DPKG_CONFIG_EXECUTABLE=$env:VACUUM_GSTREAMER_ROOT/bin/pkg-config.exe"
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+      - name: Build
+        run: cmake --build --preset release --parallel 4
+      - name: Windows compiler cache statistics
+        run: sccache --show-stats
+      - name: Package
+        run: cpack --config build/release/CPackConfig.cmake -C Release
+      - name: Check extracted archive with SDKs hidden
+        run: |
+          python .github/scripts/check_archive.py "build/release/packages/*.zip" `
+            --hide-sdk "$env:QT_ROOT_DIR" --hide-sdk "$env:VACUUM_GSTREAMER_ROOT"
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/release/packages/*.zip
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Draft GitHub release
+    needs: [arch, debian, windows]
+    if: always() && github.ref_type == 'tag' && needs.arch.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create or update draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          DEBIAN_RESULT: ${{ needs.debian.result }}
+          WINDOWS_RESULT: ${{ needs.windows.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          ls -l dist
+          {
+            echo "Packages built from \`$TAG\` by [this workflow run]($RUN_URL)."
+            echo
+            echo "| System | Package |"
+            echo "|---|---|"
+            echo "| Arch Linux | \`.pkg.tar.zst\` (\`pacman -U\`) |"
+            echo "| Debian 13 | \`.deb\` (\`apt install ./file.deb\`) |"
+            echo "| Windows x86_64 | portable \`.zip\` |"
+            failed=""
+            [[ $DEBIAN_RESULT == success ]] || failed+="- Debian 13: $DEBIAN_RESULT"$'\n'
+            [[ $WINDOWS_RESULT == success ]] || failed+="- Windows: $WINDOWS_RESULT"$'\n'
+            if [[ -n $failed ]]; then
+              echo
+              echo "> [!WARNING]"
+              echo "> These builds did not succeed, so their packages are missing:"
+              echo
+              printf '%s' "$failed"
+            fi
+          } > notes.md
+          prerelease=()
+          [[ $TAG == *-* ]] && prerelease=(--prerelease)
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --notes-file notes.md
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --draft --verify-tag "${prerelease[@]}" \
+              --title "Vacuum-IM ${TAG#v}" --notes-file notes.md
+          fi

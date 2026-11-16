@@ -1,24 +1,49 @@
-Source: vacuum
+Source: vacuum-im
 Section: net
 Priority: optional
-Maintainer: Sergey A Potapov <potapov.s.a@gmail.com>
-Build-Depends: cmake, debhelper (>= 7.0.50~), openssl, libqtwebkit-dev | libqt4-dev, libx11-dev, zlib1g-dev, libidn11-dev
-Standards-Version: 3.9.1
-Homepage: http://code.google.com/p/vacuum-im/
+Maintainer: protomors <protomors@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.21),
+               ninja-build,
+               pkgconf,
+               qt6-base-dev (>= 6.8),
+               qt6-svg-dev,
+               qt6-multimedia-dev,
+               qt6-tools-dev,
+               qt6-tools-dev-tools,
+               qt6-l10n-tools,
+               libgl-dev,
+               libx11-dev,
+               libxss-dev,
+               zlib1g-dev,
+               libminizip-dev,
+               libidn-dev,
+               libhunspell-dev,
+               libgstreamer1.0-dev (>= 1.20),
+               libgstreamer-plugins-base1.0-dev,
+               libgstreamer-plugins-bad1.0-dev
+Standards-Version: 4.7.2
+Homepage: https://github.com/protomors/vacuum-im
+Vcs-Git: https://github.com/protomors/vacuum-im.git
+Vcs-Browser: https://github.com/protomors/vacuum-im
+Rules-Requires-Root: no
 
-Package: vacuum
+Package: vacuum-im
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: nas
-Description: Jabber client using Qt
- Vacuum is a free instant messaging application designed for the Jabber
- (XMPP) IM network (including Google Talk). It has full Unicode support, 
- and supports most important XMPP features.
-
-Package: vacuum-dev
-Architecture: all
-Depends: ${misc:Depends}, vacuum
-Description: Development files for Vacuum
- This package contains Vacuum include files you need if you
- want to develop plugins for Vacuum.
-
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         libqt6sql6-sqlite,
+         qt6-qpa-plugins,
+         gstreamer1.0-plugins-base,
+         gstreamer1.0-plugins-good,
+         gstreamer1.0-plugins-bad,
+         gstreamer1.0-nice
+Recommends: qt6-svg-plugins,
+            qt6-image-formats-plugins,
+            hunspell-en-us | hunspell-dictionary
+Suggests: qt6-wayland
+Description: full-featured Jabber/XMPP client
+ Vacuum-IM is a cross-platform Jabber/XMPP client built from plugins.
+ It supports multiple accounts, nested roster groups, meta-contacts,
+ multi-user chat with bookmarks, local and server-side message history,
+ file transfer, spell checking and voice calls.

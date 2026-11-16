@@ -1,16 +1,34 @@
 #!/usr/bin/make -f
-#export DH_VERBOSE=1
 
-REV=$(shell dpkg-parsechangelog | awk '/^Version: / {print $$2}' | sed 's/.*svn//' | sed 's/-.*//')
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-override_dh_auto_configure:
-	dh_auto_configure -- -DVER_STRING=$(REV) -DCMAKE_BUILD_TYPE=Release
-
-override_dh_install:
-	dh_install --list-missing -XCOPYING -Xlicense.txt
-	for size in 16 24 32 48 64 96 128 ; do \
-	mkdir -p $(CURDIR)/debian/vacuum/usr/share/icons/hicolor/$${size}x$${size}/apps/ && install -Dm644 $(CURDIR)/resources/menuicons/shared/mainwindowlogo$${size}.png $(CURDIR)/debian/vacuum/usr/share/icons/hicolor/$${size}x$${size}/apps/vacuum.png ; \
-	done
+# Extra CMake arguments, e.g. VACUUM_CMAKE_ARGS="-DGIT_HASH=... -DGIT_DATE=..."
+VACUUM_CMAKE_ARGS ?=
 
 %:
-	dh $@ --parallel
+	dh $@ --buildsystem=cmake+ninja
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DVACUUM_DEPENDENCY_PROVIDER=SYSTEM \
+		-DPLUGIN_voicecalls=ON \
+		-DSPELLCHECKER_BACKEND=HUNSPELL \
+		-DINSTALL_SDK=OFF \
+		-DINSTALL_DOCS=OFF \
+		-DINSTALL_ARCHIVE_INFO=OFF \
+		$(VACUUM_CMAKE_ARGS)
+
+# There are no regression tests in the default build (BUILD_TESTING=OFF).
+override_dh_auto_test:
+
+override_dh_auto_install:
+	dh_auto_install
+	# Development symlink; the plugin SDK is not packaged.
+	rm -f debian/vacuum-im/usr/lib/libvacuumutils.so
+
+override_dh_makeshlibs:
+	# libvacuumutils is private to the application.
+	dh_makeshlibs --no-scripts -X/usr/lib/vacuum/plugins
+
+override_dh_shlibdeps:
+	dh_shlibdeps -l$(CURDIR)/debian/vacuum-im/usr/lib

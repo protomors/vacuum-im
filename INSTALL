@@ -119,22 +119,51 @@ Extract the complete archive and run bin/vacuum on Linux, or vacuum/vacuum.exe
 on Windows. The Windows archive includes Qt platform/media/TLS/SQLite plugins,
 compiler DLLs and the GStreamer dependencies needed for voice calls.
 
-GitHub Actions builds both platforms on pushes, pull requests and manual runs,
-checks the extracted archives, then uploads the archive files directly as
-workflow artifacts. The Windows check temporarily hides the Qt/GStreamer SDKs
-and removes development PATH entries. The check script can also be run locally:
+Distribution packages
+---------------------
+Native packages use the system Qt, GStreamer and other libraries, and install
+under /usr. Packaging files live in src/packages/linux/arch (PKGBUILD) and
+src/packages/linux/debian. They can be built locally in the CI containers:
+
+  .github/scripts/build-arch-package.sh   # in .github/containers/linux.Dockerfile
+  .github/scripts/build-deb.sh            # in .github/containers/debian.Dockerfile
+
+The scripts package the committed HEAD (git archive), so commit first. The
+package version comes from src/definitions/version.h. Builds have a snapshot
+suffix with the commit date and hash unless VACUUM_RELEASE=1 is set. Outputs
+are written to build/arch/ and build/deb/.
+
+Continuous integration
+----------------------
+The CI workflow runs on every push and pull request. It builds only the Arch
+Linux archive, checks the extracted archive, and uploads it as a workflow
+artifact.
+
+The Packages workflow builds the Arch package, the Debian 13 package and the
+Windows archive. It runs when a v* tag is pushed, or manually from the Actions
+tab. Each Linux package is installed and started headless; the Debian package
+is installed on a clean Debian image, which checks its declared dependencies.
+A tag also creates a draft GitHub release with all packages attached; tags
+containing "-" (for example v1.3.0-alpha) are marked as pre-releases. The Arch
+build must succeed for a release. Debian or Windows failures are listed in
+the draft's notes instead of blocking it. Manual runs keep the packages as
+workflow artifacts only.
+
+The Windows check temporarily hides the Qt/GStreamer SDKs and removes
+development PATH entries. The archive check script can also be run locally:
 
   python .github/scripts/check_archive.py /path/to/archive.tar.gz
 
-CI caches the Arch container's dependency layer, the Windows Qt installation,
+CI caches the Arch and Debian containers' dependency layers, the Windows Qt installation,
 and the installed GStreamer SDK. Changing the Dockerfile or GStreamer installer
 script invalidates the corresponding preparation cache; Qt's cache key includes
 its version, architecture and selected modules. The GStreamer SDK is saved as
 soon as installation succeeds, even if a later compilation step fails.
 Windows configuration uses pkg-config.exe from that SDK.
 
-Compilation uses ccache on Linux (a cache capped at 1 GiB) and sccache with
-GitHub's cache backend on Windows. Compiler caches reuse object files based on
+Compilation uses ccache for the CI archive build (a cache capped at 1 GiB)
+and sccache with GitHub's cache backend on Windows. Linux package builds
+compile from scratch. Compiler caches reuse object files based on
 compiler, options, source and headers. CMake configuration, linking, packaging
 and archive validation still run. Build directories are not cached. The first
 run populates the caches; later runs report hits/misses in their compiler-cache
@@ -173,6 +202,8 @@ dependency provider.
   INSTALL_SDK=ON                Install plugin development headers/helpers
                                 (OFF in the supplied presets).
   INSTALL_DOCS=OFF              Skip installed documentation.
+  INSTALL_ARCHIVE_INFO=OFF      Skip build-info.json and RUNTIME-REQUIREMENTS.txt
+                                (used by distribution packages).
   INSTALL_LIB_DIR=lib64         Override the Unix library directory.
   PLUGIN_<name>=OFF             Disable a plugin.
   PLUGIN_voicecalls=ON          Require voice-call dependencies (release default).

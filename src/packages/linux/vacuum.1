@@ -1,0 +1,45 @@
+.TH VACUUM 1 "November 2026" "Vacuum-IM" "User Commands"
+.SH NAME
+vacuum \- Jabber/XMPP instant messaging client
+.SH SYNOPSIS
+.B vacuum
+.RB [ \-p
+.IR profile ]
+.RB [ \-pp
+.IR password ]
+.RB [ \-h
+.IR directory ]
+.RB [ \-l
+.IR locale ]
+.RB [ \-lt
+.IR types ]
+.SH DESCRIPTION
+.B Vacuum-IM
+is a full-featured, cross-platform Jabber/XMPP client built with Qt. The
+program itself is a plugin loader; all functionality, including multiple
+accounts, multi-user chat, message history, file transfer, spell checking
+and voice calls, is provided by plugins.
+.SH OPTIONS
+.TP
+.BI \-p " profile"
+Open the named profile.
+.TP
+.BI \-pp " password"
+Password for the profile given with
+.BR \-p .
+Command-line arguments are visible to other local users, so avoid this
+option on shared systems.
+.TP
+.BI \-h " directory"
+Keep application data (profiles and settings) in
+.I directory
+instead of the default location.
+.TP
+.BI \-l " locale"
+Use the given interface language, for example
+.BR uk " or " de_DE .
+.TP
+.BI \-lt " types"
+Enable logging of the given logger message types (a numeric mask).
+.SH SEE ALSO
+https://github.com/protomors/vacuum-im
