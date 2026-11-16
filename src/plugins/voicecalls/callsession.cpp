@@ -20,9 +20,10 @@
 #define MAX_PENDING_CANDIDATES    100
 #define STUN_DEFAULT_PORT         3478
 
-CallSession::CallSession(IStanzaProcessor *AStanzaProcessor, const Jid &AStreamJid, const Jid &AContactJid, const QString &ASessionId, bool AOutgoing, QObject *AParent) : QObject(AParent)
+CallSession::CallSession(IStanzaProcessor *AStanzaProcessor, IJingle *AJingle, const Jid &AStreamJid, const Jid &AContactJid, const QString &ASessionId, bool AOutgoing, QObject *AParent) : QObject(AParent)
 {
 	FStanzaProcessor = AStanzaProcessor;
+	FJingle = AJingle;
 
 	FStreamJid = AStreamJid;
 	FContactJid = AContactJid;
@@ -217,8 +218,7 @@ bool CallSession::receiveSession(const Stanza &ARequest)
 	if (FOutgoing || FHasOffer || FState==Ended)
 		return false;
 
-	Stanza result = FStanzaProcessor->makeReplyResult(ARequest);
-	FStanzaProcessor->sendStanzaOut(FStreamJid,result);
+	FJingle->sendResult(FStreamJid,ARequest);
 
 	FHasOffer = true;
 	FSessionOffer = ARequest;
@@ -397,8 +397,7 @@ bool CallSession::processRequest(const Stanza &ARequest)
 	{
 		if (FOutgoing && FState==Initiating && FDescriptionSent)
 		{
-			Stanza result = FStanzaProcessor->makeReplyResult(ARequest);
-			FStanzaProcessor->sendStanzaOut(FStreamJid,result);
+			FJingle->sendResult(FStreamJid,ARequest);
 			applySessionAccept(jingle);
 			return true;
 		}
@@ -406,8 +405,7 @@ bool CallSession::processRequest(const Stanza &ARequest)
 	}
 	else if (action == "session-terminate")
 	{
-		Stanza result = FStanzaProcessor->makeReplyResult(ARequest);
-		FStanzaProcessor->sendStanzaOut(FStreamJid,result);
+		FJingle->sendResult(FStreamJid,ARequest);
 
 		QDomElement reasonElem = jingle.firstChildElement("reason");
 		QString reason = reasonElem.firstChildElement().tagName();
@@ -424,8 +422,7 @@ bool CallSession::processRequest(const Stanza &ARequest)
 	{
 		if (hasJingleSession())
 		{
-			Stanza result = FStanzaProcessor->makeReplyResult(ARequest);
-			FStanzaProcessor->sendStanzaOut(FStreamJid,result);
+			FJingle->sendResult(FStreamJid,ARequest);
 			applyTransportInfo(jingle);
 			return true;
 		}
@@ -433,8 +430,7 @@ bool CallSession::processRequest(const Stanza &ARequest)
 	}
 	else if (action == "session-info")
 	{
-		Stanza result = FStanzaProcessor->makeReplyResult(ARequest);
-		FStanzaProcessor->sendStanzaOut(FStreamJid,result);
+		FJingle->sendResult(FStreamJid,ARequest);
 
 		if (FOutgoing && !FRemoteRinging && !jingle.firstChildElement("ringing").isNull() && (FState==Initiating || FState==Proposing))
 		{
@@ -446,8 +442,7 @@ bool CallSession::processRequest(const Stanza &ARequest)
 	else if (action == "content-add")
 	{
 		// Only the audio stream the call started with is supported
-		Stanza result = FStanzaProcessor->makeReplyResult(ARequest);
-		FStanzaProcessor->sendStanzaOut(FStreamJid,result);
+		FJingle->sendResult(FStreamJid,ARequest);
 
 		QDomElement rejectJingle;
 		Stanza reject = makeJingleRequest("content-reject",rejectJingle);
@@ -462,11 +457,10 @@ bool CallSession::processRequest(const Stanza &ARequest)
 		return true;
 	}
 
-	XmppStanzaError err(outOfOrder ? XmppStanzaError::EC_UNEXPECTED_REQUEST : XmppStanzaError::EC_FEATURE_NOT_IMPLEMENTED);
 	if (outOfOrder)
-		err.setAppCondition(NS_JINGLE_ERRORS,"out-of-order");
-	Stanza error = FStanzaProcessor->makeReplyError(ARequest,err);
-	FStanzaProcessor->sendStanzaOut(FStreamJid,error);
+		FJingle->sendError(FStreamJid,ARequest,XmppStanzaError::EC_UNEXPECTED_REQUEST,"out-of-order");
+	else
+		FJingle->sendError(FStreamJid,ARequest,XmppStanzaError::EC_FEATURE_NOT_IMPLEMENTED);
 	return true;
 }
 
@@ -673,12 +667,7 @@ void CallSession::sendJingleMessage(const QString &AAction, const Jid &ATo)
 
 Stanza CallSession::makeJingleRequest(const QString &AAction, QDomElement &AJingle)
 {
-	Stanza request(STANZA_KIND_IQ);
-	request.setType(STANZA_TYPE_SET).setTo(FContactJid.full()).setUniqueId();
-	AJingle = request.addElement("jingle",NS_JINGLE);
-	AJingle.setAttribute("action",AAction);
-	AJingle.setAttribute("sid",FSessionId);
-	return request;
+	return FJingle->makeRequest(FContactJid,FSessionId,AAction,AJingle);
 }
 
 bool CallSession::sendJingleRequest(Stanza &ARequest)

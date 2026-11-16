@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QDateTime>
 #include <interfaces/istanzaprocessor.h>
+#include <interfaces/ijingle.h>
 #include "mediasession.h"
 
 // One voice call: Jingle Message Initiation (XEP-0353) to find the device that takes the call,
@@ -42,7 +43,7 @@ public:
 		Failed
 	};
 public:
-	CallSession(IStanzaProcessor *AStanzaProcessor, const Jid &AStreamJid, const Jid &AContactJid, const QString &ASessionId, bool AOutgoing, QObject *AParent);
+	CallSession(IStanzaProcessor *AStanzaProcessor, IJingle *AJingle, const Jid &AStreamJid, const Jid &AContactJid, const QString &ASessionId, bool AOutgoing, QObject *AParent);
 	~CallSession();
 	virtual QObject *instance() { return this; }
 	//IStanzaRequestOwner
@@ -111,6 +112,7 @@ protected slots:
 	void onMediaConnectionFailed();
 private:
 	IStanzaProcessor *FStanzaProcessor;
+	IJingle *FJingle;
 private:
 	Jid FStreamJid;
 	Jid FContactJid;

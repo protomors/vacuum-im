@@ -1,7 +1,6 @@
 #include "voicecalls.h"
 
 #include <QUrl>
-#include <QUuid>
 #include <definitions/namespaces.h>
 #include <definitions/menuicons.h>
 #include <definitions/resources.h>
@@ -29,7 +28,6 @@
 #include <utils/menu.h>
 #include "mediasession.h"
 
-#define SHC_JINGLE_REQUEST            "/iq[@type='set']/jingle[@xmlns='" NS_JINGLE "']"
 #define SHC_JINGLE_MESSAGE(action)    "/message/" action "[@xmlns='" NS_JINGLE_MESSAGE "']"
 
 #define ADR_STREAM_JID                Action::DR_StreamJid
@@ -39,6 +37,7 @@ VoiceCalls::VoiceCalls()
 {
 	FXmppStreamManager = NULL;
 	FStanzaProcessor = NULL;
+	FJingle = NULL;
 	FDiscovery = NULL;
 	FPresenceManager = NULL;
 	FRosterManager = NULL;
@@ -69,6 +68,7 @@ void VoiceCalls::pluginInfo(IPluginInfo *APluginInfo)
 	APluginInfo->homePage = "http://www.vacuum-im.org";
 	APluginInfo->dependences.append(XMPPSTREAMS_UUID);
 	APluginInfo->dependences.append(STANZAPROCESSOR_UUID);
+	APluginInfo->dependences.append(JINGLE_UUID);
 }
 
 bool VoiceCalls::initConnections(IPluginManager *APluginManager, int &AInitOrder)
@@ -90,6 +90,12 @@ bool VoiceCalls::initConnections(IPluginManager *APluginManager, int &AInitOrder
 	if (plugin)
 	{
 		FStanzaProcessor = qobject_cast<IStanzaProcessor *>(plugin->instance());
+	}
+
+	plugin = APluginManager->pluginInterface("IJingle").value(0,NULL);
+	if (plugin)
+	{
+		FJingle = qobject_cast<IJingle *>(plugin->instance());
 	}
 
 	plugin = APluginManager->pluginInterface("IServiceDiscovery").value(0,NULL);
@@ -182,7 +188,7 @@ bool VoiceCalls::initConnections(IPluginManager *APluginManager, int &AInitOrder
 
 	connect(APluginManager->instance(),SIGNAL(shutdownStarted()),SLOT(onShutdownStarted()));
 
-	return FXmppStreamManager!=NULL && FStanzaProcessor!=NULL;
+	return FXmppStreamManager!=NULL && FStanzaProcessor!=NULL && FJingle!=NULL;
 }
 
 bool VoiceCalls::initObjects()
@@ -194,17 +200,15 @@ bool VoiceCalls::initObjects()
 	if (!FAvailable)
 		LOG_WARNING(QString("Voice calls are disabled, GStreamer elements not found: %1").arg(missing.join(", ")));
 
-	// Other clients offer calls only to those who announce all of these
+	if (FAvailable)
+		FJingle->insertApplication(NS_JINGLE_APPS_RTP,this);
+
+	// Other clients offer calls only to those who announce all of these, the core announces Jingle itself
 	if (FDiscovery && FAvailable)
 	{
 		IDiscoFeature dfeature;
 		dfeature.active = true;
 		dfeature.icon = IconStorage::staticStorage(RSR_STORAGE_MENUICONS)->getIcon(MNI_VOICECALLS_CALL);
-
-		dfeature.var = NS_JINGLE;
-		dfeature.name = tr("Jingle");
-		dfeature.description = tr("Supports the negotiation of media sessions with another contact");
-		FDiscovery->insertDiscoFeature(dfeature);
 
 		dfeature.var = NS_JINGLE_APPS_RTP;
 		dfeature.name = tr("Jingle RTP Sessions");
@@ -260,13 +264,7 @@ bool VoiceCalls::initSettings()
 
 bool VoiceCalls::stanzaReadWrite(int AHandleId, const Jid &AStreamJid, Stanza &AStanza, bool &AAccept)
 {
-	if (FSHIRequests.value(AStreamJid) == AHandleId)
-	{
-		AAccept = true;
-		processJingleRequest(AStreamJid,AStanza);
-		return true;
-	}
-	else if (FSHIMessages.value(AStreamJid) == AHandleId)
+	if (FSHIMessages.value(AStreamJid) == AHandleId)
 	{
 		if (AStanza.type() == "groupchat")
 			return false;
@@ -356,7 +354,7 @@ bool VoiceCalls::startCall(const Jid &AStreamJid, const Jid &AContactJid)
 			return false;
 	}
 
-	CallSession *session = createSession(AStreamJid,target,QUuid::createUuid().toString(QUuid::WithoutBraces),true);
+	CallSession *session = createSession(AStreamJid,target,FJingle->newSessionId(),true);
 	showCallDialog(session,true);
 	if (propose)
 		session->startProposal();
@@ -429,10 +427,11 @@ CallSession *VoiceCalls::findContactSession(const Jid &AStreamJid, const Jid &AC
 
 CallSession *VoiceCalls::createSession(const Jid &AStreamJid, const Jid &AContactJid, const QString &ASessionId, bool AOutgoing)
 {
-	CallSession *session = new CallSession(FStanzaProcessor,AStreamJid,AContactJid,ASessionId,AOutgoing,this);
+	CallSession *session = new CallSession(FStanzaProcessor,FJingle,AStreamJid,AContactJid,ASessionId,AOutgoing,this);
 	connect(session,SIGNAL(stateChanged()),SLOT(onSessionStateChanged()));
 	connect(session,SIGNAL(ended()),SLOT(onSessionEnded()));
 	FSessions.append(session);
+	FJingle->insertSession(AStreamJid,ASessionId,this);
 
 	session->setFallbackStunServer(Options::node(OPV_VOICECALLS_STUNSERVER).value().toString());
 	if (FDiscovery && FDiscovery->discoInfo(AStreamJid,AStreamJid.domain()).features.contains(NS_EXTERNAL_SERVICES))
@@ -467,51 +466,30 @@ CallDialog *VoiceCalls::showCallDialog(CallSession *ASession, bool AActivate)
 	return dialog;
 }
 
-void VoiceCalls::processJingleRequest(const Jid &AStreamJid, const Stanza &ARequest)
+bool VoiceCalls::jingleSessionInitiate(const Jid &AStreamJid, const Stanza &ARequest)
 {
-	QDomElement jingle = ARequest.firstElement("jingle",NS_JINGLE);
-	QString sessionId = jingle.attribute("sid");
-	QString action = jingle.attribute("action");
+	QString sessionId = ARequest.firstElement("jingle",NS_JINGLE).attribute("sid");
 	Jid contactJid = ARequest.fromJid();
 
-	CallSession *session = findSession(AStreamJid,sessionId);
-	if (session)
+	if (!FAvailable || contactJid.pBare()==AStreamJid.pBare() || isRoomJid(AStreamJid,contactJid))
 	{
-		if (!session->processRequest(ARequest))
-			replyJingleError(AStreamJid,ARequest,XmppStanzaError::EC_ITEM_NOT_FOUND,"unknown-session");
-	}
-	else if (action != "session-initiate")
-	{
-		replyJingleError(AStreamJid,ARequest,XmppStanzaError::EC_ITEM_NOT_FOUND,"unknown-session");
-	}
-	else if (!FAvailable || sessionId.isEmpty() || !contactJid.hasResource() || contactJid.pBare()==AStreamJid.pBare() || isRoomJid(AStreamJid,contactJid))
-	{
-		replyJingleError(AStreamJid,ARequest,XmppStanzaError::EC_SERVICE_UNAVAILABLE);
+		return false;
 	}
 	else if (Options::node(OPV_VOICECALLS_CONTACTSONLY).value().toBool() && !isRosterContact(AStreamJid,contactJid))
 	{
 		LOG_STRM_INFO(AStreamJid,QString("Call from unknown contact ignored, from=%1").arg(contactJid.full()));
-		replyJingleError(AStreamJid,ARequest,XmppStanzaError::EC_SERVICE_UNAVAILABLE);
+		return false;
 	}
 	else if (hasCall())
 	{
 		LOG_STRM_INFO(AStreamJid,QString("Call rejected while another call is in progress, from=%1").arg(contactJid.full()));
-		Stanza result = FStanzaProcessor->makeReplyResult(ARequest);
-		FStanzaProcessor->sendStanzaOut(AStreamJid,result);
-
-		Stanza terminate(STANZA_KIND_IQ);
-		terminate.setType(STANZA_TYPE_SET).setTo(contactJid.full()).setUniqueId();
-		QDomElement terminateJingle = terminate.addElement("jingle",NS_JINGLE);
-		terminateJingle.setAttribute("action","session-terminate");
-		terminateJingle.setAttribute("sid",sessionId);
-		terminateJingle.appendChild(terminate.createElement("reason")).appendChild(terminate.createElement("busy"));
-		FStanzaProcessor->sendStanzaOut(AStreamJid,terminate);
-
+		FJingle->sendResult(AStreamJid,ARequest);
+		FJingle->sendTerminate(AStreamJid,contactJid,sessionId,"busy");
 		notifyMissedCall(AStreamJid,contactJid);
 	}
 	else
 	{
-		session = createSession(AStreamJid,contactJid,sessionId,false);
+		CallSession *session = createSession(AStreamJid,contactJid,sessionId,false);
 		if (session->receiveSession(ARequest))
 		{
 			showCallDialog(session,false);
@@ -520,6 +498,13 @@ void VoiceCalls::processJingleRequest(const Jid &AStreamJid, const Stanza &ARequ
 			updateToolBarActions();
 		}
 	}
+	return true;
+}
+
+bool VoiceCalls::jingleSessionRequest(const Jid &AStreamJid, const Stanza &ARequest)
+{
+	CallSession *session = findSession(AStreamJid,ARequest.firstElement("jingle",NS_JINGLE).attribute("sid"));
+	return session!=NULL && session->processRequest(ARequest);
 }
 
 void VoiceCalls::processJingleMessage(const Jid &AStreamJid, const Stanza &AMessage)
@@ -550,7 +535,7 @@ void VoiceCalls::processJingleMessage(const Jid &AStreamJid, const Stanza &AMess
 
 void VoiceCalls::processCallProposal(const Jid &AStreamJid, const Jid &AContactJid, const QString &ASessionId, const QDomElement &AProposal)
 {
-	if (!FAvailable || !AContactJid.hasResource() || isRoomJid(AStreamJid,AContactJid) || findSession(AStreamJid,ASessionId)!=NULL)
+	if (!FAvailable || !AContactJid.hasResource() || isRoomJid(AStreamJid,AContactJid) || FJingle->sessionHandler(AStreamJid,ASessionId)!=NULL)
 		return;
 
 	// Calls with video are left to the devices that can show it
@@ -584,15 +569,6 @@ void VoiceCalls::processCallProposal(const Jid &AStreamJid, const Jid &AContactJ
 	notifyIncomingCall(session);
 	emit callStarted(AStreamJid,AContactJid,ASessionId);
 	updateToolBarActions();
-}
-
-void VoiceCalls::replyJingleError(const Jid &AStreamJid, const Stanza &ARequest, XmppStanzaError::ErrorCondition ACondition, const QString &AJingleCondition)
-{
-	XmppStanzaError err(ACondition);
-	if (!AJingleCondition.isEmpty())
-		err.setAppCondition(NS_JINGLE_ERRORS,AJingleCondition);
-	Stanza error = FStanzaProcessor->makeReplyError(ARequest,err);
-	FStanzaProcessor->sendStanzaOut(AStreamJid,error);
 }
 
 void VoiceCalls::notifyIncomingCall(CallSession *ASession)
@@ -749,14 +725,6 @@ void VoiceCalls::updateToolBarActions()
 
 void VoiceCalls::onXmppStreamOpened(IXmppStream *AXmppStream)
 {
-	IStanzaHandle requestHandle;
-	requestHandle.handler = this;
-	requestHandle.order = SHO_DEFAULT;
-	requestHandle.direction = IStanzaHandle::DirectionIn;
-	requestHandle.streamJid = AXmppStream->streamJid();
-	requestHandle.conditions.append(SHC_JINGLE_REQUEST);
-	FSHIRequests.insert(requestHandle.streamJid,FStanzaProcessor->insertStanzaHandle(requestHandle));
-
 	IStanzaHandle messageHandle;
 	messageHandle.handler = this;
 	messageHandle.order = SHO_MI_VOICECALLS;
@@ -777,8 +745,6 @@ void VoiceCalls::onXmppStreamOpened(IXmppStream *AXmppStream)
 void VoiceCalls::onXmppStreamClosed(IXmppStream *AXmppStream)
 {
 	Jid streamJid = AXmppStream->streamJid();
-	if (FSHIRequests.contains(streamJid))
-		FStanzaProcessor->removeStanzaHandle(FSHIRequests.take(streamJid));
 	if (FSHIMessages.contains(streamJid))
 		FStanzaProcessor->removeStanzaHandle(FSHIMessages.take(streamJid));
 
@@ -859,6 +825,7 @@ void VoiceCalls::onSessionEnded()
 		// The window keeps showing how the call ended
 		FSessions.removeAll(session);
 		FDialogs.remove(session);
+		FJingle->removeSession(streamJid,session->sessionId());
 		session->deleteLater();
 
 		emit callFinished(streamJid,contactJid,session->sessionId());
