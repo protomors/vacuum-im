@@ -36,3 +36,12 @@ target_compile_definitions(message_tests PRIVATE TEST_STYLE_PATH="${CMAKE_SOURCE
 target_link_libraries(message_tests PRIVATE vacuumutils Qt6::Test Qt6::Widgets Qt6::Network Qt6::Xml)
 add_test(NAME message COMMAND message_tests)
 set_tests_properties(message PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(receipts_tests
+	receipts_tests.cpp
+	../src/plugins/messagereceipts/messagereceipts.cpp
+	../src/plugins/messagereceipts/messagereceipts.h)
+set_target_properties(receipts_tests PROPERTIES AUTOMOC ON)
+target_link_libraries(receipts_tests PRIVATE vacuumutils Qt6::Test Qt6::Widgets Qt6::Network Qt6::Xml)
+add_test(NAME receipts COMMAND receipts_tests)
+set_tests_properties(receipts PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
