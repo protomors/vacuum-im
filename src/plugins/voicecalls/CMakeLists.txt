@@ -3,7 +3,7 @@ project(voicecalls)
 set(PLUGIN_NAME "voicecalls")
 set(PLUGIN_DISPLAY_NAME "Voice Calls")
 set(PLUGIN_DESCRIPTION "Allows to make and receive voice calls")
-set(PLUGIN_DEPENDENCIES xmppstreams stanzaprocessor)
+set(PLUGIN_DEPENDENCIES xmppstreams stanzaprocessor jingle)
 
 # AUTO preserves optional source builds; release presets explicitly require ON.
 set(PLUGIN_voicecalls AUTO CACHE STRING "Build voice calls: AUTO, ON or OFF")

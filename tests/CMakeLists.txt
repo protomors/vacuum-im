@@ -16,3 +16,11 @@ set_target_properties(security_tests PROPERTIES AUTOMOC ON AUTOUIC ON)
 target_link_libraries(security_tests PRIVATE vacuumutils Qt6::Test Qt6::Widgets Qt6::Network Qt6::Xml)
 add_test(NAME security COMMAND security_tests)
 set_tests_properties(security PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(jingle_tests
+	jingle_tests.cpp
+	../src/plugins/jingle/jingle.cpp
+	../src/plugins/jingle/jingle.h)
+set_target_properties(jingle_tests PROPERTIES AUTOMOC ON)
+target_link_libraries(jingle_tests PRIVATE vacuumutils Qt6::Test Qt6::Widgets Qt6::Network Qt6::Xml)
+add_test(NAME jingle COMMAND jingle_tests)

@@ -6,6 +6,7 @@
 #include <QSoundEffect>
 #include <interfaces/ipluginmanager.h>
 #include <interfaces/ivoicecalls.h>
+#include <interfaces/ijingle.h>
 #include <interfaces/ixmppstreammanager.h>
 #include <interfaces/istanzaprocessor.h>
 #include <interfaces/iservicediscovery.h>
@@ -27,10 +28,11 @@ class VoiceCalls :
 	public IPlugin,
 	public IVoiceCalls,
 	public IStanzaHandler,
+	public IJingleHandler,
 	public IOptionsDialogHolder
 {
 	Q_OBJECT;
-	Q_INTERFACES(IPlugin IVoiceCalls IStanzaHandler IOptionsDialogHolder);
+	Q_INTERFACES(IPlugin IVoiceCalls IStanzaHandler IJingleHandler IOptionsDialogHolder);
 	Q_PLUGIN_METADATA(IID "org.vacuum-im.plugins.VoiceCalls");
 public:
 	VoiceCalls();
@@ -45,6 +47,9 @@ public:
 	virtual bool startPlugin() { return true; }
 	//IStanzaHandler
 	virtual bool stanzaReadWrite(int AHandleId, const Jid &AStreamJid, Stanza &AStanza, bool &AAccept);
+	//IJingleHandler
+	virtual bool jingleSessionInitiate(const Jid &AStreamJid, const Stanza &ARequest);
+	virtual bool jingleSessionRequest(const Jid &AStreamJid, const Stanza &ARequest);
 	//IOptionsDialogHolder
 	virtual QMultiMap<int, IOptionsDialogWidget *> optionsDialogWidgets(const QString &ANodeId, QWidget *AParent);
 	//IVoiceCalls
@@ -65,10 +70,8 @@ protected:
 	CallSession *findContactSession(const Jid &AStreamJid, const Jid &AContactJid) const;
 	CallSession *createSession(const Jid &AStreamJid, const Jid &AContactJid, const QString &ASessionId, bool AOutgoing);
 	CallDialog *showCallDialog(CallSession *ASession, bool AActivate);
-	void processJingleRequest(const Jid &AStreamJid, const Stanza &ARequest);
 	void processJingleMessage(const Jid &AStreamJid, const Stanza &AMessage);
 	void processCallProposal(const Jid &AStreamJid, const Jid &AContactJid, const QString &ASessionId, const QDomElement &AProposal);
-	void replyJingleError(const Jid &AStreamJid, const Stanza &ARequest, XmppStanzaError::ErrorCondition ACondition, const QString &AJingleCondition = QString());
 	void notifyIncomingCall(CallSession *ASession);
 	void notifyMissedCall(const Jid &AStreamJid, const Jid &AContactJid);
 	void removeCallNotify(CallSession *ASession);
@@ -100,6 +103,7 @@ protected slots:
 private:
 	IXmppStreamManager *FXmppStreamManager;
 	IStanzaProcessor *FStanzaProcessor;
+	IJingle *FJingle;
 	IServiceDiscovery *FDiscovery;
 	IPresenceManager *FPresenceManager;
 	IRosterManager *FRosterManager;
@@ -112,7 +116,6 @@ private:
 	IOptionsManager *FOptionsManager;
 private:
 	bool FAvailable;
-	QMap<Jid, int> FSHIRequests;
 	QMap<Jid, int> FSHIMessages;
 	QList<CallSession *> FSessions;
 	QMap<CallSession *, CallDialog *> FDialogs;

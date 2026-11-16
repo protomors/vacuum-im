@@ -72,6 +72,8 @@ def check(archive, workspace):
         raise RuntimeError('Disabled Adium plugin was included')
     if not any('voicecalls' in p.name for p in plugins):
         raise RuntimeError('Release archive is missing voice calls')
+    if not any('jingle' in p.name for p in plugins):
+        raise RuntimeError('Release archive is missing the Jingle core used by voice calls')
 
     env = os.environ.copy()
     for key in list(env):
