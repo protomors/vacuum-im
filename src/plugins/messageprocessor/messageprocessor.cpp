@@ -90,6 +90,11 @@ bool MessageProcessor::initObjects()
 		dfeature.name = tr("Out of Band Data");
 		dfeature.description = tr("Supports to communicate a URI to another user or application");
 		FDiscovery->insertDiscoFeature(dfeature);
+
+		dfeature.var = NS_STANZA_ID;
+		dfeature.name = tr("Unique and Stable Stanza IDs");
+		dfeature.description = tr("Supports unique and stable identifiers of messages");
+		FDiscovery->insertDiscoFeature(dfeature);
 	}
 
 	return true;
@@ -229,6 +234,16 @@ void MessageProcessor::removeActiveStream(const Jid &AStreamJid)
 
 bool MessageProcessor::sendMessage(const Jid &AStreamJid, Message &AMessage, int ADirection)
 {
+	if (ADirection==IMessageProcessor::DirectionOut && AMessage.type()!=Message::Error)
+	{
+		// Receipts, markers and corrections refer to messages by id, and
+		// XEP-0359 origin-id keeps the id even if a service rewrites it.
+		if (AMessage.id().isEmpty())
+			AMessage.setRandomId();
+		if (AMessage.originId().isEmpty())
+			AMessage.setOriginId(AMessage.id());
+	}
+
 	if (processMessage(AStreamJid,AMessage,ADirection))
 	{
 		if (ADirection == IMessageProcessor::DirectionOut)
