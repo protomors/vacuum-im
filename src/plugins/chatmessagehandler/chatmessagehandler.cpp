@@ -20,6 +20,7 @@
 #include <definitions/notificationdataroles.h>
 #include <definitions/notificationtypeorders.h>
 #include <definitions/tabpagenotifypriorities.h>
+#include <definitions/namespaces.h>
 #include <definitions/messagedataroles.h>
 #include <definitions/messagehandlerorders.h>
 #include <definitions/messageeditsendhandlerorders.h>
@@ -34,6 +35,36 @@
 #define HISTORY_TIME_DELTA        5
 #define HISTORY_DUBLICATE_DELTA   2*60
 #define HISTORY_COLLECTION_TIME   20*60
+
+// Applies archived XEP-0308 corrections to the messages they correct.
+// AMessages must be ordered from the newest to the oldest.
+static void foldHistoryCorrections(QList<Message> &AMessages)
+{
+	QHash<QString, int> originals;
+	QList<int> corrections;
+	for (int i=AMessages.count()-1; i>=0; i--)
+	{
+		const Message &message = AMessages.at(i);
+		QString direction = QString::number(message.data(MDR_MESSAGE_DIRECTION).toInt());
+		QString replaceId = message.stanza().firstElement("replace",NS_MESSAGE_CORRECT).attribute("id");
+		int original = !replaceId.isEmpty() ? originals.value(direction+":"+replaceId,-1) : -1;
+		if (original >= 0)
+		{
+			AMessages[original].detach();
+			AMessages[original].setBody(message.body());
+			corrections.append(i);
+		}
+		else
+		{
+			QString id = messageViewMessageId(message);
+			if (!id.isEmpty())
+				originals.insert(direction+":"+id,i);
+		}
+	}
+	// Indexes were collected in descending order
+	foreach(int index, corrections)
+		AMessages.removeAt(index);
+}
 
 #define ADR_STREAM_JID            Action::DR_StreamJid
 #define ADR_CONTACT_JID           Action::DR_Parametr1
@@ -569,6 +600,7 @@ void ChatMessageHandler::showHistory(IMessageChatWindow *AWindow)
 		QList<Message> pending = FPendingMessages.take(AWindow);
 		IArchiveCollectionBody history = FHistoryMessages.take(AWindow);
 		std::stable_sort(history.messages.begin(),history.messages.end(),[](const Message &left, const Message &right) { return right < left; });
+		foldHistoryCorrections(history.messages);
 
 		// Remove extra history messages
 		if (history.messages.count() > HISTORY_MESSAGES)

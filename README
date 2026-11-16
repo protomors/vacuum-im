@@ -35,6 +35,7 @@ Main Features
   * Easy access to recent contacts and conferences
   * Ability to combine contact to meta-contact from several accounts
   * Storage of history both locally and on the server (XEP-136)
+  * Delivery receipts, read markers and correction of the last message (XEP-0184, XEP-0333, XEP-0308)
   * Create a bookmark at the conference with the possibility autologin
   * Support for CAPTCHA forms, with the possibility of transmission without the use of browser
   * Automated change of transport with preservation of names, groups, subscriptions and archive messages
