@@ -1,0 +1,13 @@
+# Normalise all text files to LF in the repository and working tree.
+* text=auto eol=lf
+
+# cmd.exe mishandles labels/goto in LF batch files.
+*.bat text eol=crlf
+
+# Binary assets
+*.png binary
+*.gif binary
+*.jpg binary
+*.ico binary
+*.icns binary
+*.wav binary
