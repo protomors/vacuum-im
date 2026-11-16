@@ -79,6 +79,8 @@
 #define OPV_MESSAGES_EMOTICONS_MAXINMESSAGE             "messages.emoticons.max-in-message"
 // ChatStates
 #define OPV_MESSAGES_CHATSTATESENABLED                  "messages.chatstates-enabled"
+#define OPV_MESSAGES_SENDRECEIPTS                       "messages.send-receipts"
+#define OPV_MESSAGES_SENDDISPLAYEDMARKERS               "messages.send-displayed-markers"
 // NormalMessageHandler
 #define OPV_MESSAGES_UNNOTIFYALLNORMAL                  "messages.unnotify-all-normal-messages"
 // MessageStyles
