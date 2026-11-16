@@ -124,38 +124,38 @@ bool ViewWidget::appendText(const QString &AText, const IMessageStyleContentOpti
 
 bool ViewWidget::appendMessage(const Message &AMessage, const IMessageStyleContentOptions &AOptions)
 {
-	bool hasText = false;
+	IMessageStyleContentOptions options = AOptions;
+	bool meCommand = false;
+	bool *meCommandCheck = AOptions.kind==IMessageStyleContentOptions::KindMessage && !AOptions.senderName.isEmpty() ? &meCommand : NULL;
 
-	QTextDocument doc;
-	if (FMessageProcessor)
+	QString html;
+	if (messageToHtml(AMessage,html,meCommandCheck))
 	{
-		hasText = FMessageProcessor->messageToText(AMessage,&doc);
-	}
-	else if (!AMessage.body().isEmpty())
-	{
-		hasText = true;
-		doc.setPlainText(AMessage.body());
-	}
-
-	if (hasText)
-	{
-		// "/me" command
-		IMessageStyleContentOptions options = AOptions;
-		if (AOptions.kind==IMessageStyleContentOptions::KindMessage && !AOptions.senderName.isEmpty())
-		{
-			static const QRegularExpression me(QRegularExpression::anchoredPattern("/me\\s"));
-
-			QTextCursor cursor(&doc);
-			cursor.movePosition(QTextCursor::NextCharacter,QTextCursor::KeepAnchor,4);
-			if (me.match(cursor.selectedText()).hasMatch())
-			{
-				options.kind = IMessageStyleContentOptions::KindMeCommand;
-				cursor.removeSelectedText();
-			}
-		}
-		return appendHtml(TextManager::getDocumentBody(doc),options);
+		if (meCommand)
+			options.kind = IMessageStyleContentOptions::KindMeCommand;
+		if (options.contentId.isEmpty() && options.kind!=IMessageStyleContentOptions::KindStatus && options.kind!=IMessageStyleContentOptions::KindTopic)
+			options.contentId = messageViewContentId(options.direction==IMessageStyleContentOptions::DirectionOut, messageViewMessageId(AMessage));
+		return appendHtml(html,options);
 	}
 	return false;
+}
+
+bool ViewWidget::hasMessage(const QString &AContentId) const
+{
+	return FMessageStyle!=NULL && !AContentId.isEmpty() ? FMessageStyle->hasContent(FStyleWidget,AContentId) : false;
+}
+
+bool ViewWidget::replaceMessage(const QString &AContentId, const Message &AMessage)
+{
+	QString html;
+	if (FMessageStyle!=NULL && !AContentId.isEmpty() && messageToHtml(AMessage,html,NULL))
+		return FMessageStyle->replaceContent(FStyleWidget,AContentId,html);
+	return false;
+}
+
+bool ViewWidget::setMessageLabel(const QString &AContentId, int ALabelId, const QString &AHtml)
+{
+	return FMessageStyle!=NULL && !AContentId.isEmpty() ? FMessageStyle->setContentLabel(FStyleWidget,AContentId,ALabelId,AHtml) : false;
 }
 
 void ViewWidget::contextMenuForView(const QPoint &APosition, Menu *AMenu)
@@ -184,6 +184,39 @@ QTextDocumentFragment ViewWidget::textFragmentAt(const QPoint &APosition) const
 
 void ViewWidget::initialize()
 {
+}
+
+bool ViewWidget::messageToHtml(const Message &AMessage, QString &AHtml, bool *AMeCommand) const
+{
+	bool hasText = false;
+
+	QTextDocument doc;
+	if (FMessageProcessor)
+	{
+		hasText = FMessageProcessor->messageToText(AMessage,&doc);
+	}
+	else if (!AMessage.body().isEmpty())
+	{
+		hasText = true;
+		doc.setPlainText(AMessage.body());
+	}
+
+	if (hasText)
+	{
+		// "/me" command
+		if (AMeCommand)
+		{
+			static const QRegularExpression me(QRegularExpression::anchoredPattern("/me\\s"));
+
+			QTextCursor cursor(&doc);
+			cursor.movePosition(QTextCursor::NextCharacter,QTextCursor::KeepAnchor,4);
+			*AMeCommand = me.match(cursor.selectedText()).hasMatch();
+			if (*AMeCommand)
+				cursor.removeSelectedText();
+		}
+		AHtml = TextManager::getDocumentBody(doc);
+	}
+	return hasText;
 }
 
 void ViewWidget::dropEvent(QDropEvent *AEvent)

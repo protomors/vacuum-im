@@ -30,6 +30,9 @@ public:
 	virtual bool appendHtml(const QString &AHtml, const IMessageStyleContentOptions &AOptions);
 	virtual bool appendText(const QString &AText, const IMessageStyleContentOptions &AOptions);
 	virtual bool appendMessage(const Message &AMessage, const IMessageStyleContentOptions &AOptions);
+	virtual bool hasMessage(const QString &AContentId) const;
+	virtual bool replaceMessage(const QString &AContentId, const Message &AMessage);
+	virtual bool setMessageLabel(const QString &AContentId, int ALabelId, const QString &AHtml);
 	virtual void contextMenuForView(const QPoint &APosition, Menu *AMenu);
 	virtual QTextDocumentFragment selection() const;
 	virtual QTextCharFormat textFormatAt(const QPoint &APosition) const;
@@ -42,6 +45,7 @@ signals:
 	void messageStyleChanged(IMessageStyle *ABefore, const IMessageStyleOptions &AOptions);
 protected:
 	void initialize();
+	bool messageToHtml(const Message &AMessage, QString &AHtml, bool *AMeCommand) const;
 	void resetMessageDocumentContexts(QWidget *AStyleWidget);
 protected:
 	void dropEvent(QDropEvent *AEvent);

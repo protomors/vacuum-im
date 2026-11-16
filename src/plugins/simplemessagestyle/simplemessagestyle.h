@@ -67,6 +67,17 @@ class SimpleMessageStyle :
 public:
 	struct ContentItem {
 		int size;
+		quint64 serial;
+		QString contentId;
+	};
+	struct ContentInfo {
+		quint64 serial;
+		int labelsLength;
+		QMap<int, QString> labels;
+	};
+	struct ContentRange {
+		int bodyStart;
+		int labelsStart;
 	};
 	struct WidgetStatus {
 		int lastKind;
@@ -75,6 +86,7 @@ public:
 		bool scrollStarted;
 		int contentStartPosition;
 		QList<ContentItem> content;
+		QHash<QString, ContentInfo> contents;
 		QMap<QString, QVariant> options;
 	};
 public:
@@ -93,6 +105,9 @@ public:
 	virtual QTextDocumentFragment textFragmentAt(QWidget *AWidget, const QPoint &APosition) const;
 	virtual bool changeOptions(QWidget *AWidget, const IMessageStyleOptions &AOptions, bool AClear = true);
 	virtual bool appendContent(QWidget *AWidget, const QString &AHtml, const IMessageStyleContentOptions &AOptions);
+	virtual bool hasContent(QWidget *AWidget, const QString &AContentId) const;
+	virtual bool replaceContent(QWidget *AWidget, const QString &AContentId, const QString &AHtml);
+	virtual bool setContentLabel(QWidget *AWidget, const QString &AContentId, int ALabelId, const QString &AHtml);
 	//ISimpleMessageStyle
 	virtual QMap<QString, QVariant> infoValues() const;
 	virtual QList<QString> variants() const;
@@ -120,6 +135,13 @@ protected:
 	void fillContentKeywords(QString &AHtml, const IMessageStyleContentOptions &AOptions, const WidgetStatus &AStatus) const;
 	QString prepareMessage(const QString &AHtml, const IMessageStyleContentOptions &AOptions) const;
 protected:
+	QString contentLabelsHtml(const ContentInfo &AInfo) const;
+	bool registerContent(QTextDocument *ADocument, int AStart, int AEnd, quint64 ASerial, int &ALabelsLength) const;
+	bool findContentRange(QTextDocument *ADocument, quint64 ASerial, ContentRange &ARange) const;
+	void tagContentRange(QTextDocument *ADocument, int AStart, int AEnd, quint64 ASerial, int ARole) const;
+	void changeContentSize(WidgetStatus &AStatus, quint64 ASerial, int ADelta) const;
+	static QString removeContentMarkers(const QString &AHtml);
+protected:
 	bool eventFilter(QObject *AWatched, QEvent *AEvent);
 protected slots:
  	void onScrollAfterResize();
@@ -130,6 +152,7 @@ private:
 	QTimer FScrollTimer;
 	bool FCombineConsecutive;
 	bool FAllowCustomBackground;
+	quint64 FNextContentSerial;
 private:
 	QString FTopicHTML;
 	QString FStatusHTML;

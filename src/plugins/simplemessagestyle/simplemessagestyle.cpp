@@ -7,6 +7,7 @@
 #include <QDomDocument>
 #include <QTextBlock>
 #include <QScrollBar>
+#include <QRegularExpression>
 #include <interfaces/imessagedocumentcontext.h>
 #include <utils/options.h>
 #include <utils/pluginhelper.h>
@@ -20,6 +21,19 @@
 #include <utils/logger.h>
 
 #define CONSECUTIVE_TIMEOUT                 2*60
+
+// Addressable contents are inserted with these noncharacters around the message
+// text and its labels, then the markers are replaced by char format properties.
+// U+FDD0 and U+FDD1 are not used, QTextDocument uses them for frame boundaries.
+#define CONTENT_MARK_BODY                   QChar(0xFDDA)
+#define CONTENT_MARK_LABELS                 QChar(0xFDDB)
+#define CONTENT_MARK_END                    QChar(0xFDDC)
+
+#define CONTENT_PROPERTY_SERIAL             (QTextFormat::UserProperty + 0x5600)
+#define CONTENT_PROPERTY_ROLE               (QTextFormat::UserProperty + 0x5601)
+
+#define CONTENT_ROLE_BODY                   1
+#define CONTENT_ROLE_LABELS                 2
 
 #define SCROLL_TIMEOUT                      100
 #define SHARED_STYLE_PATH                   RESOURCES_DIR "/" RSR_STORAGE_SIMPLEMESSAGESTYLES "/" FILE_STORAGE_SHARED_DIR
@@ -40,6 +54,7 @@ static int SenderColorsCount = sizeof(SenderColors)/sizeof(SenderColors[0]);
 QString SimpleMessageStyle::FSharedPath = QString();
 
 SimpleMessageStyle::SimpleMessageStyle(const QString &AStylePath, QNetworkAccessManager *ANetworkAccessManager, QObject *AParent) : QObject(AParent)
+	, FNextContentSerial(1)
 	, FMessageWidgets(nullptr)
 {
 	if (FSharedPath.isEmpty())
@@ -153,6 +168,7 @@ bool SimpleMessageStyle::changeOptions(QWidget *AWidget, const IMessageStyleOpti
 			wstatus.lastTime = QDateTime();
 			wstatus.scrollStarted = false;
 			wstatus.content.clear();
+			wstatus.contents.clear();
 			wstatus.options = AOptions.extended;
 
 			if (isNewView)
@@ -214,7 +230,12 @@ bool SimpleMessageStyle::appendContent(QWidget *AWidget, const QString &AHtml, c
 
 			int removeSize = 0;
 			while(wstatus.content.count() > maxMessages)
-				removeSize += wstatus.content.takeFirst().size;
+			{
+				ContentItem removed = wstatus.content.takeFirst();
+				if (!removed.contentId.isEmpty() && wstatus.contents.value(removed.contentId).serial==removed.serial)
+					wstatus.contents.remove(removed.contentId);
+				removeSize += removed.size;
+			}
 
 			// MessageWidgets owns the boundary metadata for feature plugins.
 			// Invalidate contexts for the whole messages being trimmed before the
@@ -243,11 +264,37 @@ bool SimpleMessageStyle::appendContent(QWidget *AWidget, const QString &AHtml, c
 		fillContentKeywords(content,AOptions,wstatus);
 		QString messageHtml = prepareMessage(AHtml,AOptions);
 		messageHtml = processStyleContent(AWidget, messageHtml, AOptions);
+
+		ContentInfo info;
+		info.serial = 0;
+		info.labelsLength = 0;
+		bool addressable = !AOptions.contentId.isEmpty() && content.contains("%message%")
+			&& AOptions.kind!=IMessageStyleContentOptions::KindStatus && AOptions.kind!=IMessageStyleContentOptions::KindTopic;
+		if (addressable)
+		{
+			content = removeContentMarkers(content);
+			messageHtml = CONTENT_MARK_BODY + removeContentMarkers(messageHtml) + CONTENT_MARK_LABELS + contentLabelsHtml(info) + CONTENT_MARK_END;
+		}
 		content.replace("%message%",messageHtml);
 
 		ContentItem item;
+		item.serial = 0;
 		int startPos = cursor.position();
 		cursor.insertHtml(content);
+		if (addressable)
+		{
+			info.serial = FNextContentSerial++;
+			if (registerContent(view->document(),startPos,cursor.position(),info.serial,info.labelsLength))
+			{
+				item.serial = info.serial;
+				item.contentId = AOptions.contentId;
+				wstatus.contents.insert(AOptions.contentId,info);
+			}
+			else
+			{
+				LOG_WARNING(QString("Failed to register simple style content, id=%1").arg(AOptions.contentId));
+			}
+		}
 		item.size = cursor.position()-startPos;
 
 		if (scrollAtEnd)
@@ -264,6 +311,92 @@ bool SimpleMessageStyle::appendContent(QWidget *AWidget, const QString &AHtml, c
 	else
 	{
 		REPORT_ERROR("Failed to simple style append content: Invalid view");
+	}
+	return false;
+}
+
+bool SimpleMessageStyle::hasContent(QWidget *AWidget, const QString &AContentId) const
+{
+	StyleViewer *view = qobject_cast<StyleViewer *>(AWidget);
+	if (view && FWidgetStatus.contains(view))
+	{
+		const WidgetStatus &wstatus = *FWidgetStatus.find(view);
+		QHash<QString,ContentInfo>::const_iterator it = wstatus.contents.constFind(AContentId);
+		ContentRange range;
+		return it!=wstatus.contents.constEnd() && findContentRange(view->document(),it->serial,range);
+	}
+	return false;
+}
+
+bool SimpleMessageStyle::replaceContent(QWidget *AWidget, const QString &AContentId, const QString &AHtml)
+{
+	StyleViewer *view = qobject_cast<StyleViewer *>(AWidget);
+	QString html = removeContentMarkers(AHtml);
+	if (view && FWidgetStatus.contains(view) && !html.isEmpty())
+	{
+		WidgetStatus &wstatus = FWidgetStatus[view];
+		QHash<QString,ContentInfo>::const_iterator it = wstatus.contents.constFind(AContentId);
+
+		ContentRange range;
+		QTextDocument *doc = view->document();
+		if (it!=wstatus.contents.constEnd() && findContentRange(doc,it->serial,range))
+		{
+			quint64 serial = it->serial;
+			bool scrollAtEnd = view->verticalScrollBar()->sliderPosition()==view->verticalScrollBar()->maximum();
+			int sizeBefore = doc->characterCount();
+
+			QTextCursor cursor(doc);
+			cursor.setPosition(range.bodyStart);
+			cursor.setPosition(range.labelsStart,QTextCursor::KeepAnchor);
+			cursor.insertHtml(html);
+			tagContentRange(doc,range.bodyStart,cursor.position(),serial,CONTENT_ROLE_BODY);
+
+			changeContentSize(wstatus,serial,doc->characterCount()-sizeBefore);
+			if (scrollAtEnd)
+				view->verticalScrollBar()->setSliderPosition(view->verticalScrollBar()->maximum());
+			return true;
+		}
+	}
+	return false;
+}
+
+bool SimpleMessageStyle::setContentLabel(QWidget *AWidget, const QString &AContentId, int ALabelId, const QString &AHtml)
+{
+	StyleViewer *view = qobject_cast<StyleViewer *>(AWidget);
+	if (view && FWidgetStatus.contains(view))
+	{
+		WidgetStatus &wstatus = FWidgetStatus[view];
+		QHash<QString,ContentInfo>::iterator it = wstatus.contents.find(AContentId);
+
+		ContentRange range;
+		QTextDocument *doc = view->document();
+		if (it!=wstatus.contents.end() && findContentRange(doc,it->serial,range))
+		{
+			QString html = removeContentMarkers(AHtml);
+			if (it->labels.value(ALabelId) == html)
+				return true;
+			if (!html.isEmpty())
+				it->labels.insert(ALabelId,html);
+			else
+				it->labels.remove(ALabelId);
+
+			bool scrollAtEnd = view->verticalScrollBar()->sliderPosition()==view->verticalScrollBar()->maximum();
+			int sizeBefore = doc->characterCount();
+
+			// Only the length rendered last time is replaced, any text inserted
+			// later right after the labels may have inherited their format.
+			QTextCursor cursor(doc);
+			cursor.setPosition(range.labelsStart);
+			cursor.setPosition(qMin(range.labelsStart+it->labelsLength,doc->characterCount()-1),QTextCursor::KeepAnchor);
+			cursor.insertHtml(contentLabelsHtml(*it));
+			it->labelsLength = cursor.position()-range.labelsStart;
+			tagContentRange(doc,range.labelsStart,cursor.position(),it->serial,CONTENT_ROLE_LABELS);
+
+			changeContentSize(wstatus,it->serial,doc->characterCount()-sizeBefore);
+			if (scrollAtEnd)
+				view->verticalScrollBar()->setSliderPosition(view->verticalScrollBar()->maximum());
+			return true;
+		}
 	}
 	return false;
 }
@@ -589,6 +722,126 @@ QString SimpleMessageStyle::prepareMessage(const QString &AHtml, const IMessageS
 		return TextManager::getDocumentBody(doc);
 	}
 	return AHtml;
+}
+
+QString SimpleMessageStyle::contentLabelsHtml(const ContentInfo &AInfo) const
+{
+	// Labels always occupy at least one character to keep their position in the document
+	if (AInfo.labels.isEmpty())
+		return QString(QChar(0x200B));
+	return "&nbsp;" + QStringList(AInfo.labels.values()).join("&nbsp;");
+}
+
+bool SimpleMessageStyle::registerContent(QTextDocument *ADocument, int AStart, int AEnd, quint64 ASerial, int &ALabelsLength) const
+{
+	int bodyMark = -1, labelsMark = -1, endMark = -1;
+	for (int pos=AStart; pos<AEnd && endMark<0; pos++)
+	{
+		QChar ch = ADocument->characterAt(pos);
+		if (bodyMark<0 && ch==CONTENT_MARK_BODY)
+			bodyMark = pos;
+		else if (bodyMark>=0 && labelsMark<0 && ch==CONTENT_MARK_LABELS)
+			labelsMark = pos;
+		else if (labelsMark>=0 && ch==CONTENT_MARK_END)
+			endMark = pos;
+	}
+
+	// Remove from the end so the positions found before stay valid
+	foreach(int mark, QList<int>() << endMark << labelsMark << bodyMark)
+	{
+		if (mark >= 0)
+		{
+			QTextCursor cursor(ADocument);
+			cursor.setPosition(mark);
+			cursor.setPosition(mark+1,QTextCursor::KeepAnchor);
+			cursor.removeSelectedText();
+		}
+	}
+
+	// Positions after the markers were removed
+	int bodyStart = bodyMark;
+	int labelsStart = labelsMark-1;
+	int labelsEnd = endMark-2;
+	if (endMark>=0 && bodyStart<labelsStart && labelsStart<labelsEnd)
+	{
+		tagContentRange(ADocument,bodyStart,labelsStart,ASerial,CONTENT_ROLE_BODY);
+		tagContentRange(ADocument,labelsStart,labelsEnd,ASerial,CONTENT_ROLE_LABELS);
+		ALabelsLength = labelsEnd-labelsStart;
+		return true;
+	}
+	return false;
+}
+
+bool SimpleMessageStyle::findContentRange(QTextDocument *ADocument, quint64 ASerial, ContentRange &ARange) const
+{
+	ARange.bodyStart = -1;
+	ARange.labelsStart = -1;
+
+	// Recent contents are at the end, and contents are tagged with growing serials,
+	// so the search stops at the first older content found before the body.
+	for (QTextBlock block = ADocument->lastBlock(); block.isValid(); block = block.previous())
+	{
+		bool olderFound = false;
+		for (QTextBlock::iterator it = block.begin(); !it.atEnd(); ++it)
+		{
+			QTextFragment fragment = it.fragment();
+			if (fragment.isValid())
+			{
+				QTextCharFormat format = fragment.charFormat();
+				quint64 serial = format.property(CONTENT_PROPERTY_SERIAL).toULongLong();
+				if (serial == ASerial)
+				{
+					int &start = format.intProperty(CONTENT_PROPERTY_ROLE)==CONTENT_ROLE_BODY ? ARange.bodyStart : ARange.labelsStart;
+					start = start<0 ? fragment.position() : qMin(start,fragment.position());
+				}
+				else if (serial>0 && serial<ASerial && ARange.bodyStart>=0)
+				{
+					olderFound = true;
+				}
+			}
+		}
+		if (olderFound)
+			break;
+	}
+	return ARange.bodyStart>=0 && ARange.labelsStart>ARange.bodyStart;
+}
+
+void SimpleMessageStyle::tagContentRange(QTextDocument *ADocument, int AStart, int AEnd, quint64 ASerial, int ARole) const
+{
+	if (AStart < AEnd)
+	{
+		QTextCharFormat format;
+		format.setProperty(CONTENT_PROPERTY_SERIAL,ASerial);
+		format.setProperty(CONTENT_PROPERTY_ROLE,ARole);
+
+		QTextCursor cursor(ADocument);
+		cursor.setPosition(AStart);
+		cursor.setPosition(AEnd,QTextCursor::KeepAnchor);
+		cursor.mergeCharFormat(format);
+	}
+}
+
+void SimpleMessageStyle::changeContentSize(WidgetStatus &AStatus, quint64 ASerial, int ADelta) const
+{
+	// Keeps the sizes used to remove the oldest contents in sync
+	for (int i=AStatus.content.count()-1; i>=0; i--)
+	{
+		if (AStatus.content.at(i).serial == ASerial)
+		{
+			AStatus.content[i].size += ADelta;
+			break;
+		}
+	}
+}
+
+QString SimpleMessageStyle::removeContentMarkers(const QString &AHtml)
+{
+	// The markers must not come from the message text itself, neither as characters nor as references
+	static const QRegularExpression markerRefs("&#(?:[xX]0*[fF][dD][dD][aAbBcC]|0*6498[678]);");
+	QString html = AHtml;
+	html.remove(CONTENT_MARK_BODY).remove(CONTENT_MARK_LABELS).remove(CONTENT_MARK_END);
+	html.remove(markerRefs);
+	return html;
 }
 
 bool SimpleMessageStyle::eventFilter(QObject *AWatched, QEvent *AEvent)
