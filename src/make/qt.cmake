@@ -1,4 +1,4 @@
-find_package(Qt6 6.10 REQUIRED COMPONENTS
+find_package(Qt6 6.8 REQUIRED COMPONENTS
 	Widgets
 	Network
 	Xml
