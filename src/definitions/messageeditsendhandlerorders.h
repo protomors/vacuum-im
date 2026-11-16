@@ -3,6 +3,8 @@
 
 #define MESHO_MULTIUSERCHATWINDOW_COMMANDS                      500
 
+#define MESHO_MESSAGECORRECTIONS                                900
+
 #define MESHO_CHATMESSAGEHANDLER                                1000
 #define MESHO_NORMALMESSAGEHANDLER                              1000
 #define MESHO_MULTIUSERCHATWINDOW_GROUPCHAT                     1000
