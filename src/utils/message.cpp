@@ -4,6 +4,7 @@
 
 #define MESSAGE_NS_DELAY       "urn:xmpp:delay"
 #define MESSAGE_NS_X_DELAY     "jabber:x:delay"
+#define MESSAGE_NS_STANZA_ID   "urn:xmpp:sid:0"
 
 MessageData::MessageData() : FStanza(STANZA_KIND_MESSAGE,STANZA_NS_CLIENT)
 {
@@ -100,7 +101,7 @@ QString Message::id() const
 
 Message &Message::setRandomId()
 {
-	d->FStanza.setId(QUuid::createUuid().toString());
+	d->FStanza.setId(QUuid::createUuid().toString(QUuid::WithoutBraces));
 	return *this;
 }
 
@@ -108,6 +109,37 @@ Message &Message::setId(const QString &AId)
 {
 	d->FStanza.setId(AId);
 	return *this;
+}
+
+QString Message::originId() const
+{
+	return d->FStanza.firstElement("origin-id",MESSAGE_NS_STANZA_ID).attribute("id");
+}
+
+Message &Message::setOriginId(const QString &AId)
+{
+	d->FStanza.detach();
+	QDomElement elem = d->FStanza.firstElement("origin-id",MESSAGE_NS_STANZA_ID);
+	if (!AId.isEmpty())
+	{
+		if (elem.isNull())
+			elem = d->FStanza.addElement("origin-id",MESSAGE_NS_STANZA_ID);
+		elem.setAttribute("id",AId);
+	}
+	else if (!elem.isNull())
+	{
+		d->FStanza.element().removeChild(elem);
+	}
+	return *this;
+}
+
+QString Message::stanzaId(const Jid &ABy) const
+{
+	// Only the entity named in 'by' can vouch for the id, so ids from other entities are ignored
+	for (QDomElement elem = d->FStanza.firstElement("stanza-id",MESSAGE_NS_STANZA_ID); !elem.isNull(); elem = elem.nextSiblingElement("stanza-id"))
+		if (elem.namespaceURI()==MESSAGE_NS_STANZA_ID && Jid(elem.attribute("by"))==ABy)
+			return elem.attribute("id");
+	return QString();
 }
 
 Jid Message::toJid() const

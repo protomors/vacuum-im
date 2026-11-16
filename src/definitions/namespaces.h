@@ -94,6 +94,10 @@
 #define NS_JINGLE_MESSAGE                       "urn:xmpp:jingle-message:0"
 #define NS_EXTERNAL_SERVICES                    "urn:xmpp:extdisco:2"
 #define NS_MESSAGE_HINTS                        "urn:xmpp:hints"
+#define NS_STANZA_ID                            "urn:xmpp:sid:0"
+#define NS_RECEIPTS                             "urn:xmpp:receipts"
+#define NS_CHAT_MARKERS                         "urn:xmpp:chat-markers:0"
+#define NS_MESSAGE_CORRECT                      "urn:xmpp:message-correct:0"
 
 #define NS_VACUUM_PRIVATESTORAGE_UPDATE         "vacuum:privatestorage:update"
 

@@ -48,6 +48,10 @@ public:
 	QString id() const;
 	Message &setRandomId();
 	Message &setId(const QString &AId);
+	// XEP-0359: Unique and Stable Stanza IDs
+	QString originId() const;
+	Message &setOriginId(const QString &AId);
+	QString stanzaId(const Jid &ABy) const;
 	Jid toJid() const;
 	QString to() const;
 	Message &setTo(const QString &ATo);
