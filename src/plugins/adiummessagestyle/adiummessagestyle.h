@@ -122,6 +122,10 @@ public:
 	virtual QTextDocumentFragment textFragmentAt(QWidget *AWidget, const QPoint &APosition) const;
 	virtual bool changeOptions(QWidget *AWidget, const IMessageStyleOptions &AOptions, bool AClear = true);
 	virtual bool appendContent(QWidget *AWidget, const QString &AHtml, const IMessageStyleContentOptions &AOptions);
+	// Adium styles are not built with Qt 6, so their contents are not addressable
+	virtual bool hasContent(QWidget *, const QString &) const { return false; }
+	virtual bool replaceContent(QWidget *, const QString &, const QString &) { return false; }
+	virtual bool setContentLabel(QWidget *, const QString &, int, const QString &) { return false; }
 	//AdiumMessageStyle
 	virtual int version() const;
 	virtual QMap<QString, QVariant> infoValues() const;

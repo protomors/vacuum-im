@@ -81,6 +81,9 @@ struct IMessageStyleContentOptions
 	QString senderColor;
 	QString senderIcon;
 	QString textBGColor;
+	// Makes the content addressable by IMessageStyle::replaceContent and setContentLabel.
+	// See messageViewContentId() in imessagewidgets.h
+	QString contentId;
 };
 
 class IMessageStyle
@@ -97,6 +100,14 @@ public:
 	virtual QTextDocumentFragment textFragmentAt(QWidget *AWidget, const QPoint &APosition) const =0;
 	virtual bool changeOptions(QWidget *AWidget, const IMessageStyleOptions &AOptions, bool AClear = true) =0;
 	virtual bool appendContent(QWidget *AWidget, const QString &AHtml, const IMessageStyleContentOptions &AOptions) =0;
+	// Content appended with a non-empty IMessageStyleContentOptions::contentId.
+	// If several contents share an id, the most recent one is used.
+	virtual bool hasContent(QWidget *AWidget, const QString &AContentId) const =0;
+	// Replaces the message text of the content; the header and the labels are kept
+	virtual bool replaceContent(QWidget *AWidget, const QString &AContentId, const QString &AHtml) =0;
+	// Labels are short inline html snippets shown after the message text, ordered by ALabelId.
+	// An empty AHtml removes the label.
+	virtual bool setContentLabel(QWidget *AWidget, const QString &AContentId, int ALabelId, const QString &AHtml) =0;
 protected:
 	virtual void widgetAdded(QWidget *AWidget) const =0;
 	virtual void widgetRemoved(QWidget *AWidget) const =0;
@@ -150,7 +161,7 @@ public:
 	virtual bool messageStyleContentInsert(int AOrder, QWidget *AWidget, const QString &AHtml, QString &AModifiedHtml, const IMessageStyleContentOptions &AOptions) =0;
 };
 
-Q_DECLARE_INTERFACE(IMessageStyle,"Vacuum.Plugin.IMessageStyle/1.4")
+Q_DECLARE_INTERFACE(IMessageStyle,"Vacuum.Plugin.IMessageStyle/1.5")
 Q_DECLARE_INTERFACE(IMessageStyleEngine,"Vacuum.Plugin.IMessageStyleEngine/1.2")
 Q_DECLARE_INTERFACE(IMessageStyleManager,"Vacuum.Plugin.IMessageStyleManager/1.5")
 Q_DECLARE_INTERFACE(IMessageStyleHandler,"Vacuum.Plugin.IMessageStyleHandler/1.0")

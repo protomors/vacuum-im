@@ -25,6 +25,23 @@
 
 class IMessageWindow;
 
+// Message id used to address a displayed message. The file archive keeps the
+// XEP-0359 origin-id element but not the id attribute of archived messages.
+inline QString messageViewMessageId(const Message &AMessage)
+{
+	return !AMessage.id().isEmpty() ? AMessage.id() : AMessage.originId();
+}
+
+// Identifies a message in a message view, see IMessageStyleContentOptions::contentId.
+// Message ids are only unique per sender, so the id is combined with the direction
+// and, in views shared by several senders (conferences), with the sender nick.
+inline QString messageViewContentId(bool AOutgoing, const QString &AMessageId, const QString &ASender=QString())
+{
+	if (AMessageId.isEmpty())
+		return QString();
+	return QString("%1:%2:%3").arg(AOutgoing ? QStringLiteral("out") : QStringLiteral("in"), ASender, AMessageId);
+}
+
 class IMessageAddress
 {
 public:
@@ -94,6 +111,10 @@ public:
 	virtual bool appendHtml(const QString &AHtml, const IMessageStyleContentOptions &AOptions) =0;
 	virtual bool appendText(const QString &AText, const IMessageStyleContentOptions &AOptions) =0;
 	virtual bool appendMessage(const Message &AMessage, const IMessageStyleContentOptions &AOptions) =0;
+	// Access to messages appended with a content id, see messageViewContentId()
+	virtual bool hasMessage(const QString &AContentId) const =0;
+	virtual bool replaceMessage(const QString &AContentId, const Message &AMessage) =0;
+	virtual bool setMessageLabel(const QString &AContentId, int ALabelId, const QString &AHtml) =0;
 	virtual void contextMenuForView(const QPoint &APosition, Menu *AMenu) =0;
 	virtual QTextDocumentFragment selection() const =0;
 	virtual QTextCharFormat textFormatAt(const QPoint &APosition) const =0;
@@ -444,7 +465,7 @@ protected:
 Q_DECLARE_INTERFACE(IMessageAddress,"Vacuum.Plugin.IMessageAddress/1.0")
 Q_DECLARE_INTERFACE(IMessageWidget,"Vacuum.Plugin.IMessageWidget/1.0")
 Q_DECLARE_INTERFACE(IMessageInfoWidget,"Vacuum.Plugin.IMessageInfoWidget/1.3")
-Q_DECLARE_INTERFACE(IMessageViewWidget,"Vacuum.Plugin.IMessageViewWidget/1.6")
+Q_DECLARE_INTERFACE(IMessageViewWidget,"Vacuum.Plugin.IMessageViewWidget/1.7")
 Q_DECLARE_INTERFACE(IMessageEditWidget,"Vacuum.Plugin.IMessageEditWidget/1.4")
 Q_DECLARE_INTERFACE(IMessageReceiversWidget,"Vacuum.Plugin.IMessageReceiversWidget/1.4")
 Q_DECLARE_INTERFACE(IMessageMenuBarWidget,"Vacuum.Plugin.IMessageMenuBarWidget/1.1")

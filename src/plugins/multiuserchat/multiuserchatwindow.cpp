@@ -1754,6 +1754,8 @@ void MultiUserChatWindow::showMultiChatUserMessage(const Message &AMessage, cons
 
 		options.senderId = userJid.pFull();
 		options.senderName = ANick.toHtmlEscaped();
+		// Messages of all occupants, including our own, come from the room
+		options.contentId = messageViewContentId(false,messageViewMessageId(AMessage),ANick);
 		options.senderAvatar = FMessageStyleManager->contactAvatar(userJid);
 		options.senderColor = FViewWidget->messageStyle()!=NULL ? FViewWidget->messageStyle()->senderColorById(ANick) : QString();
 
