@@ -9,9 +9,4 @@
 #define XERR_COMMANDS_BAD_SESSIONID                           "bad-sessionid"
 #define XERR_COMMANDS_SESSION_EXPIRED                         "session-expired"
 
-
-// DataStreamsManager - NS_STREAM_INITIATION
-#define XERR_SI_BAD_PROFILE                                   "bad-profile"
-#define XERR_SI_NO_VALID_STREAMS                              "no-valid-streams"
-
 #endif // DEF_XMPPERRORS_H

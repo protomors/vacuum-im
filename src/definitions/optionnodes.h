@@ -13,7 +13,6 @@
 #define OPN_STATUSITEMS                  "StatusItems"
 #define OPN_NOTIFICATIONS                "Notifications"
 #define OPN_SHORTCUTS                    "Shortcuts"
-#define OPN_DATATRANSFER                 "DataTransfer"
 #define OPN_APPEARANCE                   "Appearance"
 
 #endif // DEF_OPTIONNODES_H

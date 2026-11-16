@@ -126,16 +126,6 @@
 #define OHO_SHORTCUTS                             500
 #define   OWO_SHORTCUTS                           510
 
-//Node = ON_DATATRANSFER
-#define OHO_DATATRANSFER_FILETRANSFER             100
-#define   OWO_DATATRANSFER_FILESTREAMS            110
-#define   OWO_DATATRANSFER_GROUPBYSENDER          120
-#define   OWO_DATATRANSFER_AUTORECEIVE            130
-#define   OWO_DATATRANSFER_HIDEONSTART            140
-#define   OWO_DATATRANSFER_DEFAULTMETHOD          150
-#define OHO_DATATRANSFER_METHODNAME               500
-#define   OWO_DATATRANSFER_METHODSETTINGS         505
-
 //Node = OPN_APPEARANCE
 #define OHO_APPEARANCE_MESSAGESTYLE               200
 #define   OWO_APPEARANCE_MESSAGETYPESTYLE         201

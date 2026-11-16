@@ -58,12 +58,6 @@
 #define MNI_CHATMHANDLER_MESSAGE        "chatmessagehandlerMessage"
 #define MNI_CHATMHANDLER_CLEAR_CHAT     "chatmessagehandlerClearChat"
 
-//DataStreamsManager
-#define MNI_DATASTREAMSMANAGER          "dataStreamsManager"
-
-//FileStreamsManager
-#define MNI_FILESTREAMSMANAGER          "filestreamsmanager"
-
 //FileTransfer
 #define MNI_FILETRANSFER_SEND           "filetransferSend"
 #define MNI_FILETRANSFER_RECEIVE        "filetransferReceive"

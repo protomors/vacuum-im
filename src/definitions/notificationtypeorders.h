@@ -12,7 +12,6 @@
 #define NTO_SUBSCRIPTION_REQUEST               500
 #define NTO_CHATSTATE_NOTIFY                   530
 #define NTO_VOICE_CALL                         540
-#define NTO_FILETRANSFER_NOTIFY                550
 #define NTO_CAPTCHA_REQUEST                    600
 #define NTO_CONNECTION_ERROR                   700
 

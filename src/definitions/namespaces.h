@@ -64,15 +64,7 @@
 
 #define NS_RESULTSET                            "http://jabber.org/protocol/rsm"
 
-#define NS_FEATURENEG                           "http://jabber.org/protocol/feature-neg"
-
 #define NS_CHATSTATES                           "http://jabber.org/protocol/chatstates"
-
-#define NS_STREAM_INITIATION                    "http://jabber.org/protocol/si"
-#define NS_SI_FILETRANSFER                      "http://jabber.org/protocol/si/profile/file-transfer"
-
-#define NS_INBAND_BYTESTREAMS                   "http://jabber.org/protocol/ibb"
-#define NS_SOCKS5_BYTESTREAMS                   "http://jabber.org/protocol/bytestreams"
 
 #define NS_PUBSUB                               "http://jabber.org/protocol/pubsub"
 #define NS_PUBSUB_ERRORS                        "http://jabber.org/protocol/pubsub#errors"

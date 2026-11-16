@@ -15,8 +15,6 @@
 #define SCTG_APPLICATION                                           "application"
 //MultiUserChat
 #define   SCT_APP_MULTIUSERCHAT_WIZARD                             "application.muc-wizard"
-//FileStreamsManager
-#define   SCT_APP_FILETRANSFERS_SHOW                               "application.show-filetransfers"
 //ShortcutManager
 #define   SCT_APP_FOCUSROSTER                                      "application.focus-roster"
 #define   SCT_APP_OPENNOTIFIEDCONTACT                              "application.open-notified-contact"
@@ -60,8 +58,6 @@
 #define   SCT_MESSAGEWINDOWS_EDITNEXTMESSAGE                       "message-windows.edit-next-message"
 #define   SCT_MESSAGEWINDOWS_SENDCHATMESSAGE                       "message-windows.send-chat-message"
 #define   SCT_MESSAGEWINDOWS_SENDNORMALMESSAGE                     "message-windows.send-normal-message"
-//FileTransfer
-#define   SCT_MESSAGEWINDOWS_SENDFILE                              "message-windows.sendfile"
 //MessageArchiver
 #define   SCT_MESSAGEWINDOWS_SHOWHISTORY                           "message-windows.show-history"
 //vCard

@@ -18,26 +18,11 @@
 #define IERR_DATAFORMS_URL_INVALID_SCHEME                    "dataforms-url-invalid-scheme"
 #define IERR_DATAFORMS_URL_NETWORK_ERROR                     "dataforms-url-network-error"
 
-// DataStreamsManager
-#define IERR_DATASTREAMS_STREAM_STREAMID_EXISTS              "datastreams-stream-streamid-exists"
-#define IERR_DATASTREAMS_STREAM_INVALID_RESPONSE             "datastreams-stream-invalid-response"
-#define IERR_DATASTREAMS_STREAM_UNSUPPORTED_REQUEST          "datastreams-stream-invalid-request"
-
 // FileMessageArchive
 #define IERR_FILEARCHIVE_DATABASE_NOT_CREATED                "filearchive-database-not-created"
 #define IERR_FILEARCHIVE_DATABASE_NOT_OPENED                 "filearchive-database-not-opened"
 #define IERR_FILEARCHIVE_DATABASE_NOT_COMPATIBLE             "filearchive-database-not-compatible"
 #define IERR_FILEARCHIVE_DATABASE_EXEC_FAILED                "filearchive-database-exec-failed"
-
-// FileStreamsManager
-#define IERR_FILESTREAMS_STREAM_FILE_IO_ERROR                "filestreams-stream-file-io-error"
-#define IERR_FILESTREAMS_STREAM_FILE_SIZE_CHANGED            "filestreams-stream-file-size-changed"
-#define IERR_FILESTREAMS_STREAM_CONNECTION_TIMEOUT           "filestreams-stream-connection-timeout"
-#define IERR_FILESTREAMS_STREAM_TERMINATED_BY_REMOTE_USER    "filestreams-stream-terminated-by-remote-user"
-
-// FileTransfer
-#define IERR_FILETRANSFER_TRANSFER_NOT_STARTED               "filetransfer-transfer-not-started"
-#define IERR_FILETRANSFER_TRANSFER_TERMINATED                "filetransfer-transfer-terminated"
 
 // HttpUpload
 #define IERR_HTTPUPLOAD_NOT_SUPPORTED                        "httpupload-not-supported"
@@ -47,13 +32,6 @@
 #define IERR_HTTPUPLOAD_UPLOAD_FAILED                        "httpupload-upload-failed"
 #define IERR_HTTPUPLOAD_ABORTED                              "httpupload-aborted"
 #define IERR_HTTPUPLOAD_SEND_FAILED                          "httpupload-send-failed"
-
-// InBandStreams
-#define IERR_INBAND_STREAM_DESTROYED                         "inband-stream-destroyed"
-#define IERR_INBAND_STREAM_INVALID_DATA                      "inband-stream-invalid-data"
-#define IERR_INBAND_STREAM_NOT_OPENED                        "inband-stream-not-opened"
-#define IERR_INBAND_STREAM_INVALID_BLOCK_SIZE                "inband-stream-invalid-block-size"
-#define IERR_INBAND_STREAM_DATA_NOT_SENT                     "inband-stream-data-not-sent"
 
 // MessageArchive
 #define IERR_HISTORY_HEADERS_LOAD_ERROR                      "history-headers-load-error"
@@ -74,20 +52,6 @@
 #define IERR_SASL_AUTH_INVALID_REQUEST                       "sasl-auth-invalid-request"
 #define IERR_SASL_AUTH_INVALID_RESPONSE                      "sasl-auth-invalid-response"
 #define IERR_SASL_BIND_INVALID_STREAM_JID                    "sasl-bind-invalid-stream-jid"
-
-// SocksStreams
-#define IERR_SOCKS5_STREAM_DESTROYED                         "socks5-stream-destroyed"
-#define IERR_SOCKS5_STREAM_INVALID_MODE                      "socks5-stream-invalid-mode"
-#define IERR_SOCKS5_STREAM_HOSTS_REJECTED                    "socks5-stream-hosts-rejected"
-#define IERR_SOCKS5_STREAM_HOSTS_UNREACHABLE                 "socks5-stream-hosts-unreachable"
-#define IERR_SOCKS5_STREAM_HOSTS_NOT_CREATED                 "socks5-stream-hosts-not-created"
-#define IERR_SOCKS5_STREAM_NOT_ACTIVATED                     "socks5-stream-not-activated"
-#define IERR_SOCKS5_STREAM_DATA_NOT_SENT                     "socks5-stream-data-not-sent"
-#define IERR_SOCKS5_STREAM_NO_DIRECT_CONNECTION              "socks5-stream-no-direct-connections"
-#define IERR_SOCKS5_STREAM_INVALID_HOST                      "socks5-stream-invalid-host"
-#define IERR_SOCKS5_STREAM_INVALID_HOST_ADDRESS              "socks5-stream-invalid-host-address"
-#define IERR_SOCKS5_STREAM_HOST_NOT_CONNECTED                "socks5-stream-host-not-connected"
-#define IERR_SOCKS5_STREAM_HOST_DISCONNECTED                 "socks5-stream-host-disconnected"
 
 // StartTLS
 #define IERR_STARTTLS_NOT_STARTED                            "starttls-not-started"

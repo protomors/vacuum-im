@@ -54,37 +54,6 @@
 #define OPV_CONSOLE_CONTEXT_HIGHLIGHTXML                "console.context.highlight-xml"
 #define OPV_CONSOLE_CONTEXT_WORDWRAP                    "console.context.word-wrap"
 
-// DataStreamsManager
-#define OPV_DATASTREAMS_ROOT                            "datastreams"
-#define OPV_DATASTREAMS_SPROFILE_ITEM                   "datastreams.settings-profile"
-#define OPV_DATASTREAMS_SPROFILE_NAME                   "datastreams.settings-profile.name"
-#define OPV_DATASTREAMS_METHOD_ITEM                     "datastreams.settings-profile.method"
-// InBandStream
-#define OPV_DATASTREAMS_METHOD_BLOCKSIZE                "datastreams.settings-profile.method.block-size"
-#define OPV_DATASTREAMS_METHOD_MAXBLOCKSIZE             "datastreams.settings-profile.method.max-block-size"
-#define OPV_DATASTREAMS_METHOD_STANZATYPE               "datastreams.settings-profile.method.stanza-type"
-// SocksStreams
-#define OPV_DATASTREAMS_SOCKSLISTENPORT                 "datastreams.socks-listen-port"
-#define OPV_DATASTREAMS_METHOD_CONNECTTIMEOUT           "datastreams.settings-profile.method.connect-timeout"
-#define OPV_DATASTREAMS_METHOD_ENABLEDIRECT             "datastreams.settings-profile.method.enable-direct-connections"
-#define OPV_DATASTREAMS_METHOD_ENABLEFORWARD            "datastreams.settings-profile.method.enable-forward-direct"
-#define OPV_DATASTREAMS_METHOD_FORWARDADDRESS           "datastreams.settings-profile.method.forward-direct-address"
-#define OPV_DATASTREAMS_METHOD_USEACCOUNTSTREAMPROXY    "datastreams.settings-profile.method.use-account-stream-proxy"
-#define OPV_DATASTREAMS_METHOD_USEUSERSTREAMPROXY       "datastreams.settings-profile.method.use-user-stream-proxy"
-#define OPV_DATASTREAMS_METHOD_USERSTREAMPROXY          "datastreams.settings-profile.method.user-stream-proxy"
-#define OPV_DATASTREAMS_METHOD_USEACCOUNTNETPROXY       "datastreams.settings-profile.method.use-account-network-proxy"
-#define OPV_DATASTREAMS_METHOD_USERNETWORKPROXY         "datastreams.settings-profile.method.user-network-proxy"
-
-// FileStreamsManager
-#define OPV_FILESTREAMS_DEFAULTDIR                      "filestreams.default-dir"
-#define OPV_FILESTREAMS_GROUPBYSENDER                   "filestreams.group-by-sender"
-#define OPV_FILESTREAMS_DEFAULTMETHOD                   "filestreams.default-method"
-#define OPV_FILESTREAMS_ACCEPTABLEMETHODS               "filestreams.acceptable-methods"
-// FileTransfer
-#define OPV_FILETRANSFER_ROOT                           "filestreams.filetransfer"
-#define OPV_FILETRANSFER_AUTORECEIVE                    "filestreams.filetransfer.autoreceive"
-#define OPV_FILETRANSFER_HIDEONSTART                    "filestreams.filetransfer.hide-dialog-on-start"
-
 // MainWindow
 #define OPV_MAINWINDOW_SHOWONSTART                      "mainwindow.show-on-start"
 

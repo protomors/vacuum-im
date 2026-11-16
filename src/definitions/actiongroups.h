@@ -7,7 +7,6 @@
 
 //MainWindow  - MainMenu
 #define AG_MMENU_MULTIUSERCHAT_JOIN                             500
-#define AG_MMENU_FILESTREAMS_TRANSFER                           500
 #define AG_MMENU_CONSOLE_XML                                    700
 #define AG_MMENU_OPTIONS_PROFILE                                700
 #define AG_MMENU_OPTIONS_OPTIONS                                700
@@ -128,7 +127,6 @@
 #define AG_TMTM_MAINWINDOW_SHOW                                 200
 #define AG_TMTM_STATUSCHANGER_STATUS                            400
 #define AG_TMTM_DISCOVERY_ITEMS                                 500
-#define AG_TMTM_FILESTREAMS_TRANSFER                            500
 #define AG_TMTM_OPTIONS_OPTIONS                                 700
 #define AG_TMTM_OPTIONS_PROFILE                                 700
 #define AG_TMTM_TRAYMANAGER_QUIT                                1000

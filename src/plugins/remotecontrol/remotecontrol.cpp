@@ -14,7 +14,6 @@
 #define COMMAND_NODE_SET_STATUS         COMMAND_NODE_ROOT"#set-status"
 #define COMMAND_NODE_SET_MAIN_STATUS    COMMAND_NODE_ROOT"#set-main-status"
 #define COMMAND_NODE_LEAVE_MUC          COMMAND_NODE_ROOT"#leave-groupchats"
-#define COMMAND_NODE_ACCEPT_FILES       COMMAND_NODE_ROOT"#accept-files"
 #define COMMAND_NODE_SET_OPTIONS        COMMAND_NODE_ROOT"#set-options"
 #define COMMAND_NODE_FORWARD_MESSAGES   COMMAND_NODE_ROOT"#forward"
 
@@ -22,11 +21,9 @@
 #define FIELD_STATUS_MESSAGE            "status-message"
 #define FIELD_STATUS_PRIORITY           "status-priority"
 #define FIELD_GROUPCHATS                "groupchats"
-#define FIELD_FILES                     "files"
 #define FIELD_MESSAGES                  "messages"
 #define FIELD_SOUNDS                    "sounds"
 #define FIELD_AUTO_MSG                  "auto-msg"
-#define FIELD_AUTO_FILES                "auto-files"
 #define FIELD_AUTO_AUTH                 "auto-auth"
 #define FIELD_AUTO_OFFLINE              "auto-offline"
 
@@ -49,7 +46,6 @@ RemoteControl::RemoteControl()
 	FStatusChanger = NULL;
 	FMultiChatManager = NULL;
 	FDataForms = NULL;
-	FFileStreamManager = NULL;
 	FMessageProcessor = NULL;
 	FNotifications = NULL;
 	FStanzaProcessor = NULL;
@@ -100,12 +96,6 @@ bool RemoteControl::initConnections(IPluginManager *APluginManager, int &AInitOr
 		FMultiChatManager = qobject_cast<IMultiUserChatManager *>(plugin->instance());
 	}
 
-	plugin = APluginManager->pluginInterface("IFileStreamsManager").value(0,NULL);
-	if (plugin)
-	{
-		FFileStreamManager = qobject_cast<IFileStreamsManager *>(plugin->instance());
-	}
-
 	plugin = APluginManager->pluginInterface("IMessageProcessor").value(0,NULL);
 	if (plugin)
 	{
@@ -142,10 +132,6 @@ bool RemoteControl::initObjects()
 		{
 			FCommands->insertServer(COMMAND_NODE_LEAVE_MUC, this);
 		}
-		if (FDataForms && FFileStreamManager)
-		{
-			FCommands->insertServer(COMMAND_NODE_ACCEPT_FILES, this);
-		}
 		if (FDataForms && FStanzaProcessor && FMessageProcessor)
 		{
 			FCommands->insertServer(COMMAND_NODE_FORWARD_MESSAGES, this);
@@ -170,7 +156,6 @@ bool RemoteControl::initObjects()
 	optionItems.clear();
 	optionItems[FIELD_SOUNDS] = OptionsFormItem(QString(OPV_NOTIFICATIONS_KINDENABLED_ITEM"[%1]").arg(INotification::SoundPlay), tr("Play sounds"));
 	optionItems[FIELD_AUTO_MSG] = OptionsFormItem(QString(OPV_NOTIFICATIONS_KINDENABLED_ITEM"[%1]").arg(INotification::AutoActivate), tr("Automatically Open New Messages"));
-	optionItems[FIELD_AUTO_FILES] = OptionsFormItem(OPV_FILETRANSFER_AUTORECEIVE, tr("Automatically Accept File Transfers"));
 	optionItems[FIELD_AUTO_AUTH] = OptionsFormItem(OPV_ROSTER_AUTOSUBSCRIBE, tr("Automatically Authorize Contacts"));
 
 	return true;
@@ -219,8 +204,6 @@ QString RemoteControl::commandName(const QString &ANode) const
 		return tr("Change main status");
 	if (ANode == COMMAND_NODE_LEAVE_MUC)
 		return tr("Leave conferences");
-	if (ANode == COMMAND_NODE_ACCEPT_FILES)
-		return tr("Accept pending file transfers");
 	if (ANode == COMMAND_NODE_SET_OPTIONS)
 		return tr("Set options");
 	if (ANode == COMMAND_NODE_FORWARD_MESSAGES)
@@ -241,8 +224,6 @@ bool RemoteControl::receiveCommandRequest(const ICommandRequest &ARequest)
 			return processSetStatus(ARequest);
 		else if (ARequest.node == COMMAND_NODE_LEAVE_MUC)
 			return processLeaveMUC(ARequest);
-		else if (ARequest.node == COMMAND_NODE_ACCEPT_FILES)
-			return processFileTransfers(ARequest);
 		else if (ARequest.node == COMMAND_NODE_SET_OPTIONS)
 			return processSetOptions(ARequest);
 		else if (ARequest.node == COMMAND_NODE_FORWARD_MESSAGES)
@@ -263,11 +244,9 @@ IDataFormLocale RemoteControl::dataFormLocale(const QString &AFormType)
 	if (AFormType == DFT_REMOTECONTROL)
 	{
 		locale.fields[FIELD_AUTO_AUTH].label = tr("Whether to automatically authorize subscription requests");
-		locale.fields[FIELD_AUTO_FILES].label = tr("Whether to automatically accept file transfers");
 		locale.fields[FIELD_AUTO_MSG].label = tr("Whether to automatically open new messages");
 		locale.fields[FIELD_AUTO_OFFLINE].label = tr("Whether to automatically go offline when idle");
 		locale.fields[FIELD_SOUNDS].label = tr("Whether to play sounds");
-		locale.fields[FIELD_FILES].label = tr("A list of pending file transfers");
 		locale.fields[FIELD_MESSAGES].label = tr("A list of unread messages");
 		locale.fields[FIELD_GROUPCHATS].label = tr("A list of joined conferences");
 		locale.fields[FIELD_STATUS].label = tr("A presence or availability status");
@@ -461,96 +440,6 @@ bool RemoteControl::processLeaveMUC(const ICommandRequest &ARequest)
 		{
 			result.status = COMMAND_STATUS_CANCELED;
 			return FCommands->sendCommandResult(result);;
-		}
-	}
-	return false;
-}
-
-bool RemoteControl::processFileTransfers(const ICommandRequest &ARequest)
-{
-	if (FCommands && FDataForms && FFileStreamManager)
-	{
-		ICommandResult result = FCommands->prepareResult(ARequest);
-		if (ARequest.action==COMMAND_ACTION_EXECUTE && ARequest.form.fields.isEmpty())
-		{
-			result.sessionId = QUuid::createUuid().toString();
-			result.form.type = DATAFORM_TYPE_FORM;
-			result.form.title = commandName(ARequest.node);
-
-			IDataField field;
-			field.type = DATAFIELD_TYPE_HIDDEN;
-			field.var = "FORM_TYPE";
-			field.value = DFT_REMOTECONTROL;
-			field.required = false;
-			result.form.fields.append(field);
-
-			field.type = DATAFIELD_TYPE_LISTMULTI;
-			field.var = FIELD_FILES;
-			field.label = tr("Pending file transfers");
-			field.value = QVariant();
-			field.required = true;
-
-			IDataOption opt;
-			foreach(IFileStream *stream, FFileStreamManager->streams())
-			{
-				if (stream->streamKind() == IFileStream::ReceiveFile &&
-					stream->streamState() == IFileStream::Creating)
-				{
-					QString name = FNotifications!=NULL ? FNotifications->contactName(stream->streamJid(),stream->contactJid()) : stream->contactJid().uBare();
-					opt.label = tr("%1 (%2 bytes) from '%3'").arg(stream->fileName()).arg(stream->fileSize()).arg(name);
-					opt.value = stream->streamId();
-					field.options.append(opt);
-				}
-			}
-
-			if (field.options.isEmpty())
-			{
-				result.status = COMMAND_STATUS_COMPLETED;
-				result.form = IDataForm();
-
-				ICommandNote note;
-				note.type = COMMAND_NOTE_INFO;
-				note.message = tr("There are no pending file transfers");
-				result.notes.append(note);
-			}
-			else
-			{
-				result.status = COMMAND_STATUS_EXECUTING;
-				result.form.fields.append(field);
-				result.actions.append(COMMAND_ACTION_COMPLETE);
-			}
-			return FCommands->sendCommandResult(result);
-		}
-		else if (ARequest.action==COMMAND_ACTION_COMPLETE || ARequest.action==COMMAND_ACTION_EXECUTE)
-		{
-			int index = FDataForms->fieldIndex(FIELD_FILES, ARequest.form.fields);
-			if (index >= 0)
-			{
-				foreach(const QString &streamId, ARequest.form.fields.value(index).value.toStringList())
-				{
-					IFileStream *stream = FFileStreamManager->findStream(streamId);
-					QString defaultMethod = Options::node(OPV_FILESTREAMS_DEFAULTMETHOD).value().toString();
-					if (stream->acceptableMethods().contains(defaultMethod))
-					{
-						stream->startStream(defaultMethod);
-					}
-					else if (!stream->acceptableMethods().isEmpty())
-					{
-						stream->startStream(stream->acceptableMethods().at(0));
-					}
-				}
-				result.status = COMMAND_STATUS_COMPLETED;
-			}
-			else
-			{
-				result.status = COMMAND_STATUS_CANCELED;
-			}
-			return FCommands->sendCommandResult(result);
-		}
-		else if (ARequest.action == COMMAND_ACTION_CANCEL)
-		{
-			result.status = COMMAND_STATUS_CANCELED;
-			return FCommands->sendCommandResult(result);
 		}
 	}
 	return false;

@@ -12,7 +12,6 @@
 //MessageWidgets - ToolBarWidget
 #define TBG_MWTBW_EMOTICONS                                     200
 #define TBG_MWTBW_MESSAGEWIDGETS_QUOTE                          300
-#define TBG_MWTBW_FILETRANSFER                                  500
 #define TBG_MWTBW_HTTPUPLOAD                                    510
 #define TBG_MWTBW_VOICECALLS                                    550
 #define TBG_MWTBW_ARCHIVE_VIEW                                  700

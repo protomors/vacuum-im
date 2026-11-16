@@ -8,7 +8,6 @@
 #include <interfaces/ipresencemanager.h>
 #include <interfaces/imultiuserchat.h>
 #include <interfaces/idataforms.h>
-#include <interfaces/ifilestreamsmanager.h>
 #include <interfaces/imessageprocessor.h>
 #include <interfaces/istanzaprocessor.h>
 #include <interfaces/inotifications.h>
@@ -49,7 +48,6 @@ protected:
 	bool processPing(const ICommandRequest &ARequest);
 	bool processLeaveMUC(const ICommandRequest &ARequest);
 	bool processSetStatus(const ICommandRequest &ARequest);
-	bool processFileTransfers(const ICommandRequest &ARequest);
 	bool processSetOptions(const ICommandRequest &ARequest);
 	bool processForwardMessages(const ICommandRequest &ARequest);
 protected:
@@ -59,7 +57,6 @@ private:
 	IDataForms *FDataForms;
 	IStatusChanger *FStatusChanger;
 	IMultiUserChatManager *FMultiChatManager;
-	IFileStreamsManager *FFileStreamManager;
 	IMessageProcessor *FMessageProcessor;
 	IStanzaProcessor *FStanzaProcessor;
 	INotifications *FNotifications;
