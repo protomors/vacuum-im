@@ -7,7 +7,7 @@ root. GitHub Actions is the supported CI service.
 Requirements
 ------------
   * CMake 3.21 or newer, a C++17 compiler, and Ninja for the supplied presets.
-  * Qt 6.10 or newer: Widgets, Network, Xml, Concurrent, LinguistTools, PrintSupport,
+  * Qt 6.8 or newer: Widgets, Network, Xml, Concurrent, LinguistTools, PrintSupport,
     Multimedia and Sql. Svg is optional.
   * Linux: X11 and XScreenSaver headers; Qt private headers are not required.
   * System zlib, minizip and libidn are used when found; otherwise bundled
@@ -34,6 +34,8 @@ Example build dependencies on Ubuntu 26.04:
     libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
     libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base \
     gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-nice
+
+The same package list works on Debian 13 (trixie), which provides Qt 6.8.
 
 Configure and build:
 
