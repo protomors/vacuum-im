@@ -1,0 +1,66 @@
+# Fast check for every push and pull request: Arch archive only.
+# Distribution packages for all platforms are built by packages.yml.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archives-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Linux x86_64 (Arch, system libraries)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v4
+      - name: Prepare pinned Arch build environment
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: .github/containers/linux.Dockerfile
+          tags: vacuum-linux:latest
+          load: true
+          cache-from: type=gha,scope=linux-toolchain
+          cache-to: type=gha,scope=linux-toolchain,mode=max,ignore-error=true
+      - name: Restore Linux compiler cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/ccache-linux
+          key: linux-ccache-v1-${{ hashFiles('.github/containers/linux.Dockerfile') }}-${{ github.sha }}
+          restore-keys: |
+            linux-ccache-v1-${{ hashFiles('.github/containers/linux.Dockerfile') }}-
+      - name: Build, package and check extracted archive
+        run: |
+          mkdir -p "$RUNNER_TEMP/ccache-linux"
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$RUNNER_TEMP/ccache-linux:/ccache" \
+            -e CCACHE_DIR=/ccache -e CCACHE_MAXSIZE=1G \
+            -e CCACHE_BASEDIR=/src -e CCACHE_COMPILERCHECK=content \
+            -v "$GITHUB_WORKSPACE:/src" -w /src vacuum-linux bash -euc '
+              ccache --zero-stats
+              cmake --preset release -B build/linux -DVACUUM_DEPENDENCY_PROVIDER=SYSTEM \
+                -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+              cmake --build build/linux --parallel 4
+              ccache --show-stats
+              cpack --config build/linux/CPackConfig.cmake -C Release
+              python .github/scripts/check_archive.py "build/linux/packages/*.tar.gz"
+            '
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/linux/packages/*.tar.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+
