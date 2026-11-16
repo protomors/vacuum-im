@@ -49,20 +49,12 @@ source_lang = ru
 file_filter = <lang>/rostersview.ts
 source_lang = ru
 
-[vacuum-im.socksstreamsts]
-file_filter = <lang>/socksstreams.ts
-source_lang = ru
-
 [vacuum-im.rostersmodelts]
 file_filter = <lang>/rostersmodel.ts
 source_lang = ru
 
 [vacuum-im.privacyliststs]
 file_filter = <lang>/privacylists.ts
-source_lang = ru
-
-[vacuum-im.filestreamsmanagerts]
-file_filter = <lang>/filestreamsmanager.ts
 source_lang = ru
 
 [vacuum-im.traymanagerts]
@@ -107,10 +99,6 @@ source_lang = ru
 
 [vacuum-im.accountmanagerts]
 file_filter = <lang>/accountmanager.ts
-source_lang = ru
-
-[vacuum-im.inbandstreamsts]
-file_filter = <lang>/inbandstreams.ts
 source_lang = ru
 
 [vacuum-im.optionsmanagerts]
@@ -177,10 +165,6 @@ source_lang = ru
 file_filter = <lang>/console.ts
 source_lang = ru
 
-[vacuum-im.datastreamsmanagerts]
-file_filter = <lang>/datastreamsmanager.ts
-source_lang = ru
-
 [vacuum-im.rosterts]
 file_filter = <lang>/roster.ts
 source_lang = ru
@@ -239,10 +223,6 @@ source_lang = ru
 
 [vacuum-im.statusiconsts]
 file_filter = <lang>/statusicons.ts
-source_lang = ru
-
-[vacuum-im.filetransferts]
-file_filter = <lang>/filetransfer.ts
 source_lang = ru
 
 [vacuum-im.commandsts]

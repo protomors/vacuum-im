@@ -26,9 +26,6 @@
 #define SEVP_STATISTICS_ENABLED                              "statistics|enabled|Statistics Enabled"
 #define SEVP_STATISTICS_DISABLED                             "statistics|disabled|Statistics Disabled"
 
-#define SEVP_FILESTREAM_SUCCESS                              "file-stream|success|File Stream Success"
-#define SEVP_FILESTREAM_FAILURE                              "file-stream|failure|File Stream Failure"
-
 #define SEVP_ACCOUNT_APPENDED                                "account|appended|Account Appended"
 #define SEVP_ACCOUNT_REGISTERED                              "account|registered|Account Registered"
 
@@ -45,7 +42,5 @@
 #define STMP_HISTORY_HEADERS_LOAD                            "history|headers-load|History Headers Load"
 #define STMP_HISTORY_MESSAGES_LOAD                           "history|messages-load|History Messages Load"
 #define STMP_HISTORY_FILE_DATABASE_SYNC                      "history|file-database-sync|History File Database Sync"
-
-#define STMP_SOCKSSTREAM_CONNECTED                           "socks-stream|connected|Socks Stream Connected"
 
 #endif // DEF_STATISTICSPARAMS_H

@@ -11,7 +11,6 @@
 #define ONO_STATUSITEMS           500
 #define ONO_NOTIFICATIONS         600
 #define ONO_SHORTCUTS             700
-#define ONO_DATATRANSFER          800
 #define ONO_APPEARANCE            900
 
 // ONO_ACCOUNTS
